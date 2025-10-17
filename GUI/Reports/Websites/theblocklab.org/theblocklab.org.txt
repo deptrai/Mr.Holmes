@@ -1,0 +1,164 @@
+SCANNING EXECUTED ON:
+Date: 08/10/2025 12:32:03
+IP: 185.230.63.171
+NATION: United States
+NATION-CODE: US
+REGION-CODE: VA
+REGION-NAME: Virginia
+CITY: Ashburn
+TIMEZONE: America/New_York
+ISP: wix com inc
+ORG: Wix Com Inc
+AS: AS58182 Wix.com Ltd.
+LAT: 39.018
+LONG: -77.539
+ZIP/POSTAL-CODE: 20147
+
+WEBSITE DATA:
+% IANA WHOIS server
+% for more information on IANA, visit http://www.iana.org
+% This query returned 1 object
+
+refer:        whois.publicinterestregistry.org
+
+domain:       ORG
+
+organisation: Public Interest Registry (PIR)
+address:      11911 Freedom Drive,
+address:      10th Floor, Suite 1000
+address:      Reston VA 20190
+address:      United States of America (the)
+
+contact:      administrative
+name:         Director of Operations, Compliance and Customer Support
+organisation: Public Interest Registry (PIR)
+address:      11911 Freedom Drive,
+address:      10th Floor, Suite 1000
+address:      Reston VA 20190
+address:      United States of America (the)
+phone:        +1 703 889 5778
+fax-no:       +1 703 889 5779
+e-mail:       ops@pir.org
+
+contact:      technical
+name:         Senior Director, DNS Infrastructure Group
+organisation: Identity Digital Limited
+address:      c/o Identity Digital Inc.
+address:      10500 NE 8th Street, Suite 750
+address:      Bellevue WA 98004
+address:      United States of America (the)
+phone:        +1.425.298.2200
+fax-no:       +1.425.671.0020
+e-mail:       tldtech@identity.digital
+
+nserver:      A0.ORG.AFILIAS-NST.INFO 199.19.56.1 2001:500:e:0:0:0:0:1
+nserver:      A2.ORG.AFILIAS-NST.INFO 199.249.112.1 2001:500:40:0:0:0:0:1
+nserver:      B0.ORG.AFILIAS-NST.ORG 199.19.54.1 2001:500:c:0:0:0:0:1
+nserver:      B2.ORG.AFILIAS-NST.ORG 199.249.120.1 2001:500:48:0:0:0:0:1
+nserver:      C0.ORG.AFILIAS-NST.INFO 199.19.53.1 2001:500:b:0:0:0:0:1
+nserver:      D0.ORG.AFILIAS-NST.ORG 199.19.57.1 2001:500:f:0:0:0:0:1
+ds-rdata:     26974 8 2 4fede294c53f438a158c41d39489cd78a86beb0d8a0aeaff14745c0d16e1de32
+
+whois:        whois.publicinterestregistry.org
+
+status:       ACTIVE
+remarks:      Registration information:
+remarks:      http://publicinterestregistry.org
+
+created:      1985-01-01
+changed:      2025-08-14
+source:       IANA
+
+# whois.publicinterestregistry.org
+
+Domain Name: theblocklab.org
+Registry Domain ID: REDACTED
+Registrar WHOIS Server: whois.namecheap.com
+Registrar URL: http://www.namecheap.com
+Updated Date: 2025-09-17T19:46:32Z
+Creation Date: 2025-08-22T15:08:54Z
+Registry Expiry Date: 2026-08-22T15:08:54Z
+Registrar: NameCheap, Inc.
+Registrar IANA ID: 1068
+Registrar Abuse Contact Email: abuse@namecheap.com
+Registrar Abuse Contact Phone: +1.9854014545
+Domain Status: ok https://icann.org/epp#ok
+Name Server: ns2.wixdns.net
+Name Server: ns3.wixdns.net
+DNSSEC: unsigned
+URL of the ICANN Whois Inaccuracy Complaint Form: https://icann.org/wicf/
+>>> Last update of WHOIS database: 2025-10-08T05:32:17Z <<<
+
+# whois.namecheap.com
+
+Domain name: theblocklab.org
+Registry Domain ID: 637323798c1c46a39372c0727cdbc815-LROR
+Registrar WHOIS Server: whois.namecheap.com
+Registrar URL: http://www.namecheap.com
+Updated Date: 0001-01-01T00:00:00.00Z
+Creation Date: 2025-08-22T15:08:54.11Z
+Registrar Registration Expiration Date: 2026-08-22T15:08:54.11Z
+Registrar: NAMECHEAP INC
+Registrar IANA ID: 1068
+Registrar Abuse Contact Email: abuse@namecheap.com
+Registrar Abuse Contact Phone: +1.9854014545
+Reseller: NAMECHEAP INC
+Domain Status: ok https://icann.org/epp#ok
+Registry Registrant ID: 
+Registrant Name: Redacted for Privacy
+Registrant Organization: Privacy service provided by Withheld for Privacy ehf
+Registrant Street: Kalkofnsvegur 2 
+Registrant City: Reykjavik
+Registrant State/Province: Capital Region
+Registrant Postal Code: 101
+Registrant Country: IS
+Registrant Phone: +354.4212434
+Registrant Phone Ext: 
+Registrant Fax: 
+Registrant Fax Ext: 
+Registrant Email: 67211467d2834a7f8a6be453259d3a1c.protect@withheldforprivacy.com
+Registry Admin ID: 
+Admin Name: Redacted for Privacy
+Admin Organization: Privacy service provided by Withheld for Privacy ehf
+Admin Street: Kalkofnsvegur 2 
+Admin City: Reykjavik
+Admin State/Province: Capital Region
+Admin Postal Code: 101
+Admin Country: IS
+Admin Phone: +354.4212434
+Admin Phone Ext: 
+Admin Fax: 
+Admin Fax Ext: 
+Admin Email: 67211467d2834a7f8a6be453259d3a1c.protect@withheldforprivacy.com
+Registry Tech ID: 
+Tech Name: Redacted for Privacy
+Tech Organization: Privacy service provided by Withheld for Privacy ehf
+Tech Street: Kalkofnsvegur 2 
+Tech City: Reykjavik
+Tech State/Province: Capital Region
+Tech Postal Code: 101
+Tech Country: IS
+Tech Phone: +354.4212434
+Tech Phone Ext: 
+Tech Fax: 
+Tech Fax Ext: 
+Tech Email: 67211467d2834a7f8a6be453259d3a1c.protect@withheldforprivacy.com
+Name Server: ns2.wixdns.net
+Name Server: ns3.wixdns.net
+DNSSEC: unsigned
+URL of the ICANN WHOIS Data Problem Reporting System: http://wdprs.internic.net/
+>>> Last update of WHOIS database: 2025-10-07T21:32:41.35Z <<<
+
+
+MALICIOUS/FAKE LINK FOUND ON:
+GOOD LOOKS LIKE THIS WEBSITE/DOMAIN IS SAFE :-)
+FOR MAJOR INFORMATION CONSULT THESE LINKS...
+https://www.scamadviser.com/check-website/theblocklab.org
+https://www.ssltrust.com.au/ssl-tools/website-security-check?domain=theblocklab.org
+https://www.islegitsite.com/check/theblocklab.org
+
+OPEN PORTS:
+Port: 80
+Port: 82
+Port: 443
+Port: 445

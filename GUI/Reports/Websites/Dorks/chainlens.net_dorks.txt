@@ -1,0 +1,40 @@
+GOOGLE-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:txt
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:pdf
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:log
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:doc
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:docx
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:sqlite
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:yaml
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:json
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:xls
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:xlsx
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:csv
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+filetype:md
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+intext:admin+OR+Admin
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+intext:emails+OR+Emails+OR+EMAILS
+| https://www.google.com/search?q=site:(www.chainlens.net)%29+intitle:admin+OR+Admin
+| https://www.google.com/search?q=intext:(www.chainlens.net+OR+chainlens.net)
+| https://www.google.com/search?q=inurl:(www.chainlens.net+OR+chainlens.net)
+----------------------------------------------------------------------------------------------------------------------
+YANDEX-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://yandex.com/search/?text=site:chainlens.net
+| https://yandex.com/search/?text=site:chainlens.net+mime:txt
+| https://yandex.com/search/?text=site:chainlens.net+mime:pdf
+| https://yandex.com/search/?text=site:chainlens.net+mime:log
+| https://yandex.com/search/?text=site:chainlens.net+mime:doc
+| https://yandex.com/search/?text=site:chainlens.net+mime:docx
+| https://yandex.com/search/?text=site:chainlens.net+mime:sqlite
+| https://yandex.com/search/?text=site:chainlens.net+mime:yaml
+| https://yandex.com/search/?text=site:chainlens.net+mime:json
+| https://yandex.com/search/?text=site:chainlens.net+mime:xls
+| https://yandex.com/search/?text=site:chainlens.net+mime:xlsx
+| https://yandex.com/search/?text=site:chainlens.net+mime:csv
+| https://yandex.com/search/?text=inurl:chainlens.net
+----------------------------------------------------------------------------------------------------------------------

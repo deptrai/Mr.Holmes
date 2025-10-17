@@ -1,0 +1,56 @@
+# Brownfield Analysis - Codebase Documentation Workflow Configuration
+name: brownfield-analysis
+description: "Comprehensive brownfield codebase analysis workflow that documents existing architecture, identifies technical debt, assesses code quality, and creates baseline documentation for legacy projects before planning new features"
+author: "BMad"
+
+# Critical variables
+config_source: "{project-root}/bmad/bmm/config.yaml"
+output_folder: "{config_source}:output_folder"
+user_name: "{config_source}:user_name"
+date: system-generated
+
+# Module path and component files
+installed_path: "{project-root}/bmad/bmm/workflows/1-analysis/brownfield-analysis"
+template: "{installed_path}/template.md"
+instructions: "{installed_path}/instructions.md"
+validation: "{installed_path}/checklist.md"
+
+# Output configuration
+default_output_file: "{output_folder}/brownfield-analysis-{{project_name}}-{{date}}.md"
+
+# Workflow settings
+autonomous: false # Interactive workflow requiring user collaboration and codebase access
+analysis_depth: "comprehensive" # Options: "quick" (surface-level), "standard" (balanced), "comprehensive" (deep dive)
+
+# Analysis components
+analysis_areas:
+  - architecture: "Current system architecture and design patterns"
+  - technical_debt: "Technical debt identification and prioritization"
+  - code_quality: "Code quality metrics and standards compliance"
+  - dependencies: "Dependency analysis and vulnerability assessment"
+  - security: "Security audit and compliance review"
+  - performance: "Performance baseline and bottleneck identification"
+  - documentation: "Existing documentation assessment"
+  - testing: "Test coverage and quality assessment"
+
+# Required tools and access
+required_tools:
+  - codebase_retrieval: "For semantic code search and understanding"
+  - grep_search: "For pattern matching and reference finding"
+  - git_tools: "For commit history and evolution analysis"
+  - file_system: "For directory structure and file analysis"
+
+# Optional MCP integrations
+recommended_mcp:
+  - context7: "For framework/library documentation"
+  - perplexity: "For best practices research"
+  - chrome_devtools: "For runtime analysis if web application"
+
+# Output artifacts
+deliverables:
+  - brownfield_analysis_report: "Comprehensive analysis document"
+  - architecture_diagram: "Current architecture visualization (Mermaid)"
+  - technical_debt_register: "Prioritized technical debt items"
+  - refactoring_roadmap: "Recommended refactoring strategy"
+  - migration_checklist: "Pre-planning validation checklist"
+

@@ -1,0 +1,40 @@
+GOOGLE-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:txt
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:pdf
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:log
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:doc
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:docx
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:sqlite
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:yaml
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:json
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:xls
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:xlsx
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:csv
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+filetype:md
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+intext:admin+OR+Admin
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+intext:emails+OR+Emails+OR+EMAILS
+| https://www.google.com/search?q=site:(www.theblocklab.org)%29+intitle:admin+OR+Admin
+| https://www.google.com/search?q=intext:(www.theblocklab.org+OR+theblocklab.org)
+| https://www.google.com/search?q=inurl:(www.theblocklab.org+OR+theblocklab.org)
+----------------------------------------------------------------------------------------------------------------------
+YANDEX-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://yandex.com/search/?text=site:theblocklab.org
+| https://yandex.com/search/?text=site:theblocklab.org+mime:txt
+| https://yandex.com/search/?text=site:theblocklab.org+mime:pdf
+| https://yandex.com/search/?text=site:theblocklab.org+mime:log
+| https://yandex.com/search/?text=site:theblocklab.org+mime:doc
+| https://yandex.com/search/?text=site:theblocklab.org+mime:docx
+| https://yandex.com/search/?text=site:theblocklab.org+mime:sqlite
+| https://yandex.com/search/?text=site:theblocklab.org+mime:yaml
+| https://yandex.com/search/?text=site:theblocklab.org+mime:json
+| https://yandex.com/search/?text=site:theblocklab.org+mime:xls
+| https://yandex.com/search/?text=site:theblocklab.org+mime:xlsx
+| https://yandex.com/search/?text=site:theblocklab.org+mime:csv
+| https://yandex.com/search/?text=inurl:theblocklab.org
+----------------------------------------------------------------------------------------------------------------------
