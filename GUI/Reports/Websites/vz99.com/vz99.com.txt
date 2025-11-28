@@ -1,0 +1,112 @@
+SCANNING EXECUTED ON:
+Date: 25/11/2025 11:45:19
+IP: 172.66.40.128
+NATION: Canada
+NATION-CODE: CA
+REGION-CODE: ON
+REGION-NAME: Ontario
+CITY: Toronto
+TIMEZONE: America/Toronto
+ISP: Cloudflare, Inc.
+ORG: Cloudflare, Inc.
+AS: AS13335 Cloudflare, Inc.
+LAT: 43.6532
+LONG: -79.3832
+ZIP/POSTAL-CODE: M5A
+
+MALICIOUS/FAKE LINK FOUND ON:
+GOOD LOOKS LIKE THIS WEBSITE/DOMAIN IS SAFE :-)
+FOR MAJOR INFORMATION CONSULT THESE LINKS...
+https://www.scamadviser.com/check-website/vz99.com
+https://www.ssltrust.com.au/ssl-tools/website-security-check?domain=vz99.com
+https://www.islegitsite.com/check/vz99.com
+--------------------------------
+SHOWING TWITTER RESULTS FOR: vz99.com
+--------------------------------
+SHOWING TWITTER RESULTS FOR: vz99
+--------------------------------
+SHOWING GITHUB RESULTS FOR: vz99.com
+--------------------------------
+SHOWING GITHUB RESULTS FOR: vz99
+
+USER FOUND: vz99
+PROFILE-PIC: https://avatars.githubusercontent.com/u/61710108?v=4
+LINK: https://github.com/vz99
+
+USER FOUND: vz99jp
+PROFILE-PIC: https://avatars.githubusercontent.com/u/177142325?v=4
+LINK: https://github.com/vz99jp
+
+USER FOUND: vz996963-lgtm
+PROFILE-PIC: https://avatars.githubusercontent.com/u/241200548?v=4
+LINK: https://github.com/vz996963-lgtm
+
+USER FOUND: VZ99-VZ99-Casino-Nha-Cai-VZ99
+PROFILE-PIC: https://avatars.githubusercontent.com/u/100891087?v=4
+LINK: https://github.com/VZ99-VZ99-Casino-Nha-Cai-VZ99
+
+USER FOUND: vz99luxury
+PROFILE-PIC: https://avatars.githubusercontent.com/u/210104797?v=4
+LINK: https://github.com/vz99luxury
+
+USER FOUND: vz99report
+PROFILE-PIC: https://avatars.githubusercontent.com/u/228436641?v=4
+LINK: https://github.com/vz99report
+
+USER FOUND: vz99cncom
+PROFILE-PIC: https://avatars.githubusercontent.com/u/229159678?v=4
+LINK: https://github.com/vz99cncom
+
+USER FOUND: vz99how
+PROFILE-PIC: https://avatars.githubusercontent.com/u/198895735?v=4
+LINK: https://github.com/vz99how
+
+USER FOUND: vz99gifts
+PROFILE-PIC: https://avatars.githubusercontent.com/u/209324035?v=4
+LINK: https://github.com/vz99gifts
+
+USER FOUND: vz99party
+PROFILE-PIC: https://avatars.githubusercontent.com/u/227409593?v=4
+LINK: https://github.com/vz99party
+
+USER FOUND: vz99gmbh-lab
+PROFILE-PIC: https://avatars.githubusercontent.com/u/235029659?v=4
+LINK: https://github.com/vz99gmbh-lab
+
+USER FOUND: vz99band1
+PROFILE-PIC: https://avatars.githubusercontent.com/u/146409557?v=4
+LINK: https://github.com/vz99band1
+
+USER FOUND: vz99vn
+PROFILE-PIC: https://avatars.githubusercontent.com/u/177011428?v=4
+LINK: https://github.com/vz99vn
+
+USER FOUND: vz99cab
+PROFILE-PIC: https://avatars.githubusercontent.com/u/214671189?v=4
+LINK: https://github.com/vz99cab
+
+USER FOUND: vz99rodeo
+PROFILE-PIC: https://avatars.githubusercontent.com/u/212303425?v=4
+LINK: https://github.com/vz99rodeo
+
+USER FOUND: vz99show
+PROFILE-PIC: https://avatars.githubusercontent.com/u/173366077?v=4
+LINK: https://github.com/vz99show
+
+USER FOUND: vz99forsale
+PROFILE-PIC: https://avatars.githubusercontent.com/u/197607038?v=4
+LINK: https://github.com/vz99forsale
+
+USER FOUND: vz99rucom
+PROFILE-PIC: https://avatars.githubusercontent.com/u/236713366?v=4
+LINK: https://github.com/vz99rucom
+
+USER FOUND: vz99comone
+PROFILE-PIC: https://avatars.githubusercontent.com/u/193207147?v=4
+LINK: https://github.com/vz99comone
+
+USER FOUND: vz99vipnet
+PROFILE-PIC: https://avatars.githubusercontent.com/u/226651765?v=4
+LINK: https://github.com/vz99vipnet
+
+OPEN PORTS:

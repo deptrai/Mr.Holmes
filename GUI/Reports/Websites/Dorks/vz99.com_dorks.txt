@@ -1,0 +1,40 @@
+GOOGLE-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:txt
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:pdf
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:log
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:doc
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:docx
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:sqlite
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:yaml
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:json
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:xls
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:xlsx
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:csv
+| https://www.google.com/search?q=site:(www.vz99.com)%29+filetype:md
+| https://www.google.com/search?q=site:(www.vz99.com)%29+intext:admin+OR+Admin
+| https://www.google.com/search?q=site:(www.vz99.com)%29+intext:emails+OR+Emails+OR+EMAILS
+| https://www.google.com/search?q=site:(www.vz99.com)%29+intitle:admin+OR+Admin
+| https://www.google.com/search?q=intext:(www.vz99.com+OR+vz99.com)
+| https://www.google.com/search?q=inurl:(www.vz99.com+OR+vz99.com)
+----------------------------------------------------------------------------------------------------------------------
+YANDEX-DORKS:
+
+[GENERAL-DORKS]:
+----------------------------------------------------------------------------------------------------------------------
+| https://yandex.com/search/?text=site:vz99.com
+| https://yandex.com/search/?text=site:vz99.com+mime:txt
+| https://yandex.com/search/?text=site:vz99.com+mime:pdf
+| https://yandex.com/search/?text=site:vz99.com+mime:log
+| https://yandex.com/search/?text=site:vz99.com+mime:doc
+| https://yandex.com/search/?text=site:vz99.com+mime:docx
+| https://yandex.com/search/?text=site:vz99.com+mime:sqlite
+| https://yandex.com/search/?text=site:vz99.com+mime:yaml
+| https://yandex.com/search/?text=site:vz99.com+mime:json
+| https://yandex.com/search/?text=site:vz99.com+mime:xls
+| https://yandex.com/search/?text=site:vz99.com+mime:xlsx
+| https://yandex.com/search/?text=site:vz99.com+mime:csv
+| https://yandex.com/search/?text=inurl:vz99.com
+----------------------------------------------------------------------------------------------------------------------
