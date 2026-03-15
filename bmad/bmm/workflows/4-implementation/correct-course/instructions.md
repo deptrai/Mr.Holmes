@@ -2,6 +2,10 @@
 
 <critical>The workflow execution engine is governed by: {project-root}/bmad/core/tasks/workflow.xml</critical>
 <critical>You MUST have already loaded and processed: {project-root}/bmad/bmm/workflows/4-implementation/correct-course/workflow.yaml</critical>
+<critical>Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}</critical>
+<critical>Generate all documents in {document_output_language}</critical>
+
+<critical>DOCUMENT OUTPUT: Updated epics, stories, or PRD sections. Clear, actionable changes. User skill level ({user_skill_level}) affects conversation style ONLY, not document updates.</critical>
 
 <workflow>
 
@@ -24,7 +28,7 @@
 </step>
 
 <step n="2" goal="Execute Change Analysis Checklist">
-  <action>Load and execute the systematic analysis from: {project-root}/bmad/bmm/workflows/4-implementation/correct-course/checklist.md</action>
+  <action>Load and execute the systematic analysis from: {checklist}</action>
   <action>Work through each checklist section interactively with the user</action>
   <action>Record status for each checklist item:</action>
     - [x] Done - Item completed successfully
@@ -129,6 +133,7 @@
 - Define success criteria for implementation
 
 <action>Present complete Sprint Change Proposal to user</action>
+<action>Write Sprint Change Proposal document to {default_output_file}</action>
 <ask>Review complete proposal. Continue [c] or Edit [e]?</ask>
 </step>
 
@@ -189,7 +194,7 @@
 - Specific edit proposals with before/after
 - Implementation handoff plan
 
-<action>Report workflow completion to user</action>
+<action>Report workflow completion to user with personalized message: "✅ Correct Course workflow complete, {user_name}!"</action>
 <action>Remind user of success criteria and next steps for implementation team</action>
 </step>
 

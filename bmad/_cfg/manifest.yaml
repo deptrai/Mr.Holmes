@@ -1,7 +1,7 @@
 installation:
-  version: 6.0.0-alpha.0
-  installDate: '2025-10-07T15:29:58.987Z'
-  lastUpdated: '2025-10-07T15:29:58.987Z'
+  version: 6.0.0-alpha.6
+  installDate: '2025-11-28T05:11:54.627Z'
+  lastUpdated: '2025-11-28T05:11:54.627Z'
 modules:
   - core
   - bmb
@@ -9,3 +9,5 @@ modules:
   - cis
 ides:
   - auggie
+  - cursor
+  - windsurf

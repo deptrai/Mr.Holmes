@@ -5,11 +5,9 @@ author: "BMad"
 
 # Critical variables load from config_source
 config_source: "{project-root}/bmad/bmb/config.yaml"
-output_folder: "{config_source}:output_folder"
 custom_agent_location: "{config_source}:custom_agent_location"
 user_name: "{config_source}:user_name"
 communication_language: "{config_source}:communication_language"
-date: system-generated
 
 # Technical documentation for agent building
 agent_types: "{installed_path}/agent-types.md"
@@ -35,3 +33,5 @@ module_output_file: "{project-root}/bmad/{{target_module}}/agents/{{agent_filena
 standalone_output_file: "{custom_agent_location}/{{agent_filename}}.agent.yaml"
 # Optional user override file (auto-created by installer if missing)
 config_output_file: "{project-root}/bmad/_cfg/agents/{{target_module}}-{{agent_filename}}.customize.yaml"
+
+standalone: true

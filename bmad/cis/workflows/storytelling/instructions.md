@@ -5,24 +5,29 @@
 <workflow>
 <critical>The workflow execution engine is governed by: {project_root}/bmad/core/tasks/workflow.xml</critical>
 <critical>You MUST have already loaded and processed: {project_root}/bmad/cis/workflows/storytelling/workflow.yaml</critical>
+<critical>Communicate all responses in {communication_language}</critical>
 
 <step n="1" goal="Story Context Setup">
 
 <action>Check if context data was provided with workflow invocation</action>
-<check>If data attribute was passed to this workflow:</check>
-<action>Load the context document from the data file path</action>
-<action>Study the background information, brand details, or subject matter</action>
-<action>Use the provided context to inform story development</action>
-<action>Acknowledge the focused storytelling goal</action>
-<ask response="story_refinement">I see we're crafting a story based on the context provided. What specific angle or emphasis would you like?</ask>
-<check>Else (no context data provided):</check>
-<action>Proceed with context gathering</action>
-<ask response="story_purpose">1. What's the purpose of this story? (e.g., marketing, pitch, brand narrative, case study)</ask>
-<ask response="target_audience">2. Who is your target audience?</ask>
-<ask response="key_messages">3. What key messages or takeaways do you want the audience to have?</ask>
-<ask>4. Any constraints? (length, tone, medium, existing brand guidelines)</ask>
+
+<check if="data attribute was passed to this workflow">
+  <action>Load the context document from the data file path</action>
+  <action>Study the background information, brand details, or subject matter</action>
+  <action>Use the provided context to inform story development</action>
+  <action>Acknowledge the focused storytelling goal</action>
+  <ask response="story_refinement">I see we're crafting a story based on the context provided. What specific angle or emphasis would you like?</ask>
+</check>
+
+<check if="no context data provided">
+  <action>Proceed with context gathering</action>
+  <ask response="story_purpose">1. What's the purpose of this story? (e.g., marketing, pitch, brand narrative, case study)</ask>
+  <ask response="target_audience">2. Who is your target audience?</ask>
+  <ask response="key_messages">3. What key messages or takeaways do you want the audience to have?</ask>
+  <ask>4. Any constraints? (length, tone, medium, existing brand guidelines)</ask>
 
 <critical>Wait for user response before proceeding. This context shapes the narrative approach.</critical>
+</check>
 
 <template-output>story_purpose, target_audience, key_messages</template-output>
 
@@ -45,20 +50,29 @@ I can help craft your story using these proven narrative frameworks:
 3. **Customer Journey Story** - Before/after transformation narrative
 4. **Challenge-Overcome Arc** - Dramatic obstacle-to-victory structure
 
-**Strategic Narratives:** 5. **Brand Story** - Values, mission, and unique positioning 6. **Pitch Narrative** - Persuasive problem-to-solution structure 7. **Vision Narrative** - Future-focused aspirational story 8. **Origin Story** - Foundational narrative of how it began
+**Strategic Narratives:**
 
-**Specialized Narratives:** 9. **Data Storytelling** - Transform insights into compelling narrative 10. **Emotional Hooks** - Craft powerful opening and touchpoints
+5. **Brand Story** - Values, mission, and unique positioning
+6. **Pitch Narrative** - Persuasive problem-to-solution structure
+7. **Vision Narrative** - Future-focused aspirational story
+8. **Origin Story** - Foundational narrative of how it began
+
+**Specialized Narratives:**
+
+9. **Data Storytelling** - Transform insights into compelling narrative
+10. **Emotional Hooks** - Craft powerful opening and touchpoints
 
 Which framework best fits your purpose? (Enter 1-10, or ask for my recommendation)
 </ask>
 
-<check>If user asks for recommendation:</check>
-<action>Analyze story_purpose, target_audience, and key_messages</action>
-<action>Recommend best-fit framework with clear rationale</action>
-<example>
-Based on your {{story_purpose}} for {{target_audience}}, I recommend:
-**{{framework_name}}** because {{rationale}}
-</example>
+<check if="user asks for recommendation">
+  <action>Analyze story_purpose, target_audience, and key_messages</action>
+  <action>Recommend best-fit framework with clear rationale</action>
+  <example>
+  Based on your {{story_purpose}} for {{target_audience}}, I recommend:
+  **{{framework_name}}** because {{rationale}}
+  </example>
+</check>
 
 <template-output>story_type, framework_name</template-output>
 
@@ -249,10 +263,11 @@ Polish and plan forward:
 
 <ask>What parts of the story feel strongest?</ask>
 <ask>What areas could use more refinement?</ask>
+<ask>What's the key resolution or call to action for your story?</ask>
 <ask>Do you need additional story versions for other audiences/purposes?</ask>
 <ask>How will you test this story with your audience?</ask>
 
-<template-output>refinement_opportunities, additional_versions, feedback_plan</template-output>
+<template-output>resolution, refinement_opportunities, additional_versions, feedback_plan</template-output>
 
 </step>
 
@@ -265,6 +280,9 @@ Compile all story components into the structured template:
 3. Include all strategic guidance and usage notes
 4. Verify tone and voice consistency
 5. Fill all template placeholders with actual content
+
+<action>Write final story document to {output_folder}/story-{{date}}.md</action>
+<action>Confirm completion with: "Story complete, {user_name}! Your narrative has been saved to {output_folder}/story-{{date}}.md"</action>
 
 <template-output>agent_role, agent_name, user_name, date</template-output>
 

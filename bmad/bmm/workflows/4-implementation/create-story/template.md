@@ -1,6 +1,6 @@
 # Story {{epic_num}}.{{story_num}}: {{story_title}}
 
-Status: Draft
+Status: drafted
 
 ## Story
 
@@ -38,7 +38,7 @@ so that {{benefit}}.
 
 ### Context Reference
 
-<!-- Path(s) to story context XML/JSON will be added here by context workflow -->
+<!-- Path(s) to story context XML will be added here by context workflow -->
 
 ### Agent Model Used
 
