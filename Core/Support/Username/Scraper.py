@@ -481,7 +481,7 @@ class info:
             pass
         except requests.Timeout as err:
             print(Font.Color.RED + "[!]" +
-                  Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
+                  Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(err))
             Flag = False
             IsPrivate = "Undefined"
             TwitterParams[0].append(IsPrivate)

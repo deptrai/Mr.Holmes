@@ -10,3 +10,7 @@ pytest-asyncio>=0.23
 
 # === Async HTTP Mocking ===
 aioresponses>=0.7.6
+
+# === CI/CD & Code Quality ===
+flake8>=7.0.0
+pytest-cov>=4.1.0
