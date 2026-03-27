@@ -1,6 +1,6 @@
 # Story 5.1: Argparse CLI Interface
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,12 +18,12 @@ so that scans có thể automated / scripted / chạy trong CI.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Create `Core/cli/parser.py` — argparse definition
-- [ ] Task 2 — Create `Core/cli/runner.py` — batch execution logic
-- [ ] Task 3 — Modify `MrHolmes.py` entry point
-  - [ ] If args provided → batch mode
-  - [ ] If no args → interactive mode (current)
-- [ ] Task 4 — Integration tests
+- [x] Task 1 — Create `Core/cli/parser.py` — argparse definition
+- [x] Task 2 — Create `Core/cli/runner.py` — batch execution logic
+- [x] Task 3 — Modify `MrHolmes.py` entry point
+  - [x] If args provided → batch mode
+  - [x] If no args → interactive mode (current)
+- [x] Task 4 — Integration tests
 
 ## Dev Notes
 
@@ -50,6 +50,17 @@ MrHolmes.py       # MODIFY — add arg detection
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet
 ### Completion Notes List
+- Created `Core/cli/parser.py` — `build_parser()` and `parse_args()` via argparse; mutually exclusive scan target group; `--proxy`, `--nsfw`, `--output json|txt|csv`
+- Created `Core/cli/runner.py` — `BatchRunner` dispatches to ScanPipeline (username) or legacy modules (phone/email/website); `ScanResult` output container; json/txt/csv formatting
+- Modified `MrHolmes.py` — arg parsing before interactive mode; `has_batch_target()` gate; `SystemExit` instead of bare `exit()`
+- 45 new tests in `tests/cli/test_parser.py` and `tests/cli/test_runner.py`; 374/374 total passing
 ### File List
+- Core/cli/__init__.py (NEW)
+- Core/cli/parser.py (NEW)
+- Core/cli/runner.py (NEW)
+- MrHolmes.py (MODIFY)
+- tests/cli/__init__.py (NEW)
+- tests/cli/test_parser.py (NEW)
+- tests/cli/test_runner.py (NEW)

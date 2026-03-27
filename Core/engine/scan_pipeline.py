@@ -59,9 +59,21 @@ class ScanPipeline:
         pipeline.run()
     """
 
-    def __init__(self, username: str, mode: str) -> None:
+    def __init__(
+        self,
+        username: str,
+        mode: str,
+        *,
+        batch_mode: bool = False,
+        proxy_choice: int | None = None,
+        nsfw_enabled: bool = False,
+    ) -> None:
         self.username = sanitize_username(username)
         self.mode = mode
+        # Batch-mode config — skip interactive prompts when set
+        self.batch_mode = batch_mode
+        self._batch_proxy_choice = proxy_choice  # 1=proxy, 2=no proxy
+        self._batch_nsfw = nsfw_enabled
         self.ctx: ScanContext | None = None
         self.cfg: ScanConfig | None = None
         self._opt: int = 1  # 1=research, 2=scraping — for recap branching
@@ -139,13 +151,20 @@ class ScanPipeline:
     # Stage 3: configure_proxy() — User chooses proxy, resolve identity
     # ------------------------------------------------------------------
     def configure_proxy(self) -> ScanConfig:
-        """Ask user for proxy preference and build ScanConfig via ProxyManager."""
-        choice = safe_int_input(
-            Font.Color.BLUE + "\n[+]" + Font.Color.WHITE +
-            Language.Translation.Translate_Language(
-                filename, "Default", "choice", "None") +
-            Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-            valid_range=range(1, 3))
+        """Ask user for proxy preference and build ScanConfig via ProxyManager.
+
+        In batch mode, uses self._batch_proxy_choice (default 2 = no proxy)
+        to skip the interactive prompt.
+        """
+        if self.batch_mode and self._batch_proxy_choice is not None:
+            choice = self._batch_proxy_choice
+        else:
+            choice = safe_int_input(
+                Font.Color.BLUE + "\n[+]" + Font.Color.WHITE +
+                Language.Translation.Translate_Language(
+                    filename, "Default", "choice", "None") +
+                Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                valid_range=range(1, 3))
 
         self._proxy_manager = ProxyManager()
         self._proxy_manager.configure(choice)
@@ -213,12 +232,16 @@ class ScanPipeline:
             self.tags, self.most_tags,
         )
 
-        nsfw = safe_int_input(
-            Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
-            Language.Translation.Translate_Language(
-                filename, "Username", "Default", "Nsfw") +
-            Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-            valid_range=range(1, 3))
+        # In batch mode, use pre-configured flag; otherwise prompt
+        if self.batch_mode:
+            nsfw = 1 if self._batch_nsfw else 2
+        else:
+            nsfw = safe_int_input(
+                Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
+                Language.Translation.Translate_Language(
+                    filename, "Username", "Default", "Nsfw") +
+                Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                valid_range=range(1, 3))
 
         if nsfw == 1:
             nsfw_file = "Site_lists/Username/NSFW_site_list.json"
@@ -454,13 +477,17 @@ class ScanPipeline:
         self.configure_proxy()
         self.prepare_report()
 
-        self._opt = safe_int_input(
-            Font.Color.BLUE + "\n[+]" + Font.Color.GREEN +
-            "[INSERT AN OPTION]:" + Font.Color.WHITE +
-            "\n(1)USERNAME-RESEARCH (SEARCH USERNAME ON DIFFERENT WEBSITES)"
-            "\n(2)PROFILE-SCRAPING (SCRAPE USERNAME PROFILE DIRECTLY)" +
-            Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-            valid_range=range(1, 3))
+        # In batch mode, default to research (opt=1) — no interactive prompt
+        if self.batch_mode:
+            self._opt = 1
+        else:
+            self._opt = safe_int_input(
+                Font.Color.BLUE + "\n[+]" + Font.Color.GREEN +
+                "[INSERT AN OPTION]:" + Font.Color.WHITE +
+                "\n(1)USERNAME-RESEARCH (SEARCH USERNAME ON DIFFERENT WEBSITES)"
+                "\n(2)PROFILE-SCRAPING (SCRAPE USERNAME PROFILE DIRECTLY)" +
+                Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                valid_range=range(1, 3))
 
         if self._opt == 1:
             self.scan_sites()

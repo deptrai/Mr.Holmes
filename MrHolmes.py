@@ -36,13 +36,25 @@ class Main:
         Menu.Main.main(Mode)
 
 if __name__ == "__main__":
+    # --- Batch (non-interactive) mode — AC1, AC2, AC3 -------------------
+    from Core.cli.parser import parse_args, has_batch_target
+    from Core.cli.runner import BatchRunner
+
+    _args = parse_args()
+
+    if has_batch_target(_args):
+        # One or more scan flags provided → run non-interactively
+        runner = BatchRunner(_args)
+        raise SystemExit(runner.run())
+
+    # --- Interactive mode (no args) — backward compatible (AC3) ----------
     Mode = Main.Controll_Display()
-    Mode
     try:
-       Main.Menu(Mode)
+        Main.Menu(Mode)
     except KeyboardInterrupt:
         print(Font.Color.RED + "\n\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "KeyC", "None"))
-        exit()
+        raise SystemExit(0)
     except ModuleNotFoundError as Error:
         print(Font.Color.RED + "\n\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Internal", "None").format(str(Error)))
-        exit()
+        raise SystemExit(1)
+
