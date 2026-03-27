@@ -282,7 +282,8 @@ class ScanPipeline:
         logger.info(Language.Translation.Translate_Language(
             filename, "Default", "TotFound", "None").format(
                 self.ctx.subject_type, self.username))
-        sleep(3)
+        if not self.batch_mode:
+            sleep(3)
 
         if not self.successfull:
             logger.warning(Language.Translation.Translate_Language(

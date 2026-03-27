@@ -1,6 +1,6 @@
 # Story 5.2: Abstract Output Layer
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,11 +18,11 @@ so that output có thể switch giữa CLI, Rich, JSON, hoặc silent mode.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Define `OutputHandler` Protocol
-- [ ] Task 2 — Implement `ConsoleOutput` (wraps current print logic)
-- [ ] Task 3 — Implement `SilentOutput` (no-op)
-- [ ] Task 4 — Inject OutputHandler into ScanPipeline
-- [ ] Task 5 — Unit tests
+- [x] Task 1 — Define `OutputHandler` Protocol
+- [x] Task 2 — Implement `ConsoleOutput` (wraps current print logic)
+- [x] Task 3 — Implement `SilentOutput` (no-op)
+- [x] Task 4 — Inject OutputHandler into ScanPipeline
+- [x] Task 5 — Unit tests
 
 ## Dev Notes
 
@@ -37,6 +37,15 @@ Core/cli/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet
 ### Completion Notes List
+- `Core/cli/output.py`: `OutputHandler` runtime_checkable Protocol — 5 methods (found, not_found, error, progress, summary). `ConsoleOutput` lazy-imports Font for ANSI colors, falls back to plain text. `SilentOutput` no-op, routes errors to logger.debug only.
+- `Core/engine/scan_pipeline.py`: Added `output_handler` kwarg to `__init__()` (defaults ConsoleOutput). `handle_results()` calls `self.output.found()` per URL and `self.output.summary()` at end.
+- `Core/cli/runner.py`: `BatchRunner._run_username_scan()` passes `SilentOutput()` so pipeline doesn’t print per-URL noise; runner’s own `_emit_output()` owns final formatting.
+- `tests/cli/test_output.py`: 34 tests — all ACs covered. Full suite: 408/408 passing.
 ### File List
+- Core/cli/output.py (NEW)
+- Core/cli/__init__.py (MODIFY)
+- Core/engine/scan_pipeline.py (MODIFY)
+- Core/cli/runner.py (MODIFY)
+- tests/cli/test_output.py (NEW)
