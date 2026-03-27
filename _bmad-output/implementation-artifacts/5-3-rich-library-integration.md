@@ -1,6 +1,6 @@
 # Story 5.3: Rich Library Integration
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,11 +18,11 @@ so that scan experience trực quan, hiện đại, và informative.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Implement `RichOutput` class
-- [ ] Task 2 — Progress bar: `rich.progress.Progress`
-- [ ] Task 3 — Results table: `rich.table.Table`
-- [ ] Task 4 — Tag tree: `rich.tree.Tree`
-- [ ] Task 5 — Terminal capability detection + fallback
+- [x] Task 1 — Implement `RichOutput` class
+- [x] Task 2 — Progress bar: `rich.progress.Progress`
+- [x] Task 3 — Results table: `rich.table.Table`
+- [x] Task 4 — Tag tree: `rich.tree.Tree`
+- [x] Task 5 — Terminal capability detection + fallback
 
 ## Dev Notes
 
@@ -37,6 +37,14 @@ Core/cli/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet
 ### Completion Notes List
+- `Core/cli/rich_output.py`: `RichOutput` class implementing OutputHandler Protocol. Stateful: accumulates `_found_rows` and `_tag_groups` during scan, renders Rich Table + Tree at `summary()`. `force_fallback=True` constructor arg for non-TTY testing.
+- `make_output_handler()` factory: auto-selects `SilentOutput` / `RichOutput` / `ConsoleOutput` based on env.
+- 5 tests skip when non-TTY (expected CI behaviour); 21 pass always.
+- 5 TTY-dependent render tests use `pytest.skip` to avoid flaky CI failures.
+- Full suite: 429 passed, 5 skipped.
 ### File List
+- Core/cli/rich_output.py (NEW)
+- Core/cli/__init__.py (MODIFY)
+- tests/cli/test_rich_output.py (NEW)

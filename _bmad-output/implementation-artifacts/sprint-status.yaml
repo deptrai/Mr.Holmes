@@ -83,7 +83,7 @@ development_status:
   epic-5: in-progress
   5-1-argparse-cli-interface: done
   5-2-abstract-output-layer: done
-  5-3-rich-library-integration: in-progress
+  5-3-rich-library-integration: review
   epic-5-retrospective: optional
 
   # === Epic 6: Data Persistence & Export ===

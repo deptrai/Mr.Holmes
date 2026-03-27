@@ -276,10 +276,13 @@ def make_output_handler(force_rich: bool = False, force_silent: bool = False) ->
         from Core.cli.output import SilentOutput
         return SilentOutput()
 
-    if force_rich or _rich_available():
-        handler = RichOutput()
+    available = force_rich or _rich_available()
+    if available:
+        # Pass pre-computed availability to avoid a second _rich_available() call
+        handler = RichOutput(force_fallback=not available)
         if handler._use_rich:
             return handler
 
     from Core.cli.output import ConsoleOutput
     return ConsoleOutput()
+
