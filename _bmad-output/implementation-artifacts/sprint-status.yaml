@@ -65,14 +65,14 @@ development_status:
 
   # === Epic 3: Smart Proxy System ===
   epic-3: in-progress
-  3-1-proxy-auto-rotate: ready-for-dev
-  3-2-proxy-health-check: ready-for-dev
-  3-3-captcha-block-detection: ready-for-dev
+  3-1-proxy-auto-rotate: done
+  3-2-proxy-health-check: done
+  3-3-captcha-block-detection: done
   epic-3-retrospective: optional
 
   # === Epic 4: Quality & Security Hardening ===
   epic-4: in-progress
-  4-1-pytest-aioresponses-setup: ready-for-dev
+  4-1-pytest-aioresponses-setup: done
   4-2-secrets-migration-dotenv: ready-for-dev
   4-3-logging-module-migration: ready-for-dev
   4-4-remove-silent-exception-pass: ready-for-dev

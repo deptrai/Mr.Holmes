@@ -66,6 +66,36 @@ DEFAULT_TIMEOUT_SECONDS = 10
 
 
 # ---------------------------------------------------------------------------
+# CAPTCHA/Block Detection (Story 3.3)
+# ---------------------------------------------------------------------------
+
+CAPTCHA_INDICATORS: tuple[str, ...] = (
+    "captcha",
+    "recaptcha",
+    "hcaptcha",
+    "cf-challenge",
+    "challenge-platform",
+    "challenge-form",
+    "turnstile",
+)
+
+
+def _detect_captcha(body: str) -> bool:
+    """
+    AC3: Kiểm tra HTML body có chứa CAPTCHA/challenge indicators.
+
+    Args:
+        body: HTML response body (string).
+
+    Returns:
+        True nếu tìm thấy bất kỳ CAPTCHA keyword nào.
+    """
+    body_lower = body.lower()
+    return any(indicator in body_lower for indicator in CAPTCHA_INDICATORS)
+
+
+
+# ---------------------------------------------------------------------------
 # Core async search function (Task 1 + Task 2 + Task 3)
 # ---------------------------------------------------------------------------
 
@@ -150,6 +180,12 @@ async def _evaluate_response(
     """
     Áp dụng error strategy để xác định found/not_found.
 
+    Check order (Story 3.3):
+        1. 403 → BLOCKED (mọi strategy)
+        2. 429 → RATE_LIMITED (mọi strategy)
+        3. Body CAPTCHA detection (mọi strategy khi đọc body)
+        4. Strategy-specific logic
+
     3 strategies (AC2):
         Status-Code  — response.status == 200
         Message      — error_text NOT in response body
@@ -157,27 +193,35 @@ async def _evaluate_response(
     """
     strategy = site_config.error_strategy
 
+    # ---- AC1: 403 → BLOCKED (mọi strategy) ----
+    if response.status == 403:
+        exc = RateLimitExceeded(
+            site_name=site_config.name,
+            url=site_config.display_url,
+            status_code=403,
+        )
+        return _error_result(site_config, ScanStatus.BLOCKED, exc)
+
+    # ---- AC2: 429 → RATE_LIMITED (mọi strategy) ----
+    if response.status == 429:
+        exc = RateLimitExceeded(
+            site_name=site_config.name,
+            url=site_config.display_url,
+            status_code=429,
+            retry_after=_parse_retry_after(response),
+        )
+        return _error_result(site_config, ScanStatus.RATE_LIMITED, exc)
+
     # ---- Status-Code strategy ----
     if strategy == ErrorStrategy.STATUS_CODE:
         if response.status == 200:
+            # AC3: check CAPTCHA in body before declaring FOUND
+            body = await response.text(errors="replace")
+            if _detect_captcha(body):
+                return _captcha_result(site_config)
             return _found_result(site_config)
         elif response.status in (404, 204):
             return _not_found_result(site_config)
-        elif response.status == 429:
-            exc = RateLimitExceeded(
-                site_name=site_config.name,
-                url=site_config.display_url,
-                status_code=429,
-                retry_after=_parse_retry_after(response),
-            )
-            return _error_result(site_config, ScanStatus.RATE_LIMITED, exc)
-        elif response.status == 403:
-            exc = RateLimitExceeded(
-                site_name=site_config.name,
-                url=site_config.display_url,
-                status_code=403,
-            )
-            return _error_result(site_config, ScanStatus.BLOCKED, exc)
         else:
             return ScanResult(
                 site_name=site_config.name,
@@ -198,6 +242,8 @@ async def _evaluate_response(
                 error_message="MESSAGE strategy requires non-empty error_text",
             )
         body = await response.text(errors="replace")
+        if _detect_captcha(body):
+            return _captcha_result(site_config)
         if site_config.error_text in body:
             return _not_found_result(site_config)
         return _found_result(site_config)
@@ -215,6 +261,17 @@ async def _evaluate_response(
         url=site_config.display_url,
         status=ScanStatus.ERROR,
         error_message=f"Unknown strategy: {strategy}",
+    )
+
+
+def _captcha_result(site_config: SiteConfig) -> ScanResult:
+    """Helper: tạo ScanResult CAPTCHA khi phát hiện challenge trong body (AC3)."""
+    return ScanResult(
+        site_name=site_config.name,
+        url=site_config.display_url,
+        status=ScanStatus.CAPTCHA,
+        tags=site_config.tags,
+        error_message="CAPTCHA/challenge detected in response body",
     )
 
 

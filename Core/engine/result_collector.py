@@ -126,6 +126,40 @@ class ScanResultCollector:
             return len(self._results)
 
     @property
+    def blocked_count(self) -> int:
+        """AC5: Số BLOCKED results (HTTP 403)."""
+        with self._lock:
+            return sum(1 for r in self._results if r.status == ScanStatus.BLOCKED)
+
+    @property
+    def rate_limited_count(self) -> int:
+        """AC5: Số RATE_LIMITED results (HTTP 429)."""
+        with self._lock:
+            return sum(1 for r in self._results if r.status == ScanStatus.RATE_LIMITED)
+
+    @property
+    def captcha_count(self) -> int:
+        """AC5: Số CAPTCHA results (challenge detected in body)."""
+        with self._lock:
+            return sum(1 for r in self._results if r.status == ScanStatus.CAPTCHA)
+
+    def block_summary(self) -> str:
+        """
+        AC5: Summary report về blocking events sau scan.
+
+        Thread-safe: computes tất cả counts trong 1 lock acquisition để
+        đảm bảo consistency (tránh race condition giữa 3 lần acquire riêng).
+
+        Returns:
+            Formatted string: "Blocked: X | Rate-Limited: Y | CAPTCHA: Z"
+        """
+        with self._lock:
+            blocked = sum(1 for r in self._results if r.status == ScanStatus.BLOCKED)
+            rate_limited = sum(1 for r in self._results if r.status == ScanStatus.RATE_LIMITED)
+            captcha = sum(1 for r in self._results if r.status == ScanStatus.CAPTCHA)
+        return f"Blocked: {blocked} | Rate-Limited: {rate_limited} | CAPTCHA: {captcha}"
+
+    @property
     def all_results(self) -> list[ScanResult]:
         """Return a copy of all accumulated ScanResult objects."""
         with self._lock:
@@ -172,6 +206,9 @@ class ScanResultCollector:
                 "subject": self.subject,
                 "total": len(self._results),
                 "found": sum(1 for r in self._results if r.status == ScanStatus.FOUND),
+                "blocked": sum(1 for r in self._results if r.status == ScanStatus.BLOCKED),
+                "rate_limited": sum(1 for r in self._results if r.status == ScanStatus.RATE_LIMITED),
+                "captcha": sum(1 for r in self._results if r.status == ScanStatus.CAPTCHA),
                 "results": [r.to_dict() for r in self._results],
                 "most_tags": list(self._most_tags),
                 "all_tags": list(self._all_tags),

@@ -1,6 +1,6 @@
 # Story 3.3: CAPTCHA/Block Detection
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,13 +18,21 @@ so that kết quả false-negative giảm và user được thông báo rõ ràn
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Extend `ScanResult` với `status` enum
-  - [ ] `ScanStatus`: FOUND, NOT_FOUND, BLOCKED, RATE_LIMITED, CAPTCHA, ERROR, TIMEOUT
-- [ ] Task 2 — Implement detection logic trong async_search
-  - [ ] Check status code: 403 → BLOCKED, 429 → RATE_LIMITED
-  - [ ] Check body for CAPTCHA keywords
-- [ ] Task 3 — Update result collector summary
-- [ ] Task 4 — Unit tests với mock responses
+- [x] Task 1 — Extend `ScanResult` với `status` enum
+  - [x] `ScanStatus`: FOUND, NOT_FOUND, BLOCKED, RATE_LIMITED, CAPTCHA, ERROR, TIMEOUT
+- [x] Task 2 — Implement detection logic trong async_search
+  - [x] Check status code: 403 → BLOCKED, 429 → RATE_LIMITED
+  - [x] Check body for CAPTCHA keywords
+- [x] Task 3 — Update result collector summary
+- [x] Task 4 — Unit tests với mock responses
+
+### Review Findings
+- [x] [Review][Patch] Redundant local imports — FIXED (removed inline imports)
+- [x] [Review][Patch] Duplicate CAPTCHA ScanResult — FIXED (`_captcha_result()` helper extracted)
+- [x] [Review][Patch] `block_summary()` lock inconsistency — FIXED (single lock acquisition)
+- [x] [Review][Patch] Missing test RESPONSE_URL + 429 — FIXED (test added)
+- [x] [Review][Defer] No CAPTCHA check for RESPONSE_URL strategy — deferred
+- [x] [Review][Defer] False positive substring matching risk — deferred
 
 ## Dev Notes
 
@@ -50,5 +58,19 @@ Core/models/
 
 ## Dev Agent Record
 ### Agent Model Used
+Gemini 2.5 Pro
 ### Completion Notes List
+- `ScanStatus` enum đã có từ trước (AC4): FOUND, NOT_FOUND, BLOCKED, RATE_LIMITED, CAPTCHA, ERROR, TIMEOUT.
+- Thêm `CAPTCHA_INDICATORS` tuple và `_detect_captcha(body)` helper vào `async_search.py`.
+- Refactor `_evaluate_response()`: 403/429 check universal trước strategy evaluation.
+- Thêm CAPTCHA body scan cho STATUS_CODE và MESSAGE strategies (200 responses).
+- Thêm `blocked_count`, `rate_limited_count`, `captcha_count`, `block_summary()` vào `ScanResultCollector`.
+- `to_dict()` giờ include blocked/rate_limited/captcha counts.
+- 23 TDD tests + 285 regression tests PASS.
 ### File List
+- `[MODIFY] Core/engine/async_search.py` — CAPTCHA_INDICATORS, _detect_captcha, refactored _evaluate_response
+- `[MODIFY] Core/engine/result_collector.py` — blocked_count, rate_limited_count, captcha_count, block_summary
+- `[NEW] tests/engine/test_captcha_detection.py` — 23 TDD tests
+
+## Change Log
+- Story 3-3 implemented: universal block/rate-limit/CAPTCHA detection với TDD. (2026-03-27)

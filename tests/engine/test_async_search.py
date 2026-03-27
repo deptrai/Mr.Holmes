@@ -190,8 +190,10 @@ class TestResponseUrlStrategy:
             strategy=ErrorStrategy.RESPONSE_URL,
             response_url="https://example.com/404",
         )
+        # Mock target_url (url_template.format(username)), not display_url
+        target_url = site.url_template.format("testuser")
         with aioresponses() as m:
-            m.get(site.display_url, status=200)
+            m.get(target_url, status=200)
             import aiohttp
             async def run():
                 async with aiohttp.ClientSession() as session:
@@ -199,21 +201,36 @@ class TestResponseUrlStrategy:
             result = asyncio.get_event_loop().run_until_complete(run())
         assert result.status == ScanStatus.FOUND
 
+
     def test_url_matches_expected_returns_not_found(self):
+        """
+        Response-Url strategy: nếu site redirect đến response_url → NOT_FOUND.
+        Simulate redirect bằng cách mock response.url trả về response_url.
+        """
         expected_url = "https://example.com/404"
         site = make_site(
             url=expected_url,
             strategy=ErrorStrategy.RESPONSE_URL,
             response_url=expected_url,
         )
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
+        target_url = site.url_template.format("testuser")
+
+        import aiohttp
+        async def run():
+            async with aiohttp.ClientSession() as session:
+                # Tạo mock response với url = response_url (simulate redirect)
+                mock_resp = AsyncMock()
+                mock_resp.status = 200
+                mock_resp.url = MagicMock()
+                mock_resp.url.__str__ = MagicMock(return_value=expected_url)
+                mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+                mock_resp.__aexit__ = AsyncMock(return_value=False)
+                with patch.object(session, "get", return_value=mock_resp):
                     return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.get_event_loop().run_until_complete(run())
         assert result.status == ScanStatus.NOT_FOUND
+
+
 
 
 # ---------------------------------------------------------------------------

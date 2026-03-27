@@ -1,6 +1,6 @@
 # Story 4.1: Setup pytest + aioresponses Framework
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -19,21 +19,22 @@ so that unit tests có thể chạy cho tất cả core modules mà không cần
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Create test infrastructure
-  - [ ] `tests/conftest.py` — shared fixtures
-  - [ ] `pytest.ini` hoặc `pyproject.toml` — pytest config
-  - [ ] `tests/__init__.py`
+- [x] Task 1 — Create test infrastructure
+  - [x] `tests/conftest.py` — shared fixtures
+  - [x] `pytest.ini` — pytest config
+  - [x] `tests/__init__.py`
 
-- [ ] Task 2 — Create aioresponses fixtures
-  - [ ] `mock_session` fixture
-  - [ ] `mock_site_data` fixture
+- [x] Task 2 — Create aioresponses fixtures
+  - [x] `site_config_factory` fixture
+  - [x] `mock_aiohttp` fixture (aioresponses)
+  - [x] `status_code_site`, `message_site`, `response_url_site` fixtures
 
-- [ ] Task 3 — Write tests cho 3 error strategies
-  - [ ] `test_status_code_found()`, `test_status_code_not_found()`
-  - [ ] `test_message_found()`, `test_message_not_found()`
-  - [ ] `test_response_url_found()`, `test_response_url_not_found()`
+- [x] Task 3 — Write tests cho 3 error strategies
+  - [x] `test_status_code_found()`, `test_status_code_not_found()`
+  - [x] `test_message_found()`, `test_message_not_found()`
+  - [x] `test_response_url_found()`, `test_response_url_not_found()`
 
-- [ ] Task 4 — Verify: `python -m pytest tests/ -v`
+- [x] Task 4 — Verify: `python -m pytest tests/ -v`
 
 ## Dev Notes
 
@@ -59,5 +60,14 @@ pytest.ini               # NEW (or pyproject.toml section)
 
 ## Dev Agent Record
 ### Agent Model Used
+Gemini 2.5 Pro
 ### Completion Notes List
+- Tạo `pytest.ini` với `asyncio_mode=strict`, `testpaths=tests`, filter warnings.
+- Tạo `tests/conftest.py` với: `mock_aiohttp` (aioresponses fixture), `site_config_factory`, và 3 preconfigured site fixtures.
+- Tạo `tests/engine/test_search_strategies.py` với 8 tests cho 3 strategies (AC5).
+- Tests/ directory và `__init__.py` đã có sẵn từ trước (AC4).
+- 293 tests PASS (AC6).
 ### File List
+- `[NEW] pytest.ini` — pytest configuration
+- `[NEW] tests/conftest.py` — shared fixtures (aioresponses, SiteConfig factory)
+- `[NEW] tests/engine/test_search_strategies.py` — 8 tests cho 3 error strategies
