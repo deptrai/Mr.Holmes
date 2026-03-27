@@ -28,6 +28,10 @@ from Core.Support import Notification
 from Core.Support import Recap
 
 from Core.Support import Site_Counter as CO
+from Core.config.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 from Core.Support.Username import Scraper
 from Core.models import ScanContext, ScanConfig
 from Core.models.validators import sanitize_username, safe_int_input
@@ -93,12 +97,8 @@ class ScanPipeline:
         )
         Clear.Screen.Clear()
         banner.Random.Get_Banner("Banners/Username", self.mode)
-        print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
-              "INFO:[{}]".format(
-                  Font.Color.GREEN +
-                  Language.Translation.Translate_Language(
-                      filename, "Username", "Default", "Explanation") +
-                  Font.Color.WHITE))
+        logger.debug("INFO: %s", Language.Translation.Translate_Language(
+            filename, "Username", "Default", "Explanation"))
         return self.ctx
 
     # ------------------------------------------------------------------
@@ -125,15 +125,13 @@ class ScanPipeline:
         if os.path.exists(report):
             os.remove(report)
             _clean_folder_files()
-            print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(
-                      filename, "Default", "Delete", "None").format(self.username))
+            logger.debug(Language.Translation.Translate_Language(
+                filename, "Default", "Delete", "None").format(self.username))
         elif os.path.exists(report2):
             os.remove(report2)
             _clean_folder_files()
-            print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(
-                      filename, "Default", "Delete", "None").format(self.username))
+            logger.debug(Language.Translation.Translate_Language(
+                filename, "Default", "Delete", "None").format(self.username))
         else:
             os.mkdir(folder)
 
@@ -178,9 +176,8 @@ class ScanPipeline:
         # Remove stale report if exists (secondary cleanup)
         if os.path.isfile(self.ctx.report_path):
             os.remove(self.ctx.report_path)
-            print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(
-                      filename, "Default", "Delete", "None").format(self.username))
+            logger.debug(Language.Translation.Translate_Language(
+                filename, "Default", "Delete", "None").format(self.username))
 
         Logs.Log.Checker(self.username, "Username")
 
@@ -248,29 +245,26 @@ class ScanPipeline:
     # ------------------------------------------------------------------
     def handle_results(self) -> None:
         """Print found URLs and prompt user for profile scraping."""
-        print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-              Language.Translation.Translate_Language(
-                  filename, "Default", "TotFound", "None").format(
-                      self.ctx.subject_type, self.username))
+        logger.info(Language.Translation.Translate_Language(
+            filename, "Default", "TotFound", "None").format(
+                self.ctx.subject_type, self.username))
         sleep(3)
 
         if not self.successfull:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(
-                      filename, "Username", "Default", "NoFound"
-                  ).format(self.username))
+            logger.warning(Language.Translation.Translate_Language(
+                filename, "Username", "Default", "NoFound"
+            ).format(self.username))
             return
 
         for url in self.successfull:
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + url)
+            logger.info("[FOUND] %s", url)
             self.found += 1
 
         if self.scraper_sites:
             self._dispatch_scrapers()
         else:
-            print(Font.Color.RED + "\n[!]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(
-                      filename, "Username", "Default", "NoScrape"))
+            logger.warning(Language.Translation.Translate_Language(
+                filename, "Username", "Default", "NoScrape"))
 
     def _dispatch_scrapers(self) -> None:
         """Prompt user and dispatch available scrapers for found sites."""
@@ -310,11 +304,9 @@ class ScanPipeline:
             http_proxy2 = str(None)
             identity = None
 
-        print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-              Language.Translation.Translate_Language(
-                  filename, "Default", "Proxy", "None").format(http_proxy2))
+        logger.info("Proxy: %s", http_proxy2)
         if identity:
-            print(Font.Color.GREEN + "[+]" + Font.Color.WHITE + identity)
+            logger.info("Identity: %s", identity)
 
         self._run_scrapers(http_proxy)
 
@@ -351,17 +343,15 @@ class ScanPipeline:
         if not (self.post_gps or self.post_locations):
             return
         with open(self.ctx.report_path, "a") as f:
-            print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-                  "GETTING LATEST POST GEOLOCATION")
+            logger.info("GETTING LATEST POST GEOLOCATION")
             f.write("\nGETTING LATEST POST GEOLOCATION:\n")
             for loc in self.post_gps:
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + loc)
+                logger.info("[GPS] %s", loc)
                 f.write(loc + "\n")
-            print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-                  "GETTING LATEST PLACE VISITED")
+            logger.info("GETTING LATEST PLACE VISITED")
             f.write("\nGETTING LATEST PLACE VISITED:\n")
             for loc in self.post_locations:
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + loc)
+                logger.info("[PLACE] %s", loc)
                 f.write(loc + "\n")
 
     def _prompt_dorks_and_transfer(self) -> None:
@@ -402,9 +392,7 @@ class ScanPipeline:
             FileTransfer.Transfer.File(final_report, self.username, ".txt")
 
         Encoding.Encoder.Encode(final_report)
-        print(Font.Color.WHITE +
-              Language.Translation.Translate_Language(
-                  filename, "Default", "Report", "None") + final_report)
+        logger.info("Report: %s", final_report)
         input(Language.Translation.Translate_Language(
             filename, "Default", "Continue", "None"))
 
@@ -430,13 +418,11 @@ class ScanPipeline:
         else:
             # Scraping mode — hypothesis only
             if self.instagram_params:
-                print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-                      "INSTAGRAM HYPOTHESIS")
+                logger.info("INSTAGRAM HYPOTHESIS")
                 Recap.Stats.Hypotesys(
                     self.instagram_params, self.username, recap_file)
             if self.twitter_params:
-                print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-                      "TWITTER HYPOTHESIS")
+                logger.info("TWITTER HYPOTHESIS")
                 Recap.Stats.Hypotesys(
                     self.twitter_params, self.username, recap_file)
 
@@ -448,13 +434,12 @@ class ScanPipeline:
 
         hobby_list = self.most_tags or self.tags or None
         if hobby_list:
-            print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-                  "GETTING POSSIBLE HOBBIES/INTERESTS:")
+            logger.info("GETTING POSSIBLE HOBBIES/INTERESTS")
             with open(recap_file, "a") as f:
                 f.write("\nGETTING POSSIBLE HOBBIES/INTERESTS:\n")
                 sleep(3)
                 for hobby in hobby_list:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + hobby)
+                    logger.info("[HOBBY] %s", hobby)
                     f.write(hobby + "\n")
 
         Encoding.Encoder.Encode(recap_file)
