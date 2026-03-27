@@ -1,0 +1,104 @@
+# generated: 2026-03-26T23:06:00+07:00
+# last_updated: 2026-03-26T23:06:00+07:00
+# project: Mr.Holmes
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-26T23:06:00+07:00
+last_updated: 2026-03-26T23:07:47+07:00
+project: Mr.Holmes
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # === Epic 1: Foundation Refactoring — Code Structure Cleanup ===
+  epic-1: in-progress
+  1-1-scancontext-scanresult-dataclasses: done
+  1-2-extract-process-tags-method: done
+  1-3-split-god-method-scan-pipeline: done
+  1-4-scraper-registry-pattern: done
+  1-5-extract-proxy-manager: done
+  1-6-secure-resource-management: done
+  1-7-input-validation-sanitization: done
+  epic-1-retrospective: optional
+
+  # === Epic 2: Async Scanning Engine — Performance Breakthrough ===
+  epic-2: in-progress
+  2-1-migrate-requests-to-aiohttp: review
+  2-2-asyncio-gather-semaphore: review
+  2-3-scanresult-collection-pattern: review
+  2-4-custom-exception-classes: review
+  2-5-exponential-backoff-jitter: review
+  2-6-update-requirements-txt: review
+  epic-2-retrospective: optional
+
+  # === Epic 3: Smart Proxy System ===
+  epic-3: in-progress
+  3-1-proxy-auto-rotate: ready-for-dev
+  3-2-proxy-health-check: ready-for-dev
+  3-3-captcha-block-detection: ready-for-dev
+  epic-3-retrospective: optional
+
+  # === Epic 4: Quality & Security Hardening ===
+  epic-4: in-progress
+  4-1-pytest-aioresponses-setup: ready-for-dev
+  4-2-secrets-migration-dotenv: ready-for-dev
+  4-3-logging-module-migration: ready-for-dev
+  4-4-remove-silent-exception-pass: ready-for-dev
+  4-5-github-actions-ci: ready-for-dev
+  epic-4-retrospective: optional
+
+  # === Epic 5: CLI Modernization & Batch Mode ===
+  epic-5: in-progress
+  5-1-argparse-cli-interface: ready-for-dev
+  5-2-abstract-output-layer: ready-for-dev
+  5-3-rich-library-integration: ready-for-dev
+  epic-5-retrospective: optional
+
+  # === Epic 6: Data Persistence & Export ===
+  epic-6: in-progress
+  6-1-sqlite-schema-design: ready-for-dev
+  6-2-dual-write-report-writer: ready-for-dev
+  6-3-php-gui-sqlite-migration: ready-for-dev
+  6-4-pdf-export-jinja2: ready-for-dev
+  6-5-csv-export: ready-for-dev
+  epic-6-retrospective: optional
+
+  # === Epic 7: External Intelligence APIs ===
+  epic-7: in-progress
+  7-1-plugin-interface-design: ready-for-dev
+  7-2-haveibeenpwned-integration: ready-for-dev
+  7-3-shodan-integration: ready-for-dev
+  7-4-api-key-management-ui: ready-for-dev
+  epic-7-retrospective: optional

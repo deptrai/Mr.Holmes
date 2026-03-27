@@ -1,0 +1,12 @@
+# Mr.Holmes — Development Dependencies
+# Install: pip install -r requirements-dev.txt
+# (Inherits all production dependencies automatically)
+
+-r requirements.txt
+
+# === Testing Framework ===
+pytest>=8.0
+pytest-asyncio>=0.23
+
+# === Async HTTP Mocking ===
+aioresponses>=0.7.6

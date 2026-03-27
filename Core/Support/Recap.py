@@ -38,9 +38,9 @@ class Stats:
                     filename, "Report", "Geo", "High").format(username,str(num),str(numP),str(percentage))
                 Hobby.append("Travelling")
             print(Font.Color.BLUE + "[I]" + Font.Color.WHITE + geo)
-            f = open(report, "a")
-            f.write("\n\n" + geo)
-            f.close()
+            with open(report, "a") as f:
+                f.write("\n\n" + geo)
+
         except Exception as e:
             print(Font.Color.RED + "\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
     
@@ -167,11 +167,11 @@ class Stats:
                 print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                     filename, "Report", "Specific", "Blocked"))
             try:
-                f = open(report, "a")
-                f.write(Hypo + "\n\n")
-                f.close()
+                with open(report, "a") as f:
+                    f.write(Hypo + "\n\n")
             except Exception as e:
                 print(Font.Color.RED + "\n[!]" + Font.Color.WHITE + "ERROR: {}".format(str(e)))
+
         except Exception as e:
             print(Font.Color.RED + "\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None"))
 
@@ -186,10 +186,10 @@ class Stats:
             filename, "Report", "Recap", "Summary").format(username, str(found), str(Count), username, str(Total) + "%")
         print(Font.Color.BLUE + "[I]" + Font.Color.WHITE + Language.Translation.Translate_Language(
             filename, "Report", "Recap", "Summary").format(Font.Color.GREEN + username + Font.Color.WHITE, Font.Color.GREEN + str(found) + Font.Color.WHITE, Font.Color.GREEN + str(Count) + Font.Color.WHITE, Font.Color.GREEN + username + Font.Color.WHITE, Font.Color.GREEN + str(Total), "%" + Font.Color.WHITE))
-        f = open(report, "w")
-        f.write(
-            "REPORT CREATED BY MR.HOLMES\n\nGENERATING SUMMARY REPORT...\n" + Percentual)
-        f.close()
+        with open(report, "w") as f:
+            f.write(
+                "REPORT CREATED BY MR.HOLMES\n\nGENERATING SUMMARY REPORT...\n" + Percentual)
+
         if subject == "USERNAME":
             print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GENERATING TAGS REPORT...")
@@ -202,9 +202,9 @@ class Stats:
                 filename, "Report", "Recap", "MTags").format(', '.join(MostTags))
             print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                 filename, "Report", "Recap", "MTags").format(Font.Color.WHITE + "[" + Font.Color.GREEN + ', '.join(MostTags) + Font.Color.WHITE + "]"))
-            f = open(report, "a")
-            f.write("\nGENERATING TAGS REPORT\n\n" + "[" + Tag + "]" + "\n\n" + Mtag)
-            f.close()
+            with open(report, "a") as f:
+                f.write("\nGENERATING TAGS REPORT\n\n" + "[" + Tag + "]" + "\n\n" + Mtag)
+
             print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GENERATING GENERAL HYPOTESY REPORT...")
             sleep(3)
@@ -224,9 +224,9 @@ class Stats:
                 print(Font.Color.BLUE + "[I]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Report", "Recap",
                       "Percentual_High").format(Font.Color.GREEN + username + Font.Color.WHITE, Font.Color.GREEN + str(Total) + Font.Color.WHITE))
 
-            f = open(report, "a+")
-            f.write("\n\nGENERATING GENERAL HYPOTESY REPORT...\n\n" + General)
-            f.close()
+            with open(report, "a+") as f:
+                f.write("\n\nGENERATING GENERAL HYPOTESY REPORT...\n\n" + General)
+
 
             print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
                   "GENERATING HYPOTESYS ON VARIOUS SOCIAL MEDIAS")

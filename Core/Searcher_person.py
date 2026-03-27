@@ -10,6 +10,7 @@ import urllib
 from Core.Support import Font
 from Core.Support import Creds
 from Core.Support import Proxies
+from Core.proxy.manager import ProxyManager
 from Core.Support.Person import Scraper
 from Core.Support import Clear
 from Core.Support import Dorks
@@ -114,14 +115,11 @@ class info:
         choice = int(input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "choice", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if choice == 1:
-            http_proxy = Proxies.proxy.final_proxis
-            http_proxy2 = Proxies.proxy.choice3
-            source = "http://ip-api.com/json/" + http_proxy2
-            access = urllib.request.urlopen(source)
-            content = access.read()
-            final = json.loads(content)
-            identity = Language.Translation.Translate_Language(
-                filename, "Default", "ProxyLoc", "None").format(final["regionName"], final["country"])
+            _pm = ProxyManager()
+            _pm.configure(1)
+            http_proxy = _pm.get_proxy()
+            http_proxy2 = _pm.proxy_ip
+            identity = _pm.get_identity() or "None"
 
         else:
             http_proxy = None
@@ -140,10 +138,10 @@ class info:
                   Language.Translation.Translate_Language(filename, "Default", "Delete", "None").format(username))
         folder = "People"
         Logs.Log.Checker(username, folder)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "Date").format(Date) + "\r\n")
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "Date").format(Date) + "\r\n")
+
         Scraper.Search.Instagram(report, username, http_proxy, InstagramParams,
                                  PostLocations, PostGpsCoordinates, imagefold, username2,"People")
         Scraper.Search.Twitter(report, username, http_proxy, TwitterParams,
@@ -157,22 +155,22 @@ class info:
             n = 0
             print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GETTING LATEST POST GEOLOCATION:")
-            f = open(report, "a")
-            f.write("\nGETTING LATEST POST GEOLOCATION:\n")
-            for Locations in PostGpsCoordinates:
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Locations)
-                f.write(Locations + "\n")
-                n = n + 1
-            f.close()
+            with open(report, "a") as f:
+                f.write("\nGETTING LATEST POST GEOLOCATION:\n")
+                for Locations in PostGpsCoordinates:
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Locations)
+                    f.write(Locations + "\n")
+                    n = n + 1
+
             
             print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GETTING LATEST PLACE VISITED:")
-            f = open(report, "a")
-            f.write("\nGETTING LATEST PLACE VISITED:\n")
-            for Locations in PostLocations:
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Locations)
-                f.write(Locations+"\n")
-            f.close()
+            with open(report, "a") as f:
+                f.write("\nGETTING LATEST PLACE VISITED:\n")
+                for Locations in PostLocations:
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Locations)
+                    f.write(Locations+"\n")
+
         Recaps = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(
             filename, "Default", "Hypo", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if Recaps == 1:
@@ -188,13 +186,15 @@ class info:
             if len(MostTags):
                 print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GETTING POSSIBLE HOBBIES/INTERESTS:")
-                f = open(Recap1, "a")
-                f.write("\nGETTING POSSIBLE HOBBIES/INTERESTS:\n")
-                sleep(3)
-                for PossibleHobby in MostTags:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + PossibleHobby)
-                    f.write(PossibleHobby+"\n")
+            with open(Recap1, "a") as f:
+                    f.write("\nGETTING POSSIBLE HOBBIES/INTERESTS:\n")
+                    sleep(3)
+                    for PossibleHobby in MostTags:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + PossibleHobby)
+                        f.write(PossibleHobby+"\n")
+
             Encoding.Encoder.Encode(Recap1)
+
         choice = int(input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Dorks", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if choice == 1:

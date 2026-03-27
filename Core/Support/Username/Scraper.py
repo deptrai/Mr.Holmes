@@ -34,16 +34,15 @@ class info:
                   Language.Translation.Translate_Language(filename, "Username", "Default", "Saved").format(image))
         except Exception as e:
             print("error" + str(e))
-        f = open(image,"rb")
-        reader = f.read()
-        f.close()
+        with open(image, "rb") as f:
+            reader = f.read()
         Get_Posts.Downloader.checkFile(image,"Image")
 
     @staticmethod
     def Get_Url(username, Name):
         filename = "Site_lists/Username/site_list.json"
-        reader = open(filename,)
-        parser = json.loads(reader.read())
+        with open(filename) as reader_file:
+            parser = json.loads(reader_file.read())
         site = parser[0][Name]["Scrapable_url"].replace("{}", username)
         return site
 
@@ -89,14 +88,13 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nIMGUR DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("REPUTATION: {}\r\n".format(reputation))
-            f.write("ACCOUNT-CREATED ON: {}\r\n".format(creation))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nIMGUR DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("REPUTATION: {}\r\n".format(reputation))
+                f.write("ACCOUNT-CREATED ON: {}\r\n".format(creation))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -144,17 +142,16 @@ class info:
             print(Font.Color.YELLOW + "[v]" +
                   Font.Color.WHITE + "LIKES: {}".format(likes))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nPR0GRAMM DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("SCORE: {}\r\n".format(score))
-            f.write("COMMENT-DELETED: {}\r\n".format(comment_deleted))
-            f.write("COMMENT-COUNTS: {}\r\n".format(comment_count))
-            f.write("UPLOAD: {}\r\n".format(upload_count))
-            f.write("TAGS: {}\r\n".format(tags))
-            f.write("LIKES: {}\r\n".format(likes))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nPR0GRAMM DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("SCORE: {}\r\n".format(score))
+                f.write("COMMENT-DELETED: {}\r\n".format(comment_deleted))
+                f.write("COMMENT-COUNTS: {}\r\n".format(comment_count))
+                f.write("UPLOAD: {}\r\n".format(upload_count))
+                f.write("TAGS: {}\r\n".format(tags))
+                f.write("LIKES: {}\r\n".format(likes))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -198,16 +195,15 @@ class info:
             print(Font.Color.YELLOW + "[v]" +
                   Font.Color.WHITE + "MAJOR: {}".format(major))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nBINARYSEARCH DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("IS-ADMIN: {}\r\n".format(admin))
-            f.write("IS-VERIFIED: {}\r\n".format(verified))
-            f.write("LOCATION: {}\r\n".format(location))
-            f.write("MAJOR: {}\r\n".format(major))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nBINARYSEARCH DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("IS-ADMIN: {}\r\n".format(admin))
+                f.write("IS-VERIFIED: {}\r\n".format(verified))
+                f.write("LOCATION: {}\r\n".format(location))
+                f.write("MAJOR: {}\r\n".format(major))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -266,17 +262,16 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nMIXCLOUD DATA:\n")
-            f.write("USERNAME: {}\r\n".format(usern2))
-            f.write("NAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("IS-PRO?: {}\r\n".format(is_pro))
-            f.write("IS-PREMIUM? : {}\r\n".format(is_premium))
-            f.write("FOLLOWEED: {}\r\n".format(followeed))
-            f.write("FOLLOWERS: {}\r\n".format(followers))
-            f.write("CREATED-ON: {}\r\n".format(created))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nMIXCLOUD DATA:\n")
+                f.write("USERNAME: {}\r\n".format(usern2))
+                f.write("NAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("IS-PRO?: {}\r\n".format(is_pro))
+                f.write("IS-PREMIUM? : {}\r\n".format(is_premium))
+                f.write("FOLLOWEED: {}\r\n".format(followeed))
+                f.write("FOLLOWERS: {}\r\n".format(followers))
+                f.write("CREATED-ON: {}\r\n".format(created))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -337,16 +332,15 @@ class info:
                 print(Font.Color.YELLOW +
                       "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
 
-                f = open(report, "a", encoding="utf-8")
-                f.write("\nINSTAGRAM DATA:\n")
-                f.write("USERNAME: {}\r\n".format(username))
-                f.write("NAME: {}\r\n".format(name))
-                f.write("BIO: {}\r\n".format(bio.strip()))
-                f.write("POSTS: {}\r\n".format(posts))
-                f.write("FOLLOWED: {}\r\n".format(followed))
-                f.write("FOLLOWERS: {}\r\n".format(followers))
-                f.write("PRIVATE-ACCOUNT: {}\r\n".format(Private))
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write("\nINSTAGRAM DATA:\n")
+                    f.write("USERNAME: {}\r\n".format(username))
+                    f.write("NAME: {}\r\n".format(name))
+                    f.write("BIO: {}\r\n".format(bio.strip()))
+                    f.write("POSTS: {}\r\n".format(posts))
+                    f.write("FOLLOWED: {}\r\n".format(followed))
+                    f.write("FOLLOWERS: {}\r\n".format(followers))
+                    f.write("PRIVATE-ACCOUNT: {}\r\n".format(Private))
 
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                     username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -462,15 +456,14 @@ class info:
                 else:
                     pass
 
-                f = open(report, "a", encoding="utf-8")
-                f.write("\nTWITTER DATA:\n")
-                f.write("USERNAME: {}\r\n".format(
-                    user["href"].replace("/", "")))
-                f.write("POSTS: {}\r\n".format(posts))
-                f.write("FOLLOWERS: {}\r\n".format(follower))
-                f.write("FOLLOWING: {}\r\n".format(followed))
-                f.write("PRIVATE-ACCOUNT: {}\r\n".format(Private))
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write("\nTWITTER DATA:\n")
+                    f.write("USERNAME: {}\r\n".format(
+                        user["href"].replace("/", "")))
+                    f.write("POSTS: {}\r\n".format(posts))
+                    f.write("FOLLOWERS: {}\r\n".format(follower))
+                    f.write("FOLLOWING: {}\r\n".format(followed))
+                    f.write("PRIVATE-ACCOUNT: {}\r\n".format(Private))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -556,15 +549,14 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nDOCKERHUB DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("FULL-NAME: {}\r\n".format(full_name))
-            f.write("LOCATION: {}\r\n".format(location))
-            f.write("CREATED-ON: {}\r\n".format(profile_creation))
-            f.write("ACCOUNT-TYPE: {}\r\n".format(account_type))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nDOCKERHUB DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("FULL-NAME: {}\r\n".format(full_name))
+                f.write("LOCATION: {}\r\n".format(location))
+                f.write("CREATED-ON: {}\r\n".format(profile_creation))
+                f.write("ACCOUNT-TYPE: {}\r\n".format(account_type))
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
                   Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error2", "None"))
@@ -621,11 +613,10 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nKIK DATA:\n")
-            f.write("FIRST-NAME: {}\r\n".format(target[0]))
-            f.write("LAST-NAME: {}\r\n".format(target[1]))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nKIK DATA:\n")
+                f.write("FIRST-NAME: {}\r\n".format(target[0]))
+                f.write("LAST-NAME: {}\r\n".format(target[1]))
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
                   Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error2", "None"))
@@ -673,14 +664,13 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
+            with open(report, "a", encoding="utf-8") as f:
 
-            f.write("\nGITLAB DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("NAME: {}\r\n".format(name))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("STATUS: {}\r\n".format(status))
-            f.close()
+                f.write("\nGITLAB DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("NAME: {}\r\n".format(name))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("STATUS: {}\r\n".format(status))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -749,20 +739,19 @@ class info:
             else:
                 pass
 
-            f = open(report, "a", encoding="utf-8")
+            with open(report, "a", encoding="utf-8") as f:
 
-            f.write("\nWATTPAD DATA:\n")
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("GENDER: {}\r\n".format(gender))
-            f.write("VOTES: {}\r\n".format(votes))
-            f.write("CREATED-ON: {}\r\n".format(creation))
-            f.write("STORIES: {}\r\n".format(stories))
-            f.write("FOLLOWERS: {}\r\n".format(followers))
-            f.write("FOLLOWING: {}\r\n".format(following))
-            f.write("LOCATION: {}\r\n".format(Location))
-            f.write("PRIVATE: {}\r\n".format(isPrivate))
-            f.close()
+                f.write("\nWATTPAD DATA:\n")
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("GENDER: {}\r\n".format(gender))
+                f.write("VOTES: {}\r\n".format(votes))
+                f.write("CREATED-ON: {}\r\n".format(creation))
+                f.write("STORIES: {}\r\n".format(stories))
+                f.write("FOLLOWERS: {}\r\n".format(followers))
+                f.write("FOLLOWING: {}\r\n".format(following))
+                f.write("LOCATION: {}\r\n".format(Location))
+                f.write("PRIVATE: {}\r\n".format(isPrivate))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -842,24 +831,23 @@ class info:
                 info.Profile_Pic(username, profile_pic, SiteName ,Opt,name2)
             else:
                 pass
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nGIT-HUB DATA:\n")
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("REPOSITORIES: {}\r\n".format(repositories))
-            f.write("GISTS: {}\r\n".format(gist))
-            f.write("CREATED-ON: {}\r\n".format(creation))
-            f.write("UPDATED-ON: {}\r\n".format(modification))
-            f.write("FOLLOWERS: {}\r\n".format(followers))
-            f.write("FOLLOWING: {}\r\n".format(following))
-            f.write("BLOG: {}\r\n".format(blog))
-            f.write("LOCATION: {}\r\n".format(location))
-            f.write("NAME: {}\r\n".format(name))
-            f.write("EMAIL: {}\r\n".format(email))
-            f.write("TWITTER: {}\r\n".format(twitter))
-            f.write("HIREABLE: {}\r\n".format(is_hireable))
-            f.write("COMPANY: {}\r\n".format(company))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nGIT-HUB DATA:\n")
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("REPOSITORIES: {}\r\n".format(repositories))
+                f.write("GISTS: {}\r\n".format(gist))
+                f.write("CREATED-ON: {}\r\n".format(creation))
+                f.write("UPDATED-ON: {}\r\n".format(modification))
+                f.write("FOLLOWERS: {}\r\n".format(followers))
+                f.write("FOLLOWING: {}\r\n".format(following))
+                f.write("BLOG: {}\r\n".format(blog))
+                f.write("LOCATION: {}\r\n".format(location))
+                f.write("NAME: {}\r\n".format(name))
+                f.write("EMAIL: {}\r\n".format(email))
+                f.write("TWITTER: {}\r\n".format(twitter))
+                f.write("HIREABLE: {}\r\n".format(is_hireable))
+                f.write("COMPANY: {}\r\n".format(company))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -911,14 +899,13 @@ class info:
             print(Font.Color.YELLOW +
                   "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nTIKTOK DATA:\n")
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("NAME: {}\r\n".format(name))
-            f.write("LIKES: {}\r\n".format(like))
-            f.write("FOLLOWED: {}\r\n".format(followed))
-            f.write("FOLLOWERS: {}\r\n".format(followers))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nTIKTOK DATA:\n")
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("NAME: {}\r\n".format(name))
+                f.write("LIKES: {}\r\n".format(like))
+                f.write("FOLLOWED: {}\r\n".format(followed))
+                f.write("FOLLOWERS: {}\r\n".format(followers))
 
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                 username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -972,11 +959,10 @@ class info:
             print(Font.Color.YELLOW + "[v]" +
                   Font.Color.WHITE + "USERNAME: {}".format(user))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nMINECRAFT DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nMINECRAFT DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -1005,11 +991,10 @@ class info:
             print(Font.Color.YELLOW + "[v]" +
                   Font.Color.WHITE + "CLICKS: {}".format(clicks))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nNGL.LINK DATA:\n")
-            f.write("USERNAME: {}\r\n".format(username))
-            f.write("CLICKS: {}\r\n".format(clicks))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nNGL.LINK DATA:\n")
+                f.write("USERNAME: {}\r\n".format(username))
+                f.write("CLICKS: {}\r\n".format(clicks))
 
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                 username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -1079,18 +1064,17 @@ class info:
                 info.Profile_Pic(username, profile_pic, SiteName ,Opt,name2)
             else:
                 pass
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nDISQUS DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("CREATED ON: {}\r\n".format(creation))
-            f.write("LOCATION: {}\r\n".format(location))
-            f.write("PRIVATE: {}\r\n".format(private))
-            f.write("FOLLOWERS: {}\r\n".format(Followers))
-            f.write("FOLLOWED: {}\r\n".format(Followed))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("REPUTATION: {}\r\n".format(rep))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nDISQUS DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("CREATED ON: {}\r\n".format(creation))
+                f.write("LOCATION: {}\r\n".format(location))
+                f.write("PRIVATE: {}\r\n".format(private))
+                f.write("FOLLOWERS: {}\r\n".format(Followers))
+                f.write("FOLLOWED: {}\r\n".format(Followed))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("REPUTATION: {}\r\n".format(rep))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -1117,11 +1101,10 @@ class info:
             print(Font.Color.YELLOW + "[v]" +
                   Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nTELLONYM DATA:\n")
-            f.write("USERNAME: {}\r\n".format(username))
-            f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
-            f.close()
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nTELLONYM DATA:\n")
+                f.write("USERNAME: {}\r\n".format(username))
+                f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
 
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                 username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -1169,35 +1152,34 @@ class info:
                 modification = converted["entry"][0]["last_profile_edit"]
             else:
                 modification = "None"
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nGRAVATAR DATA:\n")
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nGRAVATAR DATA:\n")
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASH: {}".format(hashid))
-            f.write("HASH: {}\r\n".format(hashid))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASH: {}".format(hashid))
+                f.write("HASH: {}\r\n".format(hashid))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
-            f.write("USERNAME: {}\r\n".format(user))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
+                f.write("USERNAME: {}\r\n".format(user))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "DISPLAY-NAME: {}".format(displayname))
-            f.write("DISPLAY-NAME: {}\r\n".format(displayname))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "DISPLAY-NAME: {}".format(displayname))
+                f.write("DISPLAY-NAME: {}\r\n".format(displayname))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
-            f.write("NAME: {}\r\n".format(name))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
+                f.write("NAME: {}\r\n".format(name))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(bio))
-            f.write("BIO: {}\r\n".format(bio))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(bio))
+                f.write("BIO: {}\r\n".format(bio))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "UPADTED ON: {}".format(modification))
-            f.write("UPDATED-ON: {}\r\n".format(modification))
-            i = 1
-            for url in urls:
-                print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE +  "LINK N°{}: {}".format(i,url["value"]))
-                f.write("LINK N°{}: {}\r\n".format(i,url["value"]))
-                i = i +1
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "UPADTED ON: {}".format(modification))
+                f.write("UPDATED-ON: {}\r\n".format(modification))
+                i = 1
+                for url in urls:
+                    print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE +  "LINK N°{}: {}".format(i,url["value"]))
+                    f.write("LINK N°{}: {}\r\n".format(i,url["value"]))
+                    i = i +1
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
-            f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
-            f.close()
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
+                f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
             
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                 username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -1256,18 +1238,17 @@ class info:
                   "[v]" + Font.Color.WHITE + "MESSAGE-FREE: {}".format(messageF))
             
 
-            f = open(report, "a", encoding="utf-8")
+            with open(report, "a", encoding="utf-8") as f:
 
-            f.write("\nJOINROLL DATA:\n")
-            f.write("ID: {}\r\n".format(id_user))
-            f.write("USERNAME: {}\r\n".format(user))
-            f.write("BIO: {}\r\n".format(bio))
-            f.write("ROLL-ID: {}\r\n".format(id_roll))
-            f.write("SUBSCRIPTION-PRICE: {}\r\n".format(price))
-            f.write("MESSAGE-AVAILABLE: {}\r\n".format(messageA))
-            f.write("MESSAGE-ENABLED: {}\r\n".format(messageE))
-            f.write("MESSAGE-FREE: {}\r\n".format(messageF))
-            f.close()
+                f.write("\nJOINROLL DATA:\n")
+                f.write("ID: {}\r\n".format(id_user))
+                f.write("USERNAME: {}\r\n".format(user))
+                f.write("BIO: {}\r\n".format(bio))
+                f.write("ROLL-ID: {}\r\n".format(id_roll))
+                f.write("SUBSCRIPTION-PRICE: {}\r\n".format(price))
+                f.write("MESSAGE-AVAILABLE: {}\r\n".format(messageA))
+                f.write("MESSAGE-ENABLED: {}\r\n".format(messageE))
+                f.write("MESSAGE-FREE: {}\r\n".format(messageF))
 
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
@@ -1323,50 +1304,48 @@ class info:
             country = converted["country"].replace("https://api.chess.com/pub/country/","")
 
 
-            f = open(report, "a", encoding="utf-8")
-            f.write("\nCHESS.COM DATA:\n")
+            with open(report, "a", encoding="utf-8") as f:
+                f.write("\nCHESS.COM DATA:\n")
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "ID: {}".format(profile_id))
-            f.write("ID: {}\r\n".format(profile_id))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "ID: {}".format(profile_id))
+                f.write("ID: {}\r\n".format(profile_id))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
-            f.write("USERNAME: {}\r\n".format(user))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
+                f.write("USERNAME: {}\r\n".format(user))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
-            f.write("NAME: {}\r\n".format(name))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
+                f.write("NAME: {}\r\n".format(name))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "FOLLOWERS: {}".format(followers))
-            f.write("FOLLOWERS: {}\r\n".format(followers))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "FOLLOWERS: {}".format(followers))
+                f.write("FOLLOWERS: {}\r\n".format(followers))
             
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "STATUS: {}".format(status))
-            f.write("STATUS: {}\r\n".format(status))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "STATUS: {}".format(status))
+                f.write("STATUS: {}\r\n".format(status))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LOCATION: {}".format(location))
-            f.write("LOCATION: {}\r\n".format(location))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LOCATION: {}".format(location))
+                f.write("LOCATION: {}\r\n".format(location))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TITLE: {}".format(title))
-            f.write("TITLE: {}\r\n".format(title))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TITLE: {}".format(title))
+                f.write("TITLE: {}\r\n".format(title))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "STREAMER: {}".format(streamer))
-            f.write("STREAMER: {}\r\n".format(streamer))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "STREAMER: {}".format(streamer))
+                f.write("STREAMER: {}\r\n".format(streamer))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TWITCH LINK: {}".format(twitch_link))
-            f.write("TWITCH LINK: {}\r\n".format(twitch_link))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TWITCH LINK: {}".format(twitch_link))
+                f.write("TWITCH LINK: {}\r\n".format(twitch_link))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "VERIFIED: {}".format(verified))
-            f.write("VERIFIED: {}\r\n".format(verified))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "VERIFIED: {}".format(verified))
+                f.write("VERIFIED: {}\r\n".format(verified))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LEAGUE: {}".format(league))
-            f.write("LEAGUE: {}\r\n".format(league))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LEAGUE: {}".format(league))
+                f.write("LEAGUE: {}\r\n".format(league))
 
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "COUNTRY: {}".format(country))
-            f.write("COUNTRY: {}\r\n".format(country))
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "COUNTRY: {}".format(country))
+                f.write("COUNTRY: {}\r\n".format(country))
             
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
-            f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
-
-            f.close()
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
+                f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
             
             download = int(input(Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Username", "Default", "Profile_Pic").format(
                 username) + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))

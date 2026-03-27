@@ -37,32 +37,32 @@ class Search:
                 reader = soup(req.content, "html.parser")
                 users = reader.find_all("div", class_="profile-result")
                 i = 1
-                f = open(report, "a",encoding="utf-8")
-                f.write(
-                    "\n\n--------------------------------\nSHOWING INSTAGRAM RESULTS FOR: {}\n".format(username))
-                for user in users:
-                    if i <= 20:
-                        usern = user.find("div",class_="result-username").text.replace("@","")
-                        pic = user.find_all("div",class_="result-ava")
-                        for image in pic:
-                            profilepic = image.find("img")["src"]
-                            Pics.append(profilepic) 
-                        link = "https://instagram.com/{}".format(usern)
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
-                            Font.Color.GREEN + usern + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(
-                            Font.Color.GREEN + profilepic + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
-                            Font.Color.GREEN + link + Font.Color.WHITE))
-                        List.append(usern)
-                        Links.append(link)
-                        f.write("\nUSER FOUND: {}".format(usern))
-                        f.write("\nPROFILE-PIC FOUND: {}".format(profilepic))
-                        f.write("\nLINK: {}\n".format(link))
-                        i = i+1
-                    else:
-                        break
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write(
+                        "\n\n--------------------------------\nSHOWING INSTAGRAM RESULTS FOR: {}\n".format(username))
+                    for user in users:
+                        if i <= 20:
+                            usern = user.find("div",class_="result-username").text.replace("@","")
+                            pic = user.find_all("div",class_="result-ava")
+                            for image in pic:
+                                profilepic = image.find("img")["src"]
+                                Pics.append(profilepic) 
+                            link = "https://instagram.com/{}".format(usern)
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
+                                Font.Color.GREEN + usern + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(
+                                Font.Color.GREEN + profilepic + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
+                                Font.Color.GREEN + link + Font.Color.WHITE))
+                            List.append(usern)
+                            Links.append(link)
+                            f.write("\nUSER FOUND: {}".format(usern))
+                            f.write("\nPROFILE-PIC FOUND: {}".format(profilepic))
+                            f.write("\nLINK: {}\n".format(link))
+                            i = i+1
+                        else:
+                            break
+
         except ConnectionError:
             print(Font.Color.RED + "[!]" +
                   Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error2", "None"))
@@ -86,12 +86,9 @@ class Search:
                     json_file = "GUI/Reports/{}/{}/InstaName_Link.json".format(fold,username2)
                 else:
                     json_file = "GUI/Reports/{}/{}/Insta_Link.json".format(fold,username)
-            f = open(json_file, "w")
-            f.write('''{
-                        "List":[
-                        ]
-                    }''')
-            f.close()
+            with open(json_file, "w") as f:
+                f.write('''{\n                        "List":[\n                        ]\n                    }''')
+
 
             i = 0
             for image in Pics:
@@ -143,43 +140,43 @@ class Search:
                 reader = soup(req.content, "html.parser")
                 users = reader.find_all("div", class_="timeline-item")
                 i = 1
-                f = open(report, "a",encoding="utf-8")
-                f.write(
-                    "--------------------------------\nSHOWING TWITTER RESULTS FOR: {}\n".format(username))
-                for user in users:
-                    if i <= 20:
-                        usern = user.find(
-                            "a", class_="username").text.replace("@", "")
-                        pic = user.find("img",class_="avatar round")["src"]
-                        profilepic = "https://nitter.net" + pic
-                        Pics.append(profilepic)
-                        link = "https://twitter.com/{}".format(usern)
-                        bio = user.find(
-                            "div", class_="tweet-content media-body").text
-                        full_name = user.find(
-                            "a", class_="fullname").text
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
-                            Font.Color.GREEN + usern + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME FOUND: {}".format(
-                            Font.Color.GREEN + full_name + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(
-                            Font.Color.GREEN + bio + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(
-                            Font.Color.GREEN + profilepic + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
-                            Font.Color.GREEN + link + Font.Color.WHITE))
-                        List.append(usern)
-                        Links.append(link)
-                        Names2.append(full_name)
-                        f.write("\nUSER FOUND: {}".format(usern))
-                        f.write("\nFULL-NAME: {}\n".format(full_name))
-                        f.write("\nBIO: {}\n".format(bio))
-                        f.write("\nPROFILE-PIC FOUND: {}".format(profilepic))
-                        f.write("\nLINK: {}\n".format(link))
-                        i = i+1
-                    else:
-                        break
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write(
+                        "--------------------------------\nSHOWING TWITTER RESULTS FOR: {}\n".format(username))
+                    for user in users:
+                        if i <= 20:
+                            usern = user.find(
+                                "a", class_="username").text.replace("@", "")
+                            pic = user.find("img",class_="avatar round")["src"]
+                            profilepic = "https://nitter.net" + pic
+                            Pics.append(profilepic)
+                            link = "https://twitter.com/{}".format(usern)
+                            bio = user.find(
+                                "div", class_="tweet-content media-body").text
+                            full_name = user.find(
+                                "a", class_="fullname").text
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
+                                Font.Color.GREEN + usern + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME FOUND: {}".format(
+                                Font.Color.GREEN + full_name + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(
+                                Font.Color.GREEN + bio + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(
+                                Font.Color.GREEN + profilepic + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
+                                Font.Color.GREEN + link + Font.Color.WHITE))
+                            List.append(usern)
+                            Links.append(link)
+                            Names2.append(full_name)
+                            f.write("\nUSER FOUND: {}".format(usern))
+                            f.write("\nFULL-NAME: {}\n".format(full_name))
+                            f.write("\nBIO: {}\n".format(bio))
+                            f.write("\nPROFILE-PIC FOUND: {}".format(profilepic))
+                            f.write("\nLINK: {}\n".format(link))
+                            i = i+1
+                        else:
+                            break
+
                 print(Font.Color.GREEN + "[+]" +
                     Font.Color.WHITE + "TOTAL USERNAMES FOUND")
             else:
@@ -206,13 +203,9 @@ class Search:
                     json_file = "GUI/Reports/{}/{}/TwitterName_Link.json".format(fold,username2)
                 else:
                     json_file = "GUI/Reports/{}/{}/Twitter_Link.json".format(fold,username)
-            f = open(json_file, "w")
-            f.write('''{
-                        "List":[
+            with open(json_file, "w") as f:
+                f.write('''{\n                        "List":[\n\n                        ]\n                    }''')
 
-                        ]
-                    }''')
-            f.close()
 
             i = 0
             for image in Pics:
@@ -262,31 +255,31 @@ class Search:
                 reader = soup(req.content, "html.parser")
                 users = reader.find_all("div", class_="info text-truncate")
                 i = 1
-                f = open(report, "a",encoding="utf-8")
-                f.write(
-                    "--------------------------------\nSHOWING TIKTOK RESULTS FOR: {}\n".format(username))
-                for user in users:
-                    if i <= 20:
-                        usern = user.find(
-                            "a", class_="uri").text
-                        link = "https://tiktok.com/{}".format(usern)
-                        followers = user.find(
-                            "span", class_="followers").text
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
-                            Font.Color.GREEN + usern.replace("@","") + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "FOLLOWERS: {}".format(
-                            Font.Color.GREEN + followers + Font.Color.WHITE))
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
-                            Font.Color.GREEN + link + Font.Color.WHITE))
-                        List.append(usern.replace("@",""))
-                        Links.append(link)
-                        f.write("\nUSER FOUND: {}".format(usern))
-                        f.write("\nFOLLOWERS: {}\n".format(followers))
-                        f.write("\nLINK: {}\n".format(link))
-                        i = i+1
-                    else:
-                        break
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write(
+                        "--------------------------------\nSHOWING TIKTOK RESULTS FOR: {}\n".format(username))
+                    for user in users:
+                        if i <= 20:
+                            usern = user.find(
+                                "a", class_="uri").text
+                            link = "https://tiktok.com/{}".format(usern)
+                            followers = user.find(
+                                "span", class_="followers").text
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(
+                                Font.Color.GREEN + usern.replace("@","") + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "FOLLOWERS: {}".format(
+                                Font.Color.GREEN + followers + Font.Color.WHITE))
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(
+                                Font.Color.GREEN + link + Font.Color.WHITE))
+                            List.append(usern.replace("@",""))
+                            Links.append(link)
+                            f.write("\nUSER FOUND: {}".format(usern))
+                            f.write("\nFOLLOWERS: {}\n".format(followers))
+                            f.write("\nLINK: {}\n".format(link))
+                            i = i+1
+                        else:
+                            break
+
                 print(Font.Color.GREEN + "[+]" +
                     Font.Color.WHITE + "TOTAL USERNAMES FOUND")
             else:
@@ -313,13 +306,9 @@ class Search:
                         json_file = "GUI/Reports/{}/{}/TikTokName_Link.json".format(fold,username2)
                     else:
                         json_file = "GUI/Reports/{}/{}/TikTok_Link.json".format(fold,username)
-            f = open(json_file, "w")
-            f.write('''{
-                        "List":[
+            with open(json_file, "w") as f:
+                f.write('''{\n                        "List":[\n\n                        ]\n                    }''')
 
-                        ]
-                    }''')
-            f.close()
             i = 0
             for link in Links:
                 data = {
@@ -363,39 +352,40 @@ class Search:
         sleep(4)
         i = 0
         req = requests.get(url,headers=headers).text
-        f = open(report, "a",encoding="utf-8")
-        f.write( "--------------------------------\nSHOWING GITHUB RESULTS FOR: {}\n".format(username))
-        try:
-            parser = json.loads(req)
-            output = parser["total_count"]
-            if output == 0:
-                pass
-            else:
-                if output <= 20:
-                    output = output
+        with open(report, "a", encoding="utf-8") as f:
+            f.write( "--------------------------------\nSHOWING GITHUB RESULTS FOR: {}\n".format(username))
+            try:
+                parser = json.loads(req)
+                output = parser["total_count"]
+                if output == 0:
+                    pass
                 else:
-                    output = 20
-                for i in range(output):
-                    usern = parser["items"][i]["login"]
-                    link = parser["items"][i]["html_url"]
-                    profile_pic = parser["items"][i]["avatar_url"]
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(Font.Color.GREEN + usern + Font.Color.WHITE))
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(Font.Color.GREEN + profile_pic + Font.Color.WHITE))
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(Font.Color.GREEN + link + Font.Color.WHITE))
-                    List.append(usern)
-                    Links.append(link)
-                    Pics.append(profile_pic)
-                    f.write("\nUSER FOUND: {}".format(usern))
-                    f.write("\nPROFILE-PIC: {}".format(profile_pic))
-                    f.write("\nLINK: {}\n".format(link))
-        except ConnectionError:
-            print(Font.Color.RED + "[!]" +
-                  Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error2", "None"))
-            pass
-        except Exception as e:
-            print(Font.Color.RED + "[!]" +
-                  Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
-            pass
+                    if output <= 20:
+                        output = output
+                    else:
+                        output = 20
+                    for i in range(output):
+                        usern = parser["items"][i]["login"]
+                        link = parser["items"][i]["html_url"]
+                        profile_pic = parser["items"][i]["avatar_url"]
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(Font.Color.GREEN + usern + Font.Color.WHITE))
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(Font.Color.GREEN + profile_pic + Font.Color.WHITE))
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(Font.Color.GREEN + link + Font.Color.WHITE))
+                        List.append(usern)
+                        Links.append(link)
+                        Pics.append(profile_pic)
+                        f.write("\nUSER FOUND: {}".format(usern))
+                        f.write("\nPROFILE-PIC: {}".format(profile_pic))
+                        f.write("\nLINK: {}\n".format(link))
+            except ConnectionError:
+                print(Font.Color.RED + "[!]" +
+                      Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error2", "None"))
+                pass
+            except Exception as e:
+                print(Font.Color.RED + "[!]" +
+                      Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
+                pass
+
         j = 1
         if len(List):
             for Names in List:
@@ -409,13 +399,9 @@ class Search:
                     json_file = "GUI/Reports/{}/{}/GithubName_Link.json".format(fold,username2)
                 else:
                     json_file = "GUI/Reports/{}/{}/Github_Link.json".format(fold,username)
-            f = open(json_file, "w")
-            f.write('''{
-                        "List":[
+            with open(json_file, "w") as f:
+                f.write('''{\n                        "List":[\n\n                        ]\n                    }''')
 
-                        ]
-                    }''')
-            f.close()
 
             i = 0
             for image in Pics:

@@ -25,6 +25,8 @@ from Core.Support import Database
 from Core.Support import Agree
 from Core.Support import Language
 from datetime import datetime
+from Core.models.validators import sanitize_username, safe_int_input
+from Core.models.exceptions import ConfigurationError
 
 
 class Main:
@@ -39,20 +41,19 @@ class Main:
     @staticmethod
     def banner():
         Clear.Screen.Clear()
-        f = open("Version/Version.txt", "r", newline=None)
-        for line in f:
-            r = line.replace("\n", "")
-        version = f.read() + r
-        f.close()
+        with open("Version/Version.txt", "r", newline=None) as f:
+            for line in f:
+                r = line.replace("\n", "")
+            version = f.read() + r
         Quotes = ["Quotes1.txt", "Quotes4.txt", "Quotes3.txt", "Quotes7.txt",
                   "Quotes6.txt", "Quotes2.txt", "Quotes5.txt", "Quotes8.txt",
                   "Quotes9.txt", "Quotes10.txt", "Quotes11.txt", "Quotes12.txt",
                   "Quotes13.txt", "Quotes14.txt", "Quotes15.txt", "Quotes16.txt",
                   "Quotes17.txt", "Quotes18.txt", "Quotes19.txt", "Quotes20.txt"]
         choice = random.choice(Quotes)
-        f = open("Quotes/" + choice, "r", newline=None)
-        text = f.read()
-        f.close() 
+        with open("Quotes/" + choice, "r", newline=None) as f:
+            text = f.read()
+
         now = datetime.now()
         dataformat = DateFormat.Get.Format2()
         dt_string = now.strftime(dataformat)
@@ -76,16 +77,15 @@ class Main:
     @staticmethod
     def Mobile_Banner():
         Clear.Screen.Clear()
-        f = open("Version/Version.txt", "r", newline=None)
-        for line in f:
-            r = line.replace("\n", "")
-        version = f.read() + r
-        f.close()
+        with open("Version/Version.txt", "r", newline=None) as f:
+            for line in f:
+                r = line.replace("\n", "")
+            version = f.read() + r
         list = ["Banners/Banner2.txt", "Banners/Banner4.txt"]
         file_banner = random.choice(list)
-        f = open(file_banner, "r", newline=None)
-        text = f.read()
-        f.close()
+        with open(file_banner, "r", newline=None) as f:
+            text = f.read()
+
         print(Font.Color.GREEN + text)
         print(Font.Color.WHITE + "A COMPLETE OSINT TOOL:)      " +
               Font.Color.BANNER + "CODED BY LUCKSI" + Font.Color.RESET)
@@ -116,8 +116,10 @@ class Main:
                 options = str(option)
                 print(Font.Color.GREEN + Text)
                 print(Font.Color.WHITE + options)
-                sce = int(input(Font.Color.GREEN +
-                          "\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
+                sce = safe_int_input(
+                    Font.Color.GREEN + "\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                    valid_range=range(1, 16),
+                )
                 if (sce == 1):
                     print(Font.Color.RED + "\n[!]" + Font.Color.WHITE +
                           Language.Translation.Translate_Language(filename, "Main", "Alert", "None"))
@@ -127,6 +129,11 @@ class Main:
                     while username == "":
                         username = str(input(
                             Font.Color.BLUE + "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Main", "Username", "None") + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
+                    try:
+                        username = sanitize_username(username)
+                    except ConfigurationError as e:
+                        print(Font.Color.RED + "\n[!] " + Font.Color.WHITE + str(e))
+                        continue
                     Searcher.MrHolmes.search(username, Mode)
 
                 elif (sce == 2):
@@ -214,7 +221,7 @@ class Main:
                     print(Font.Color.RED + "[!]" + Font.Color.WHITE +
                           Language.Translation.Translate_Language(filename, "Default", "KeyError", "None"))
                     exit()
-            except ValueError as e:
+            except (ValueError, ConfigurationError) as e:
                 print(Font.Color.RED + "[!]" + Font.Color.WHITE +
                       Language.Translation.Translate_Language(filename, "Default", "ValueError", "None") + "{}".format(str(e)))
                 exit()

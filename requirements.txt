@@ -1,6 +1,20 @@
+# Mr.Holmes — Production Dependencies
+# Install: pip install -r requirements.txt
+
+# === Legacy (existing) ===
 PyQRCode==1.2.1
 phonenumbers==8.12.25
 requests>=2.31.0
 pdfkit==1.0.0
 beautifulsoup4==4.9.3
 stem>=1.4.0
+
+# === Async Engine (Epic 2) ===
+aiohttp>=3.9.0
+aiofiles>=23.0
+
+# === Configuration & Secrets (Story 4.2 prep) ===
+python-dotenv>=1.0.0
+
+# === CLI Modernization (Story 5.3 prep) ===
+rich>=13.0
