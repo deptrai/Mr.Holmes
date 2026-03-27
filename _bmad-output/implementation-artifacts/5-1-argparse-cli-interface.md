@@ -1,6 +1,6 @@
 # Story 5.1: Argparse CLI Interface
 
-Status: review
+Status: done
 
 ## Story
 

@@ -117,6 +117,7 @@ class BatchRunner:
     def _run_username_scan(self, username: str) -> ScanResult:
         """Run username OSINT via ScanPipeline."""
         from Core.engine.scan_pipeline import ScanPipeline
+        from Core.cli.output import SilentOutput
 
         _logger.info("Starting username batch scan: %s", username)
         proxy_choice = 1 if self.args.proxy else 2
@@ -127,6 +128,7 @@ class BatchRunner:
             batch_mode=True,
             proxy_choice=proxy_choice,
             nsfw_enabled=self.args.nsfw,
+            output_handler=SilentOutput(),  # runner owns output formatting
         )
 
         try:

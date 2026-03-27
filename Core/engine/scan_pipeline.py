@@ -13,6 +13,7 @@ import asyncio
 import os
 from datetime import datetime
 from time import sleep
+from typing import TYPE_CHECKING
 
 from Core.Support import Banner_Selector as banner
 from Core.Support import Clear
@@ -35,6 +36,9 @@ logger = get_logger(__name__)
 from Core.Support.Username import Scraper
 from Core.models import ScanContext, ScanConfig
 from Core.models.validators import sanitize_username, safe_int_input
+
+if TYPE_CHECKING:
+    from Core.cli.output import OutputHandler
 
 filename = Language.Translation.Get_Language()
 
@@ -67,6 +71,7 @@ class ScanPipeline:
         batch_mode: bool = False,
         proxy_choice: int | None = None,
         nsfw_enabled: bool = False,
+        output_handler: "OutputHandler | None" = None,
     ) -> None:
         self.username = sanitize_username(username)
         self.mode = mode
@@ -74,6 +79,12 @@ class ScanPipeline:
         self.batch_mode = batch_mode
         self._batch_proxy_choice = proxy_choice  # 1=proxy, 2=no proxy
         self._batch_nsfw = nsfw_enabled
+        # Output abstraction (AC5) — default to ConsoleOutput
+        if output_handler is None:
+            from Core.cli.output import ConsoleOutput
+            self.output: OutputHandler = ConsoleOutput()
+        else:
+            self.output = output_handler
         self.ctx: ScanContext | None = None
         self.cfg: ScanConfig | None = None
         self._opt: int = 1  # 1=research, 2=scraping — for recap branching
@@ -281,7 +292,11 @@ class ScanPipeline:
 
         for url in self.successfull:
             logger.info("[FOUND] %s", url)
+            self.output.found(url)
             self.found += 1
+
+        # Emit summary via OutputHandler (AC5)
+        self.output.summary(self.found, self.count, self.username)
 
         if self.scraper_sites:
             self._dispatch_scrapers()
