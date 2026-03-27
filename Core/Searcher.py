@@ -25,9 +25,12 @@ from datetime import datetime
 from Core.Support import Encoding
 from Core.Support import Site_Counter as CO
 from time import sleep
+from Core.config.logging_config import get_logger
 
 filename = Language.Translation.Get_Language()
 filename
+
+_logger = get_logger(__name__)
 
 class MrHolmes:
 
@@ -44,57 +47,57 @@ class MrHolmes:
             Scraper.info.Instagram(report, username, http_proxy, InstagramParams,
                                  PostLocations, PostGpsCoordinates, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Instagram scraper failed: %s", e, exc_info=True)
         try:
             Scraper.info.Twitter(report, username, http_proxy, TwitterParams,
                                "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Twitter scraper failed: %s", e, exc_info=True)
         try:
             Scraper.info.TikTok(report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("TikTok scraper failed: %s", e, exc_info=True)
         
         try:
             Scraper.info.Github(
             report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("GitHub scraper failed: %s", e, exc_info=True)
 
         try:
             Scraper.info.GitLab(
             report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("GitLab scraper failed: %s", e, exc_info=True)
         
         try:
             Scraper.info.Ngl(
             report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Ngl scraper failed: %s", e, exc_info=True)
         try:
             Scraper.info.Tellonym(
                 report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Tellonym scraper failed: %s", e, exc_info=True)
         
         try:
             Scraper.info.Gravatar(
                 report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Gravatar scraper failed: %s", e, exc_info=True)
 
         try:
             Scraper.info.Joinroll(
             report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Joinroll scraper failed: %s", e, exc_info=True)
         
         try:
             Scraper.info.Chess(
                 report, username, http_proxy, "Usernames", username)
         except Exception as e:
-            print(Font.Color.RED + "[!]" + Font.Color.WHITE + "Something went wrong")
+            _logger.error("Chess scraper failed: %s", e, exc_info=True)
         
     
     @staticmethod
@@ -136,15 +139,13 @@ class MrHolmes:
                         Requests_Search.Search.search(error, report, site1, site2, http_proxy, sites, data1, username,
                                                       subject, successfull, name, successfullName, is_scrapable, ScraperSites, Writable, main, json_file, json_file2, Tag, Tags, MostTags)
                     except Exception as e:
-                        print(
-                            Font.Color.BLUE + "\n[N]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Connection_Error1", "None"))
+                        _logger.warning(Language.Translation.Translate_Language(filename, "Default", "Connection_Error1", "None"))
                         http_proxy = None
                         try:
                             Requests_Search.Search.search(error, report, site1, site2, http_proxy, sites, data1, username,
                                                           subject, successfull, name, successfullName, is_scrapable, ScraperSites, Writable, main, json_file, json_file2, Tag, Tags, MostTags)
                         except Exception as e:
-                            print(
-                                Font.Color.BLUE + "\n[N]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Site_Error", "None"))
+                            _logger.warning(Language.Translation.Translate_Language(filename, "Default", "Site_Error", "None"))
                 if choice == 1:
                     _pm = ProxyManager()
                     _pm.configure(1)

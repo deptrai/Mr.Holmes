@@ -86,15 +86,17 @@ class TestConfigure:
 class TestGetProxy:
     def test_returns_dict_when_enabled(self):
         pm = ProxyManager()
-        mock_proxies = _make_mock_proxies("5.5.5.5")
+        from Core.Support import Proxies  # ensure module imported
+        expected_dict = {"http": "//5.5.5.5", "https": "//5.5.5.5"}
         mock_resp = _make_mock_urlopen()
 
-        with patch.dict("sys.modules", {"Core.Support.Proxies": mock_proxies}):
-            with patch("Core.proxy.manager.urllib.request.urlopen", return_value=mock_resp):
-                pm.configure(1)
+        with patch.object(Proxies.proxy, "choice3", "5.5.5.5"), \
+             patch.object(Proxies.proxy, "final_proxis", expected_dict), \
+             patch("Core.proxy.manager.urllib.request.urlopen", return_value=mock_resp):
+            pm.configure(1)
+            result = pm.get_proxy()
 
-        result = pm.get_proxy()
-        assert result == {"http": "//5.5.5.5", "https": "//5.5.5.5"}
+        assert result == expected_dict
 
     def test_returns_none_when_disabled(self):
         pm = ProxyManager()
@@ -232,12 +234,13 @@ class TestProxyIp:
 
     def test_proxy_ip_returns_ip_string_when_configured(self):
         pm = ProxyManager()
-        mock_proxies = _make_mock_proxies("7.7.7.7")
+        from Core.Support import Proxies  # ensure module imported
         mock_resp = _make_mock_urlopen()
-        with patch.dict("sys.modules", {"Core.Support.Proxies": mock_proxies}):
-            with patch("Core.proxy.manager.urllib.request.urlopen", return_value=mock_resp):
-                pm.configure(1)
-        assert pm.proxy_ip == "7.7.7.7"
+        with patch.object(Proxies.proxy, "choice3", "7.7.7.7"), \
+             patch.object(Proxies.proxy, "final_proxis", {}), \
+             patch("Core.proxy.manager.urllib.request.urlopen", return_value=mock_resp):
+            pm.configure(1)
+            assert pm.proxy_ip == "7.7.7.7"
 
     def test_proxy_ip_none_string_when_choice_2(self):
         pm = ProxyManager()

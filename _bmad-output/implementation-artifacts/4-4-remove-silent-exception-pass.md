@@ -1,6 +1,6 @@
 # Story 4.4: Remove Silent `except Exception: pass`
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 

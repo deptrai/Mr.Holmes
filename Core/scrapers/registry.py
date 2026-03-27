@@ -12,8 +12,11 @@ from typing import Callable, Dict, List, Optional
 
 from Core.Support import Font
 from Core.Support import Language
+from Core.config.logging_config import get_logger
 
 filename = Language.Translation.Get_Language()
+
+_logger = get_logger(__name__)
 
 
 class ScraperRegistry:
@@ -87,13 +90,13 @@ class ScraperRegistry:
         try:
             scraper_fn(http_proxy)
         except ConnectionError:
-            print(Font.Color.BLUE + "\n[N]" + Font.Color.WHITE + connection_error_msg)
+            _logger.warning("Connection error, retrying without proxy: %s", connection_error_msg)
             try:
                 scraper_fn(None)
-            except Exception:
-                pass
-        except Exception:
-            pass
+            except Exception as e:
+                _logger.warning("Scraper retry without proxy also failed: %s", e)
+        except Exception as e:
+            _logger.debug("Scraper dispatch error (non-critical): %s", e)
 
     # ------------------------------------------------------------------
     # Factory: Username scan registry

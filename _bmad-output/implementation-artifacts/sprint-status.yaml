@@ -75,7 +75,7 @@ development_status:
   4-1-pytest-aioresponses-setup: done
   4-2-secrets-migration-dotenv: done
   4-3-logging-module-migration: done
-  4-4-remove-silent-exception-pass: ready-for-dev
+  4-4-remove-silent-exception-pass: done
   4-5-github-actions-ci: ready-for-dev
   epic-4-retrospective: optional
 
