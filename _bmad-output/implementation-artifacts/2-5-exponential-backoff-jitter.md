@@ -1,6 +1,6 @@
 # Story 2.5: Exponential Backoff + Jitter cho Retry Logic
 
-Status: review
+Status: done
 
 ## Story
 

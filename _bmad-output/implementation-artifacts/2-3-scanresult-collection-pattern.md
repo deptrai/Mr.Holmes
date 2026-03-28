@@ -1,6 +1,6 @@
 # Story 2.3: ScanResult Collection Pattern
 
-Status: review
+Status: done
 
 ## Story
 

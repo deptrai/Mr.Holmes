@@ -1,6 +1,6 @@
 # Story 2.2: Implement `asyncio.gather()` + `Semaphore(N)` trong ScanPipeline
 
-Status: review
+Status: done
 
 ## Story
 

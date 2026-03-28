@@ -1,6 +1,6 @@
 # Story 2.4: Custom Exception Classes
 
-Status: review
+Status: done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 2.6: Update requirements.txt
 
-Status: review
+Status: done
 
 ## Story
 

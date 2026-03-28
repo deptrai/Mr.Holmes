@@ -54,13 +54,13 @@ development_status:
   epic-1-retrospective: optional
 
   # === Epic 2: Async Scanning Engine — Performance Breakthrough ===
-  epic-2: in-progress
-  2-1-migrate-requests-to-aiohttp: review
-  2-2-asyncio-gather-semaphore: review
-  2-3-scanresult-collection-pattern: review
-  2-4-custom-exception-classes: review
-  2-5-exponential-backoff-jitter: review
-  2-6-update-requirements-txt: review
+  epic-2: done
+  2-1-migrate-requests-to-aiohttp: done
+  2-2-asyncio-gather-semaphore: done
+  2-3-scanresult-collection-pattern: done
+  2-4-custom-exception-classes: done
+  2-5-exponential-backoff-jitter: done
+  2-6-update-requirements-txt: done
   epic-2-retrospective: optional
 
   # === Epic 3: Smart Proxy System ===
