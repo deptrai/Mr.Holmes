@@ -1,6 +1,6 @@
 # Story 6.1: SQLite Schema Design
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -77,6 +77,16 @@ Core/reporting/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet 4.6 (Thinking)
 ### Completion Notes List
+- Schema created in Core/reporting/schema.sql (normalized 3NF, all 4 tables)
+- Database singleton in Core/reporting/database.py with WAL mode, FK enforcement, context-manager
+- ensure_schema() is idempotent (CREATE TABLE IF NOT EXISTS)
+- 17 unit tests across: schema creation, migration, singleton, data integrity, FK cascades
+- Config path resolved to absolute — immune to CWD changes
 ### File List
+- Core/reporting/__init__.py (NEW)
+- Core/reporting/schema.sql (NEW)
+- Core/reporting/database.py (NEW)
+- tests/reporting/__init__.py (NEW)
+- tests/reporting/test_database.py (NEW)

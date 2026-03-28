@@ -1,6 +1,6 @@
 # Story 5.3: Rich Library Integration
 
-Status: review
+Status: done
 
 ## Story
 

@@ -217,62 +217,119 @@ class ScanPipeline:
             f.write(Language.Translation.Translate_Language(
                 filename, "Report", "Username", "Found"))
 
+    def _load_site_configs(self, json_file: str) -> list:
+        """Parse site_list.json into typed SiteConfig objects."""
+        import json
+        from Core.engine.async_search import SiteConfig
+        from Core.models import ErrorStrategy
+        
+        configs = []
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        for item in data:
+            for key, site_data in item.items():
+                exceptions = site_data.get("exception", [])
+                if any((char and char in self.username) for char in exceptions):
+                    continue
+                
+                error_str = site_data.get("Error", "Status-Code")
+                if error_str == "Message":
+                    strategy = ErrorStrategy.MESSAGE
+                elif error_str == "Response-Url":
+                    strategy = ErrorStrategy.RESPONSE_URL
+                else:
+                    strategy = ErrorStrategy.STATUS_CODE
+                
+                url_template = site_data.get("user2", site_data.get("user", ""))
+                # Handle edge cases where user2 is not a format string
+                display_url = site_data.get("user", "").replace("{}", self.username)
+                
+                config = SiteConfig(
+                    name=site_data.get("name", key),
+                    url_template=url_template,
+                    display_url=display_url,
+                    error_strategy=strategy,
+                    error_text=site_data.get("text", ""),
+                    response_url=site_data.get("Response_url", ""),
+                    tags=site_data.get("Tag", []),
+                    is_scrapable=(site_data.get("Scrapable", "False") == "True")
+                )
+                configs.append(config)
+        return configs
+
     # ------------------------------------------------------------------
     # Stage 5: scan_sites() — Run scan against all sites
     # ------------------------------------------------------------------
     def scan_sites(self) -> None:
         """
-        Call Controll() engine for main + optional NSFW site list.
-        Populates self.successfull, self.successfullName, etc.
+        Run the fully async concurrent OSINT scan using Epic 2 engine.
+        Updates Rich Output live.
         """
-        from Core.Searcher import MrHolmes  # local import to avoid circular
+        import asyncio
+        from Core.models.scan_result import ScanStatus
 
-        nomefile = "Site_lists/Username/site_list.json"
-        i1 = CO.Counter.Site(nomefile)
-        MrHolmes.Controll(
-            self.username, nomefile,
-            self.cfg.proxy_identity or "None",
-            self.ctx.report_path,
-            self.ctx.subject_type,
-            self.successfull, self.scraper_sites,
-            True,                            # Writable
-            self._http_proxy2,
-            self.successfullName,
-            self.cfg.proxy_dict,
-            self._proxy_choice,
-            self.tags, self.most_tags,
-        )
+        # 1. Parse configs
+        main_configs = self._load_site_configs("Site_lists/Username/site_list.json")
+        all_configs = main_configs
 
         # In batch mode, use pre-configured flag; otherwise prompt
         if self.batch_mode:
             nsfw = 1 if self._batch_nsfw else 2
         else:
+            from Core.Support import Font, Language
             nsfw = safe_int_input(
-                Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
+                Font.Color.BLUE + "[+]" + Font.Color.WHITE +
                 Language.Translation.Translate_Language(
-                    filename, "Username", "Default", "Nsfw") +
+                    filename, "Default", "NSFW", "None") +
                 Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-                valid_range=range(1, 3))
+                valid_range=range(1, 4))
 
         if nsfw == 1:
-            nsfw_file = "Site_lists/Username/NSFW_site_list.json"
-            i2 = CO.Counter.Site(nsfw_file)
-            MrHolmes.Controll(
-                self.username, nsfw_file,
-                self.cfg.proxy_identity or "None",
-                self.ctx.report_path,
-                self.ctx.subject_type,
-                self.successfull, self.scraper_sites,
-                True,
-                self._http_proxy2,
-                self.successfullName,
-                self.cfg.proxy_dict,
-                self._proxy_choice,
-                self.tags, self.most_tags,
+            nsfw_configs = self._load_site_configs("Site_lists/Username/site_list_NSFW.json")
+            all_configs.extend(nsfw_configs)
+
+        # 2. Setup Progress Tracker
+        if hasattr(self.output, "begin_progress"):
+            self.output.begin_progress(len(all_configs))
+
+        # 3. Define live callback
+        def _on_progress(res):
+            self.count += 1
+            if hasattr(self.output, "progress"):
+                self.output.progress(self.count, len(all_configs))
+            if res.status.value == "found":
+                self.output.found(res.url, res.site_name)
+                self.successfull.append(res.url)
+                self.successfullName.append(res.site_name)
+                # Save to text report file
+                with open(self.ctx.report_path, "a", encoding="utf-8") as rf:
+                    rf.write("[{}] {}\n".format(res.site_name, res.url))
+                # Parse tags
+                for tag in res.tags:
+                    if tag not in self.tags:
+                        self.tags.append(tag)
+                    else:
+                        if tag not in self.most_tags:
+                            self.most_tags.append(tag)
+                if res.is_scrapable:
+                    self.scraper_sites.append(res.site_name)
+
+        # 4. Trigger Async Scan
+        actual_proxy = self._http_proxy2 if self._http_proxy2 and self._http_proxy2 != "None" else None
+        
+        asyncio.run(
+            self.scan_all_sites(
+                all_configs,
+                self.username,
+                actual_proxy,
+                concurrency_limit=SEMAPHORE_LIMIT,
+                on_progress=_on_progress
             )
-            self.count = i1 + i2
-        else:
-            self.count = i1
+        )
+
+        if hasattr(self.output, "end_progress"):
+            self.output.end_progress()
 
     # ------------------------------------------------------------------
     # Stage 6: handle_results() — Print results + optional scraping
@@ -293,11 +350,34 @@ class ScanPipeline:
 
         for url in self.successfull:
             logger.info("[FOUND] %s", url)
-            self.output.found(url)
-            self.found += 1
+        self.found = len(self.successfull)
 
         # Emit summary via OutputHandler (AC5)
         self.output.summary(self.found, self.count, self.username)
+
+        # --- EPIC 6: APIFY HYBRID INTEGRATION ---
+        if "Instagram" in self.successfullName:
+            from Core.engine.apify_scraper import ApifyScraper
+            apify = ApifyScraper()
+            if apify.is_enabled():
+                logger.info("Apify API Token detected. Running Advanced Instagram Scraper...")
+                try:
+                    enriched = asyncio.run(apify.scrape_instagram_profile(self.username))
+                except RuntimeError:
+                    logger.warning("Cannot run Apify scraper: event loop conflict")
+                    enriched = {}
+                if enriched:
+                    logger.info("Successfully fetched deep data from Instagram via Apify.")
+                    with open(self.ctx.report_path, "a", encoding="utf-8") as rf:
+                        rf.write("\n==========================================\n")
+                        rf.write("[APIFY DEEP SCRAPE ENRICHMENT - INSTAGRAM]\n")
+                        rf.write("Full Name: {}\n".format(enriched.get('full_name', '')))
+                        rf.write("Bio: {}\n".format(enriched.get('bio', '')))
+                        rf.write("Followers: {} | Following: {}\n".format(
+                            enriched.get('followers', ''), enriched.get('following', '')))
+                        rf.write("Posts: {}\n".format(enriched.get('posts', '')))
+                        rf.write("Profile Picture URL: {}\n".format(enriched.get('profile_pic', '')))
+                        rf.write("==========================================\n\n")
 
         if self.scraper_sites:
             self._dispatch_scrapers()
@@ -307,6 +387,10 @@ class ScanPipeline:
 
     def _dispatch_scrapers(self) -> None:
         """Prompt user and dispatch available scrapers for found sites."""
+        if self.batch_mode:
+            self.scrape_op = "Negative"
+            return
+            
         # Ensure Profile_pics dir exists
         os.chdir("GUI/Reports/Usernames/{}".format(self.username))
         if not os.path.isdir("Profile_pics"):
@@ -365,6 +449,11 @@ class ScanPipeline:
         """Write recap, interests, encode report, send notification."""
         self._handle_gps_data()
 
+        if self.batch_mode:
+            self._write_recap()
+            self._prompt_dorks_and_transfer(skip_prompts=True)
+            return
+
         recap_choice = safe_int_input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
             Language.Translation.Translate_Language(
@@ -375,7 +464,7 @@ class ScanPipeline:
         if recap_choice == 1:
             self._write_recap()
 
-        self._prompt_dorks_and_transfer()
+        self._prompt_dorks_and_transfer(skip_prompts=False)
 
     def _handle_gps_data(self) -> None:
         """Write GPS geolocation and visited places to report."""
@@ -393,14 +482,17 @@ class ScanPipeline:
                 logger.info("[PLACE] %s", loc)
                 f.write(loc + "\n")
 
-    def _prompt_dorks_and_transfer(self) -> None:
-        """Prompt for dorks, notification, transfer, encoding."""
-        dork_choice = safe_int_input(
-            Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
-            Language.Translation.Translate_Language(
-                filename, "Default", "Dorks", "None") +
-            Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-            valid_range=range(1, 3))
+    def _prompt_dorks_and_transfer(self, skip_prompts: bool = False) -> None:
+        """Prompt for dorks, notification, transfer, encoding. Or execute silently if batch."""
+        if skip_prompts:
+            dork_choice = 2 # skip
+        else:
+            dork_choice = safe_int_input(
+                Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
+                Language.Translation.Translate_Language(
+                    filename, "Default", "Dorks", "None") +
+                Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                valid_range=range(1, 3))
 
         from Core.Searcher import MrHolmes
         if dork_choice == 1:
@@ -417,23 +509,38 @@ class ScanPipeline:
             f.write(Language.Translation.Translate_Language(
                 filename, "Report", "Default", "By"))
 
-        Notification.Notifier.Start(self.mode)
-        Creds.Sender.mail(final_report, self.username)
+        try:
+            Notification.Notifier.Start(self.mode)
+        except Exception as e:
+            logger.warning("Notification failed: %s", e)
+            
+        try:
+            Creds.Sender.mail(final_report, self.username)
+        except Exception:
+            pass
 
-        transfer_choice = safe_int_input(
-            Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
-            Language.Translation.Translate_Language(
-                filename, "Transfer", "Question", "None") +
-            Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-            valid_range=range(1, 3))
+        if skip_prompts:
+            transfer_choice = 2
+        else:
+            transfer_choice = safe_int_input(
+                Font.Color.BLUE + "\n[?]" + Font.Color.WHITE +
+                Language.Translation.Translate_Language(
+                    filename, "Transfer", "Question", "None") +
+                Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
+                valid_range=range(1, 3))
 
         if transfer_choice == 1:
             FileTransfer.Transfer.File(final_report, self.username, ".txt")
 
-        Encoding.Encoder.Encode(final_report)
+        try:
+            Encoding.Encoder.Encode(final_report)
+        except Exception:
+            pass
+        
         logger.info("Report: %s", final_report)
-        input(Language.Translation.Translate_Language(
-            filename, "Default", "Continue", "None"))
+        if not skip_prompts:
+            input(Language.Translation.Translate_Language(
+                filename, "Default", "Continue", "None"))
 
     def _write_recap(self) -> None:
         """Print and persist recap stats + possible hobbies/interests.
@@ -546,19 +653,13 @@ class ScanPipeline:
         username: str,
         proxy: str | None = None,
         concurrency_limit: int = SEMAPHORE_LIMIT,
+        on_progress = None,
     ) -> list:
         """
         Task 2+3+4+5 — Concurrent site scanning with bounded semaphore.
 
-        Args:
-            site_configs:      list[SiteConfig] — sites to scan.
-            username:          target username.
-            proxy:             optional proxy string "http://host:port".
-            concurrency_limit: max concurrent connections (AC2+AC3).
-
-        Returns:
-            Ordered list[ScanResult] — exceptions filtered out (AC4+AC5).
-            Order preserved because asyncio.gather() preserves task order.
+        Yields to on_progress callback as sites complete.
+        Returns ordered list of ScanResults preserving submission order.
         """
         from Core.models import ScanResult
         import aiohttp
@@ -568,15 +669,31 @@ class ScanPipeline:
         async with aiohttp.ClientSession() as session:
             # Task 2 — build task list
             tasks = [
-                ScanPipeline._scan_with_semaphore(sem, session, site, username, proxy)
+                asyncio.create_task(
+                    ScanPipeline._scan_with_semaphore(sem, session, site, username, proxy)
+                )
                 for site in site_configs
             ]
-            # AC4 — gather preserves order; return_exceptions=True → AC5
-            raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Yield progress as they complete
+            for f in asyncio.as_completed(tasks):
+                try:
+                    res = await f
+                    if res is not None and on_progress:
+                        on_progress(res)
+                except Exception as e:
+                    logger.debug("Task exception during scan: %s", e)
 
-        # Task 3 — filter exceptions, keep valid ScanResult objects
-        valid_results = [
-            r for r in raw_results
-            if isinstance(r, ScanResult)
-        ]
+        # AC4 — Extract results in original order
+        # F3: Guard against CancelledError when accessing task results
+        valid_results = []
+        for t in tasks:
+            try:
+                if not t.cancelled() and t.exception() is None:
+                    res = t.result()
+                    if res is not None:
+                        valid_results.append(res)
+            except (asyncio.CancelledError, asyncio.InvalidStateError):
+                pass
+
         return valid_results

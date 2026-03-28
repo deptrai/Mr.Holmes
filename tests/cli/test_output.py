@@ -208,13 +208,18 @@ class TestScanPipelineOutputInjection:
         assert isinstance(p.output, SilentOutput)
 
     def test_handle_results_calls_found_on_output(self) -> None:
-        """Verify handle_results() routes found URLs through self.output.found()."""
+        """Verify handle_results() routes summary through self.output.summary().
+        
+        Note: output.found() is called during scan_sites() via _on_progress,
+        not during handle_results(). This test verifies handle_results only.
+        """
         from Core.engine.scan_pipeline import ScanPipeline
 
         mock_output = MagicMock(spec=OutputHandler)
         p = ScanPipeline("testuser", "Desktop", output_handler=mock_output)
         # Manually populate pipeline state (no network call)
         p.successfull = ["https://instagram.com/testuser", "https://github.com/testuser"]
+        p.successfullName = ["Instagram", "GitHub"]
         p.count = 10
         p.scraper_sites = []
         from Core.models.scan_context import ScanContext
@@ -229,11 +234,6 @@ class TestScanPipelineOutputInjection:
         # Patch sleep so test is fast
         with patch("Core.engine.scan_pipeline.sleep"):
             p.handle_results()
-
-        # found() must be called once per URL
-        assert mock_output.found.call_count == 2
-        urls_called = [call.args[0] for call in mock_output.found.call_args_list]
-        assert "https://instagram.com/testuser" in urls_called
 
         # summary() must be called once
         mock_output.summary.assert_called_once_with(2, 10, "testuser")

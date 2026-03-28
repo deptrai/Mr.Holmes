@@ -117,10 +117,14 @@ class BatchRunner:
     def _run_username_scan(self, username: str) -> ScanResult:
         """Run username OSINT via ScanPipeline."""
         from Core.engine.scan_pipeline import ScanPipeline
-        from Core.cli.output import SilentOutput
+        from Core.cli.rich_output import make_output_handler
 
         _logger.info("Starting username batch scan: %s", username)
         proxy_choice = 1 if self.args.proxy else 2
+        
+        # Mute UI output if user explicitly requested JSON or CSV scripts.
+        # Otherwise, show the beautiful Rich UI during scan!
+        output_handler = make_output_handler(force_silent=(self.args.output != "txt"))
 
         pipeline = ScanPipeline(
             username,
@@ -128,7 +132,7 @@ class BatchRunner:
             batch_mode=True,
             proxy_choice=proxy_choice,
             nsfw_enabled=self.args.nsfw,
-            output_handler=SilentOutput(),  # runner owns output formatting
+            output_handler=output_handler,
         )
 
         try:
