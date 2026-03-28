@@ -1,6 +1,6 @@
 # Story 6.4: PDF Export via Jinja2
 
-Status: review
+Status: done
 
 ## Story
 
@@ -21,6 +21,11 @@ so that findings có thể chia sẻ, in ấn, và lưu trữ chuyên nghiệp.
 - [x] Task 2 — Implement PDF generator class
 - [x] Task 3 — CLI integration (`--export pdf`)
 - [x] Task 4 — Test PDF output
+
+### Review Findings
+- [x] [Review][CRITICAL] PARSE_DECLTYPES ValueError on ISO T-timestamps — CAST AS TEXT
+- [x] [Review][Patch] --export without --investigation falls through silently — added validation
+- [x] [Review][Patch] Filename sanitization only stripped `/` — regex for all unsafe chars
 
 ## Dev Notes
 

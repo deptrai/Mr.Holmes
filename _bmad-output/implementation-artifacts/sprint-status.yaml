@@ -91,7 +91,7 @@ development_status:
   6-1-sqlite-schema-design: done
   6-2-dual-write-report-writer: done
   6-3-php-gui-sqlite-migration: done
-  6-4-pdf-export-jinja2: review
+  6-4-pdf-export-jinja2: done
   6-5-csv-export: ready-for-dev
   epic-6-retrospective: optional
 
