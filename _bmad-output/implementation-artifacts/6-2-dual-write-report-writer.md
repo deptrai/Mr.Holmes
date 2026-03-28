@@ -1,6 +1,6 @@
 # Story 6.2: Dual-Write ReportWriter
 
-Status: review
+Status: done
 
 ## Story
 

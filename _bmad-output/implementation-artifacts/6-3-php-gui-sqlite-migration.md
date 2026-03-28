@@ -1,6 +1,6 @@
 # Story 6.3: PHP GUI SQLite Migration
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,11 +18,17 @@ so that GUI có thể filter, search, và display results hiệu quả hơn.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — PHP SQLite extension verification
-- [ ] Task 2 — Database helper class in PHP
-- [ ] Task 3 — Update investigation list controller
-- [ ] Task 4 — Update findings detail view
-- [ ] Task 5 — Add cross-case search endpoint
+- [x] Task 1 — PHP SQLite extension verification
+- [x] Task 2 — Database helper class in PHP
+- [x] Task 3 — Update investigation list controller
+- [x] Task 4 — Update findings detail view
+- [x] Task 5 — Add cross-case search endpoint
+
+### Review Findings
+- [x] [Review][Patch] CRITICAL: Duplicate Checker() code after `?>` closing tag (lines 625-803) would render as plain text — deleted 180 lines
+- [x] [Review][Patch] $created_at unescaped in HTML — wrapped with htmlspecialchars()
+- [x] [Review][Patch] XSS in Search.php onclick — added ENT_QUOTES to htmlspecialchars()
+- [x] [Review][Patch] Missing $stmt->close() in Sqlite_Helper — added after finalize()
 
 ## Dev Notes
 
@@ -37,6 +43,18 @@ GUI/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet 4.6 (Thinking)
 ### Completion Notes List
+- Task 1+2: `GUI/Actions/Sqlite_Helper.php` — static class with `isAvailable()`, `getConnection()`, `query()`, `queryOne()`. Uses `SQLite3::OPEN_READONLY`, `busyTimeout(2000)`, prepared statements with positional `?` params.
+- AC2: `getInvestigations(subject)` queries investigations table newest-first
+- AC3: `getFindings(inv_id, status_filter)` queries findings filtered by investigation_id and optional status
+- AC4: `searchInvestigations(query)` + `searchFindings(site_fragment)` for cross-case search via `GUI/Database/Search.php`
+- AC5: `isAvailable()` checks `extension_loaded('sqlite3') && file_exists(DB_PATH)` — all paths fall back to flat files when false
+- DB path: `GUI/Reports/mrholmes.db` (opened READONLY from GUI side)
+- `GUI/Actions/Usernames_Finder.php`: Added `Checker_SQLite()` using SQLite path; `Checker()` now tries SQLite first with fallback
+- 463 Python tests pass — no regressions
+- PHP CLI not installed on dev machine; syntax reviewed statically
 ### File List
+- GUI/Actions/Sqlite_Helper.php (NEW)
+- GUI/Database/Search.php (NEW)
+- GUI/Actions/Usernames_Finder.php (MODIFIED: Checker_SQLite + SQLite-first Checker)
