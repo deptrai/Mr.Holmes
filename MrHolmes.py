@@ -42,25 +42,54 @@ if __name__ == "__main__":
 
     _args = parse_args()
 
-    # --- Export mode (Story 6.4 AC1) — highest priority -------------------
+    # --- Export mode (Story 6.4 / 6.5 AC1) — highest priority -----------
     if has_export_target(_args):
-        from Core.reporting.pdf_export import PdfExporter
+        from Core.cli.parser import parse_investigation_ids
 
         try:
-            exporter = PdfExporter()
-            out_path = exporter.export(_args.investigation)
-            print(f"[✓] PDF exported: {out_path}")
-            raise SystemExit(0)
-        except ValueError as exc:
-            print(f"[!] Export error: {exc}")
+            inv_ids = parse_investigation_ids(_args.investigation)
+        except Exception as exc:
+            print(f"[!] {exc}")
             raise SystemExit(1)
-        except (ImportError, RuntimeError) as exc:
-            print(f"[!] Export failed: {exc}")
-            raise SystemExit(2)
+
+        if _args.export == "pdf":
+            from Core.reporting.pdf_export import PdfExporter
+
+            # PDF supports a single investigation only
+            single_id = inv_ids[0] if inv_ids else None
+            if single_id is None:
+                print("[!] PDF export does not support 'all' — specify a single ID.")
+                raise SystemExit(1)
+            try:
+                out_path = PdfExporter().export(single_id)
+                print(f"[✓] PDF exported: {out_path}")
+                raise SystemExit(0)
+            except ValueError as exc:
+                print(f"[!] Export error: {exc}")
+                raise SystemExit(1)
+            except (ImportError, RuntimeError) as exc:
+                print(f"[!] Export failed: {exc}")
+                raise SystemExit(2)
+
+        elif _args.export == "csv":
+            from Core.reporting.csv_export import CsvExporter
+
+            try:
+                out_path = CsvExporter().export(inv_ids)  # None = all
+                count_label = "all" if inv_ids is None else str(len(inv_ids))
+                print(f"[✓] CSV exported ({count_label} investigation(s)): {out_path}")
+                raise SystemExit(0)
+            except ValueError as exc:
+                print(f"[!] Export error: {exc}")
+                raise SystemExit(1)
+            except OSError as exc:
+                print(f"[!] File error: {exc}")
+                raise SystemExit(2)
 
     elif getattr(_args, "export", None) and not getattr(_args, "investigation", None):
         print("[!] --export requires --investigation <ID>. Example:")
-        print("    python3 MrHolmes.py --export pdf --investigation 1")
+        print("    python3 MrHolmes.py --export csv --investigation 1")
+        print("    python3 MrHolmes.py --export csv --investigation all")
         raise SystemExit(1)
 
     if has_batch_target(_args):

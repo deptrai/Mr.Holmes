@@ -79,18 +79,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format: json | txt | csv  (default: txt).",
     )
 
-    # --- Export (Story 6.4 — AC1) ------------------------------------------
+    # --- Export (Story 6.4 AC1 + Story 6.5 AC1) -------------------------
     parser.add_argument(
         "--export",
-        choices=["pdf"],
+        choices=["pdf", "csv"],
         metavar="FORMAT",
-        help="Export format for an existing investigation: pdf.",
+        help="Export format for an existing investigation: pdf | csv.",
     )
     parser.add_argument(
         "--investigation",
-        type=int,
-        metavar="ID",
-        help="Investigation ID to export (used with --export).",
+        metavar="ID[,ID...]|all",
+        help=(
+            "Investigation ID(s) to export (used with --export). "
+            "Accepts a single ID, comma-separated IDs (e.g. 1,2,3), "
+            "or 'all' to export every investigation (CSV only)."
+        ),
     )
 
     return parser
@@ -118,5 +121,32 @@ def has_batch_target(args: argparse.Namespace) -> bool:
 
 
 def has_export_target(args: argparse.Namespace) -> bool:
-    """Return True if args specify an export operation (Story 6.4)."""
+    """Return True if args specify an export operation (Story 6.4/6.5)."""
     return bool(getattr(args, "export", None) and getattr(args, "investigation", None))
+
+
+def parse_investigation_ids(raw: str) -> Optional[List[int]]:
+    """
+    Story 6.5 AC4 — parse --investigation value into a list of ints or None.
+
+    Supported formats:
+        '1'        → [1]
+        '1,2,3'    → [1, 2, 3]
+        'all'      → None  (means: all investigations)
+
+    Raises:
+        argparse.ArgumentTypeError: If the value is not parseable.
+    """
+    if raw.strip().lower() == "all":
+        return None  # sentinel: export all
+    try:
+        ids = [int(x.strip()) for x in raw.split(",") if x.strip()]
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"--investigation: expected integer ID(s) or 'all', got {raw!r}"
+        )
+    if not ids:
+        raise argparse.ArgumentTypeError(
+            "--investigation: at least one ID is required."
+        )
+    return ids

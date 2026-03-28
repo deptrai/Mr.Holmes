@@ -1,6 +1,6 @@
 # Story 6.5: CSV Export
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,9 +17,9 @@ so that results có thể processed, filtered, và visualized bằng external to
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Implement CSV exporter (`csv` stdlib)
-- [ ] Task 2 — CLI integration
-- [ ] Task 3 — Unit tests
+- [x] Task 1 — Implement CSV exporter (`csv` stdlib)
+- [x] Task 2 — CLI integration
+- [x] Task 3 — Unit tests
 
 ## Dev Notes
 
@@ -34,6 +34,16 @@ Core/reporting/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet 4.6 (Thinking)
 ### Completion Notes List
+- Task 1: `Core/reporting/csv_export.py` — CsvExporter with `export_to_string()` + `export()`. UTF-8-sig (BOM) encoding via `open(..., encoding='utf-8-sig')`. CAST timestamps to TEXT (same fix as 6.4). Tags joined with `;`.
+- AC4 multi-investigation: `export(None)` = all, `export([1,2,3])` = specific IDs
+- Task 2: Extended `--export choices` to `["pdf", "csv"]`. Changed `--investigation` from `type=int` to `str` for comma-separated support. Added `parse_investigation_ids()` helper. Updated dispatch in MrHolmes.py to route pdf/csv. Updated warning message to mention `all`.
+- Task 3: 21 unit tests in `tests/reporting/test_csv_export.py` — 21/21 pass. Also fixed 2 pre-existing PDF tests that assumed `investigation==int`. Full suite: 500 passed.
+- Smoke test: `--export csv --investigation 1` ✔, `--export csv --investigation all` ✔
 ### File List
+- Core/reporting/csv_export.py (NEW)
+- Core/cli/parser.py (MODIFIED: csv choice, str type, parse_investigation_ids)
+- MrHolmes.py (MODIFIED: format-aware dispatch)
+- tests/reporting/test_csv_export.py (NEW)
+- tests/reporting/test_pdf_export.py (MODIFIED: 2 tests updated for str type)

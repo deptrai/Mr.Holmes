@@ -204,7 +204,7 @@ class TestCliParser:
 
         args = parse_args(["--export", "pdf", "--investigation", "7"])
         assert args.export == "pdf"
-        assert args.investigation == 7
+        assert args.investigation == "7"  # now str (AC4 multi-ID support)
         assert has_export_target(args) is True
 
     def test_has_export_target_false_when_no_export(self):
@@ -219,11 +219,10 @@ class TestCliParser:
         args = parse_args(["--export", "pdf"])
         assert has_export_target(args) is False
 
-    def test_investigation_must_be_integer(self):
-        """--investigation requires an integer."""
-        from Core.cli.parser import build_parser
+    def test_investigation_invalid_id_raises_via_helper(self):
+        """parse_investigation_ids raises on non-integer values."""
         import argparse
+        from Core.cli.parser import parse_investigation_ids
 
-        parser = build_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["--export", "pdf", "--investigation", "not_an_int"])
+        with pytest.raises(argparse.ArgumentTypeError):
+            parse_investigation_ids("not_an_int")

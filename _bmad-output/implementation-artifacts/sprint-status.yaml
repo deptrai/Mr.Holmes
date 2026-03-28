@@ -92,7 +92,7 @@ development_status:
   6-2-dual-write-report-writer: done
   6-3-php-gui-sqlite-migration: done
   6-4-pdf-export-jinja2: done
-  6-5-csv-export: ready-for-dev
+  6-5-csv-export: review
   epic-6-retrospective: optional
 
   # === Epic 7: External Intelligence APIs ===
