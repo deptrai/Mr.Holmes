@@ -92,16 +92,19 @@ class ReportWriter:
             [SiteName] https://...
         """
         report_path = Path(ctx.report_path)
-        if not report_path.parent.exists():
-            report_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            if not report_path.parent.exists():
+                report_path.parent.mkdir(parents=True, exist_ok=True)
 
-        found_results = [r for r in results if r.status == ScanStatus.FOUND]
-        if not found_results:
-            return
+            found_results = [r for r in results if r.status == ScanStatus.FOUND]
+            if not found_results:
+                return
 
-        with open(report_path, "a", encoding="utf-8") as f:
-            for result in found_results:
-                f.write("[{}] {}\n".format(result.site_name, result.url))
+            with open(report_path, "a", encoding="utf-8") as f:
+                for result in found_results:
+                    f.write("[{}] {}\n".format(result.site_name, result.url))
+        except OSError as e:
+            logger.error("Failed to write to TXT report %s: %s", report_path, e)
 
     def _write_json(self, ctx: ScanContext, results: Sequence[ScanResult]) -> None:
         """
@@ -110,11 +113,11 @@ class ReportWriter:
         """
         if ctx.json_output_path:
             json_path = Path(ctx.json_output_path)
-            if not json_path.parent.exists():
-                json_path.parent.mkdir(parents=True, exist_ok=True)
-
-            payload = [r.to_dict() for r in results]
             try:
+                if not json_path.parent.exists():
+                    json_path.parent.mkdir(parents=True, exist_ok=True)
+
+                payload = [r.to_dict() for r in results]
                 with open(json_path, "w", encoding="utf-8") as f:
                     json.dump(payload, f, ensure_ascii=False, indent=2)
             except OSError as e:
@@ -122,11 +125,11 @@ class ReportWriter:
 
         if ctx.json_names_path:
             names_path = Path(ctx.json_names_path)
-            if not names_path.parent.exists():
-                names_path.parent.mkdir(parents=True, exist_ok=True)
-
-            found_names = [r.site_name for r in results if r.status == ScanStatus.FOUND]
             try:
+                if not names_path.parent.exists():
+                    names_path.parent.mkdir(parents=True, exist_ok=True)
+
+                found_names = [r.site_name for r in results if r.status == ScanStatus.FOUND]
                 with open(names_path, "w", encoding="utf-8") as f:
                     json.dump(found_names, f, ensure_ascii=False, indent=2)
             except OSError as e:

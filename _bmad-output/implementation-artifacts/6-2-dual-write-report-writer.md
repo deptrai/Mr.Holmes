@@ -25,6 +25,9 @@ so that PHP GUI vẫn đọc được files cũ + có thể query SQLite cho fea
 - [x] Task 5 — Integration into ScanPipeline
 - [x] Task 6 — Unit tests
 
+### Review Findings
+- [x] [Review][Patch] Uncaught OSError during directory creation — `mkdir(parents=True)` in `_write_json` and `_write_txt` is outside the try-catch block and can crash the pipeline if permission is denied. [Core/reporting/writer.py:94,112]
+
 ## Dev Notes
 
 ### Dependencies
