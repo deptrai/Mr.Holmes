@@ -102,6 +102,8 @@ class ScanPipeline:
         self.found: int = 0
         self.count: int = 0
         self.scrape_op: str = "Negative"
+        # Story 6.2 — ReportWriter dual-write accumulator
+        self.scan_results: list = []  # list of ScanResult
 
     # ------------------------------------------------------------------
     # Stage 1: setup() — Initialize context, paths, variables
@@ -314,6 +316,8 @@ class ScanPipeline:
                             self.most_tags.append(tag)
                 if res.is_scrapable:
                     self.scraper_sites.append(res.site_name)
+            # Story 6.2: accumulate all results for ReportWriter
+            self.scan_results.append(res)
 
         # 4. Trigger Async Scan
         actual_proxy = self._http_proxy2 if self._http_proxy2 and self._http_proxy2 != "None" else None
@@ -354,6 +358,20 @@ class ScanPipeline:
 
         # Emit summary via OutputHandler (AC5)
         self.output.summary(self.found, self.count, self.username)
+
+        # --- Story 6.2: DUAL-WRITE via ReportWriter (JSON + SQLite) ---
+        try:
+            from Core.reporting.writer import ReportWriter
+            from Core.models.scan_context import ScanConfig as _ScanConfig
+            writer = ReportWriter()
+            writer.write_json_and_sqlite(
+                ctx=self.ctx,
+                cfg=self.cfg if self.cfg is not None else _ScanConfig(),
+                results=self.scan_results,
+                total_sites=self.count,
+            )
+        except Exception as exc:
+            logger.warning("ReportWriter failed (scan unaffected): %s", exc)
 
         # --- EPIC 6: APIFY HYBRID INTEGRATION ---
         if "Instagram" in self.successfullName:

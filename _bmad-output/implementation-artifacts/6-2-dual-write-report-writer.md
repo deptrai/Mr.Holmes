@@ -1,6 +1,6 @@
 # Story 6.2: Dual-Write ReportWriter
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,12 +18,12 @@ so that PHP GUI vẫn đọc được files cũ + có thể query SQLite cho fea
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Implement ReportWriter class
-- [ ] Task 2 — Flat file writer (match current format exactly)
-- [ ] Task 3 — SQLite writer (insert records)
-- [ ] Task 4 — Error handling — SQLite failure doesn't block file output
-- [ ] Task 5 — Integration into ScanPipeline
-- [ ] Task 6 — Unit tests
+- [x] Task 1 — Implement ReportWriter class
+- [x] Task 2 — Flat file writer (match current format exactly)
+- [x] Task 3 — SQLite writer (insert records)
+- [x] Task 4 — Error handling — SQLite failure doesn't block file output
+- [x] Task 5 — Integration into ScanPipeline
+- [x] Task 6 — Unit tests
 
 ## Dev Notes
 
@@ -43,6 +43,18 @@ Core/reporting/
 ```
 
 ## Dev Agent Record
-### Agent Model Used
+### Agent Model Used: Claude Sonnet 4.6 (Thinking)
 ### Completion Notes List
+- ReportWriter at Core/reporting/writer.py with two public methods:
+  - write(): full dual-write (txt+json+sqlite) for batch/test scenarios
+  - write_json_and_sqlite(): for ScanPipeline where txt already written inline
+- AC3: txt format `[SiteName] URL\n` identical to existing _on_progress output
+- AC4: SQLite inserts investigation + findings + tags via existing Database singleton
+- AC5: _write_sqlite() catches all exceptions and returns None — flat files never blocked
+- ScanPipeline: added scan_results accumulator list, populates in _on_progress
+- 15 unit tests: AC1-AC5, tags, graceful degradation, pipeline method
+- All 463 tests pass
 ### File List
+- Core/reporting/writer.py (NEW)
+- Core/engine/scan_pipeline.py (MODIFIED: scan_results accumulator + ReportWriter call)
+- tests/reporting/test_writer.py (NEW)
