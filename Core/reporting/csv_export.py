@@ -171,27 +171,23 @@ class CsvExporter:
         subject_type = inv_dict["subject_type"]
 
         # Fetch findings (CAST timestamps to TEXT — same fix as Story 6.4)
+        # AC2: Optimized to fetch tags in a single query via LEFT JOIN and GROUP_CONCAT
         findings = conn.execute(
-            "SELECT id, site_name, url, status, "
-            "CAST(created_at AS TEXT) AS created_at "
-            "FROM findings "
-            "WHERE investigation_id = ? "
-            "ORDER BY site_name",
+            "SELECT f.id, f.site_name, f.url, f.status, "
+            "CAST(f.created_at AS TEXT) AS created_at, "
+            "GROUP_CONCAT(t.name, ';') AS tags "
+            "FROM findings f "
+            "LEFT JOIN finding_tags ft ON f.id = ft.finding_id "
+            "LEFT JOIN tags t ON ft.tag_id = t.id "
+            "WHERE f.investigation_id = ? "
+            "GROUP BY f.id "
+            "ORDER BY f.site_name",
             (investigation_id,),
         ).fetchall()
 
         rows: list[dict] = []
         for f in findings:
             f_dict = dict(f)
-            # Fetch tags and join as semicolons (AC2: tags column)
-            tag_rows = conn.execute(
-                "SELECT t.name FROM tags t "
-                "JOIN finding_tags ft ON ft.tag_id = t.id "
-                "WHERE ft.finding_id = ? ORDER BY t.name",
-                (f_dict["id"],),
-            ).fetchall()
-            tags = ";".join(r[0] for r in tag_rows)
-
             rows.append({
                 "investigation_id": investigation_id,
                 "subject":          subject,
@@ -199,7 +195,7 @@ class CsvExporter:
                 "site_name":        f_dict.get("site_name", ""),
                 "url":              f_dict.get("url") or "",
                 "status":           f_dict.get("status") or "",
-                "tags":             tags,
+                "tags":             f_dict.get("tags") or "",
                 "found_at":         f_dict.get("created_at") or "",
             })
 
@@ -218,11 +214,6 @@ class CsvExporter:
             if len(investigation_ids) > 5:
                 label += f"_and_{len(investigation_ids) - 5}_more"
         return self._output_dir / f"findings_{label}_{ts}.csv"
-
-    @staticmethod
-    def _sanitize_label(text: str) -> str:
-        """Strip filesystem-unsafe chars."""
-        return re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", text)
 
     def _write_csv(self, rows: list[dict], out_path: Path) -> None:
         """

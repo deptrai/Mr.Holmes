@@ -1,6 +1,6 @@
 # Story 6.5: CSV Export
 
-Status: review
+Status: done
 
 ## Story
 
@@ -20,6 +20,11 @@ so that results có thể processed, filtered, và visualized bằng external to
 - [x] Task 1 — Implement CSV exporter (`csv` stdlib)
 - [x] Task 2 — CLI integration
 - [x] Task 3 — Unit tests
+
+### Review Findings
+- [x] [Review][HIGH] N+1 Queries: Used `LEFT JOIN` with `GROUP_CONCAT(t.name, ';')` to eliminate N+1 latency bottleneck.
+- [x] [Review][LOW] Unused Code: Removed `_sanitize_label()`. 
+- [x] [Review][LOW] Duplicate IDs: Replaced simple list splitting with `list(dict.fromkeys(ids))` to deduplicate parsed ids.
 
 ## Dev Notes
 

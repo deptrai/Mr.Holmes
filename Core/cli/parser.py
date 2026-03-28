@@ -141,6 +141,7 @@ def parse_investigation_ids(raw: str) -> Optional[List[int]]:
         return None  # sentinel: export all
     try:
         ids = [int(x.strip()) for x in raw.split(",") if x.strip()]
+        ids = list(dict.fromkeys(ids))
     except ValueError:
         raise argparse.ArgumentTypeError(
             f"--investigation: expected integer ID(s) or 'all', got {raw!r}"
