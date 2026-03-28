@@ -140,8 +140,11 @@ class PdfExporter:
         Fetch one investigation row. Raises ValueError if not found.
         AC2 / AC4 data source.
         """
+        # Cast created_at to TEXT to avoid sqlite3 PARSE_DECLTYPES ValueError
+        # on ISO 8601 T-separator timestamps (e.g. "2025-01-15T10:30:00")
         row = conn.execute(
-            "SELECT id, subject, subject_type, created_at, proxy_used, "
+            "SELECT id, subject, subject_type, "
+            "CAST(created_at AS TEXT) AS created_at, proxy_used, "
             "total_sites, total_found "
             "FROM investigations WHERE id = ?",
             (investigation_id,),
@@ -157,7 +160,8 @@ class PdfExporter:
     ) -> list[dict]:
         """Fetch all findings for the investigation, ordered by site_name."""
         rows = conn.execute(
-            "SELECT id, site_name, url, status, error_type, created_at "
+            "SELECT id, site_name, url, status, error_type, "
+            "CAST(created_at AS TEXT) AS created_at "
             "FROM findings "
             "WHERE investigation_id = ? "
             "ORDER BY site_name",
@@ -210,7 +214,9 @@ class PdfExporter:
 
     def _pdf_path(self, investigation: dict) -> Path:
         """Build the output PDF file path."""
-        subject = investigation.get("subject", "unknown").replace("/", "_")
+        import re
+        # Strip filesystem-unsafe characters (Windows + Unix)
+        subject = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '_', investigation.get("subject", "unknown"))
         inv_id = investigation.get("id", 0)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         return self._output_dir / f"report_{subject}_{inv_id}_{ts}.pdf"

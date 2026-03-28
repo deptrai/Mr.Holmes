@@ -58,6 +58,11 @@ if __name__ == "__main__":
             print(f"[!] Export failed: {exc}")
             raise SystemExit(2)
 
+    elif getattr(_args, "export", None) and not getattr(_args, "investigation", None):
+        print("[!] --export requires --investigation <ID>. Example:")
+        print("    python3 MrHolmes.py --export pdf --investigation 1")
+        raise SystemExit(1)
+
     if has_batch_target(_args):
         # One or more scan flags provided → run non-interactively
         runner = BatchRunner(_args)
