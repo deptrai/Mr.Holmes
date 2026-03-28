@@ -37,10 +37,26 @@ class Main:
 
 if __name__ == "__main__":
     # --- Batch (non-interactive) mode — AC1, AC2, AC3 -------------------
-    from Core.cli.parser import parse_args, has_batch_target
+    from Core.cli.parser import parse_args, has_batch_target, has_export_target
     from Core.cli.runner import BatchRunner
 
     _args = parse_args()
+
+    # --- Export mode (Story 6.4 AC1) — highest priority -------------------
+    if has_export_target(_args):
+        from Core.reporting.pdf_export import PdfExporter
+
+        try:
+            exporter = PdfExporter()
+            out_path = exporter.export(_args.investigation)
+            print(f"[✓] PDF exported: {out_path}")
+            raise SystemExit(0)
+        except ValueError as exc:
+            print(f"[!] Export error: {exc}")
+            raise SystemExit(1)
+        except (ImportError, RuntimeError) as exc:
+            print(f"[!] Export failed: {exc}")
+            raise SystemExit(2)
 
     if has_batch_target(_args):
         # One or more scan flags provided → run non-interactively

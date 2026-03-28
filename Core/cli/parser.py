@@ -79,6 +79,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format: json | txt | csv  (default: txt).",
     )
 
+    # --- Export (Story 6.4 — AC1) ------------------------------------------
+    parser.add_argument(
+        "--export",
+        choices=["pdf"],
+        metavar="FORMAT",
+        help="Export format for an existing investigation: pdf.",
+    )
+    parser.add_argument(
+        "--investigation",
+        type=int,
+        metavar="ID",
+        help="Investigation ID to export (used with --export).",
+    )
+
     return parser
 
 
@@ -101,3 +115,8 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 def has_batch_target(args: argparse.Namespace) -> bool:
     """Return True if args specify a scan target (batch mode)."""
     return any([args.username, args.phone, args.email, args.website])
+
+
+def has_export_target(args: argparse.Namespace) -> bool:
+    """Return True if args specify an export operation (Story 6.4)."""
+    return bool(getattr(args, "export", None) and getattr(args, "investigation", None))
