@@ -107,7 +107,7 @@ development_status:
 
   # === Epic 8: Autonomous Profiler (Deep OSINT Agent) ===
   epic-8: in-progress
-  8-1-autonomous-profiler-engine: ready-for-dev
+  8-1-autonomous-profiler-engine: review
   8-2-llm-synthesis-integration: backlog
   8-3-interactive-mindmap-generation: backlog
   8-4-cli-menu-integration: backlog
