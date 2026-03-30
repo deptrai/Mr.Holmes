@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import aiohttp
@@ -145,7 +145,17 @@ class LLMSynthesizer:
                         )
 
                     data = await response.json()
-                    content = data["choices"][0]["message"]["content"]
+                    try:
+                        content = data["choices"][0]["message"]["content"]
+                    except (KeyError, IndexError, TypeError) as parse_err:
+                        logger.warning("LLM API returned malformed JSON: %s", parse_err)
+                        fallback = self._build_fallback_report(graph, reason=f"Malformed API response: {parse_err}")
+                        return SynthesisResult(
+                            is_success=False,
+                            report_markdown=fallback,
+                            model_used=self.model,
+                            error_message=f"Malformed API response: {parse_err}",
+                        )
                     model_used = data.get("model", self.model)
 
                     return SynthesisResult(
@@ -250,7 +260,7 @@ class LLMSynthesizer:
 Target Analysis Summary:
   Total Entities: {node_count} ({type_summary})
   Total Relationships: {len(edges)}
-  Scan Depth: {max((n.get('depth', 0) for n in nodes), default=0)} layers
+  Scan Depth: {max((n.get('depth') or 0 for n in nodes), default=0)} layers
 
 Plugin Execution Results:
 {plugin_lines or "  No plugins executed."}

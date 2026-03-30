@@ -1,6 +1,6 @@
 # Story 8.2: LLM Synthesis Integration
 
-Status: review
+Status: done
 
 ## Story
 **As an** OSINT Investigator
@@ -77,3 +77,12 @@ class SynthesisResult:
 
 ## Change Log
 - 2026-03-30: Story 8.2 created and implemented. Status → review.
+- 2026-03-30: Code review passed (Claude Opus Thinking). 3 patches applied, 3 deferred. Status → done.
+
+### Review Findings
+- [x] [Review][Patch] Dead import `field` from dataclasses — removed
+- [x] [Review][Patch] Unguarded `data["choices"][0]` — added try/except for KeyError/IndexError/TypeError
+- [x] [Review][Patch] `max()` None-safe — changed `.get('depth', 0)` to `.get('depth') or 0`
+- [x] [Review][Defer] API key leak in exception messages — needs broader secrets-in-logs policy
+- [x] [Review][Defer] Missing connect timeout — optimization
+- [x] [Review][Defer] No max-length guard on LLM response — unlikely in practice
