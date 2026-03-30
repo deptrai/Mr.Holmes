@@ -1,6 +1,6 @@
 # Story 7.6: SearxNG OSINT Integration
 
-Status: review
+Status: done
 
 ## Story
 **As an** OSINT investigator
@@ -52,6 +52,15 @@ Status: review
 
 ### Change Log
 - 2026-03-30: Tests implemented, status → review. 556/556 regression tests passed.
+- 2026-03-30: Code review passed (Claude Opus Thinking). 4 patches applied, 2 deferred. Status → done.
+
+### Review Findings
+- [x] [Review][Patch] Unused imports `Dict, Any, urllib.parse` [Core/plugins/searxng.py:11-12] — removed
+- [x] [Review][Patch] Repeated `import re`/`import asyncio` inside test fns [test_searxng.py] — hoisted to top-level
+- [x] [Review][Patch] `results` could be `None` from API → guard `or []` [Core/plugins/searxng.py:95] — fixed
+- [x] [Review][Patch] Non-deterministic `set` order in error message → `sorted()` [Core/plugins/searxng.py:62] — fixed
+- [x] [Review][Defer] Raw int `timeout=15` [Core/plugins/searxng.py:79] — deferred, pre-existing pattern
+- [x] [Review][Defer] No rate limiting mechanism — deferred, by design (AC doesn't require)
 
 ## Project Context Reference
 - Epic context: Epic 7 - External Intelligence APIs

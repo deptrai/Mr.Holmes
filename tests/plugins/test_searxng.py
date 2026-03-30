@@ -5,7 +5,10 @@ Story 7.6 — Unit tests for SearxngPlugin.
 """
 from __future__ import annotations
 
+import asyncio
 import os
+import re
+
 import pytest
 from aioresponses import aioresponses
 
@@ -100,10 +103,6 @@ async def test_searxng_found_results():
     plugin = SearxngPlugin()
 
     with aioresponses() as mock:
-        # Note: aioresponses by default matches exactly, but since params are variable,
-        # we can match just the base URL by ignoring querystrings if we don't compile regex.
-        # But we'll use a regex target or match the exact pattern.
-        import re
         pattern = re.compile(rf"^{DEFAULT_SEARX_URL}\?.*")
         mock.get(
             pattern,
@@ -134,7 +133,6 @@ async def test_searxng_empty_results():
     plugin = SearxngPlugin()
 
     with aioresponses() as mock:
-        import re
         pattern = re.compile(rf"^{DEFAULT_SEARX_URL}\?.*")
         mock.get(
             pattern,
@@ -185,8 +183,6 @@ async def test_searxng_timeout():
     plugin = SearxngPlugin()
 
     with aioresponses() as mock:
-        import asyncio
-        import re
         pattern = re.compile(rf"^{DEFAULT_SEARX_URL}\?.*")
         mock.get(pattern, exception=asyncio.TimeoutError("Timeout"))
         result = await plugin.check("admin@test.com", "EMAIL")

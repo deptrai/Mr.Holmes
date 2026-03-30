@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import urllib.parse
-from typing import Dict, Any
 
 import aiohttp
 
@@ -61,7 +59,7 @@ class SearxngPlugin(IntelligencePlugin):
                 plugin_name=self.name,
                 is_success=False,
                 data={},
-                error_message=f"{self.name} only supports {', '.join(self.SUPPORTED_TYPES)}.",
+                error_message=f"{self.name} only supports {', '.join(sorted(self.SUPPORTED_TYPES))}.",
             )
 
         query = self._build_query(target, target_type_upper)
@@ -95,7 +93,7 @@ class SearxngPlugin(IntelligencePlugin):
                         
                     data = await response.json()
                     
-                    results = data.get("results", [])
+                    results = data.get("results") or []
                     
                     osint_urls = []
                     for item in results:
