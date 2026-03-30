@@ -58,6 +58,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- Scan options -------------------------------------------------------
     parser.add_argument(
+        "--config",
+        choices=["api-keys"],
+        metavar="SECTION",
+        help="Launch interactive configuration wizard for SECTION (e.g., api-keys).",
+    )
+
+    parser.add_argument(
         "--proxy",
         action="store_true",
         default=False,
@@ -118,6 +125,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 def has_batch_target(args: argparse.Namespace) -> bool:
     """Return True if args specify a scan target (batch mode)."""
     return any([args.username, args.phone, args.email, args.website])
+
+
+def has_config_target(args: argparse.Namespace) -> bool:
+    """Return True if args specify a config menu (Story 7.4)."""
+    return bool(getattr(args, "config", None))
 
 
 def has_export_target(args: argparse.Namespace) -> bool:
