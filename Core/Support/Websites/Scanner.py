@@ -24,9 +24,9 @@ class Port:
             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Ports", "Port", "None").format(port) + Font.Color.GREEN + Language.Translation.Translate_Language(filename, "Ports", "Open", "None"))
             Open_Ports.append(port)
-            f = open(report, "a")
-            f.write("Port: {}\n".format(port))
-            f.close()
+            with open(report, "a") as f:
+                f.write("Port: {}\n".format(port))
+
         else:
             print(Font.Color.RED + "[!]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Ports", "Port", "None").format(port) + Font.Color.RED + Language.Translation.Translate_Language(filename, "Ports", "Closed", "None"))

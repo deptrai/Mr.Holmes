@@ -13,9 +13,9 @@ class One_time:
     @staticmethod
     def Agreement():
         Clear.Screen.Clear()
-        f = open("Banners/Banner1.txt", "r")
-        reader = f.read()
-        f.close()
+        with open("Banners/Banner1.txt", "r") as f:
+            reader = f.read()
+
         print(Font.Color.GREEN + reader)
         filename = Language.Translation.Get_Language()
         filename
@@ -23,9 +23,9 @@ class One_time:
             choice = str(input(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Eula", "Text", "None") +
                          Font.Color.GREEN + "(Y)" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Eula", "Agree", "None") + Font.Color.RED + "(N)" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Eula", "Disagree", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
             if choice == "Y" or choice == "y":
-                f = open("Configuration/Agreement.txt", "w")
-                f.write("Agreement Accepted")
-                f.close()
+                with open("Configuration/Agreement.txt", "w") as f:
+                    f.write("Agreement Accepted")
+
             elif choice == "N" or choice == "n":
                 print(
                     Font.Color.RED + Language.Translation.Translate_Language(filename, "Eula", "Alert", "None"))

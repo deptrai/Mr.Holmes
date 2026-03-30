@@ -13,7 +13,7 @@ class Select:
     parser = ConfigParser()
     parser.read(nomefile)
     useragent_file = parser["Settings"]["useragent_List"]
-    f = open(useragent_file, "r")
-    value = f.readlines()
-    f.close()
+    with open(useragent_file, "r") as f:
+        value = f.readlines()
+
     agent = random.choice(value).replace("\n","")

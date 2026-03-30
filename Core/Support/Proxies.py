@@ -13,9 +13,9 @@ class proxy:
     Parser = ConfigParser()
     Parser.read(nomefile)
     Proxy_file = Parser["Settings"]["Proxy_List"]
-    f = open(Proxy_file, "r")
-    value = f.readlines()
-    f.close()
+    with open(Proxy_file, "r") as f:
+        value = f.readlines()
+
     choice1 = random.choice(value)
     choice2 = choice1.split(":", 1)
     choice3 = choice2[0]

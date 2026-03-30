@@ -13,6 +13,7 @@ from Core.Support import Font
 from Core.Support import Creds
 from Core.Support import FileTransfer
 from Core.Support import Proxies
+from Core.proxy.manager import ProxyManager
 from Core.Support import Requests_Search
 from Core.Support import Clear
 from Core.Support import Dorks
@@ -52,23 +53,22 @@ class Phone_search:
                 pass
         Type = "GOOGLE"
         Dorks.Search.dork(username, report, nomefile, Type)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Phone", "FingerPrints"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Phone", "FingerPrints"))
+
         print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
               Language.Translation.Translate_Language(filename, "Phone", "FingerPrints", "None"))
         sleep(3)
-        f = open(fingerprints, "r")
-        for sites in f:
-            site = sites.rstrip("\n")
-            site = site.replace("{}", username)
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
-            f = open(report, "a")
-            f.write(site + "\n")
-            sleep(2)
-        f.close()
-        f.close()
+        with open(fingerprints, "r") as fp_file:
+            for sites in fp_file:
+                site = sites.rstrip("\n")
+                site = site.replace("{}", username)
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
+                with open(report, "a") as f:
+                    f.write(site + "\n")
+                sleep(2)
+
 
     @staticmethod
     def Yandex_dork(username,rep):
@@ -77,32 +77,30 @@ class Phone_search:
         fingerprints = "Site_lists/Phone/Yandex_Fingerprints.txt"
         Type = "YANDEX"
         Dorks.Search.dork(username, report, nomefile, Type)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Phone", "FingerPrints"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Phone", "FingerPrints"))
+
         print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
               Language.Translation.Translate_Language(filename, "Phone", "FingerPrints", "None"))
         sleep(3)
-        f = open(fingerprints, "r")
-        for sites in f:
-            site = sites.rstrip("\n")
-            site = site.replace("{}", username)
-            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
-            f = open(report, "a")
-            f.write(site + "\n")
-            sleep(2)
-        f.close()
-        f.close()
+        with open(fingerprints, "r") as fp_file:
+            for sites in fp_file:
+                site = sites.rstrip("\n")
+                site = site.replace("{}", username)
+                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
+                with open(report, "a") as f:
+                    f.write(site + "\n")
+                sleep(2)
+
 
     @staticmethod
     def lookup(username, report, international):
-        f = open(report, "a")
-        f.write("\nPHONE NUMBER FOUND ON:\n")
-        f.close()
-        f = open("Temp/Phone/Code.txt", "r", newline=None)
-        nation = f.read().rstrip("\n")
-        f.close()
+        with open(report, "a") as f:
+            f.write("\nPHONE NUMBER FOUND ON:\n")
+        with open("Temp/Phone/Code.txt", "r", newline=None) as f:
+            nation = f.read().rstrip("\n")
+
         if nation == "US":
             data = "Site_lists/Phone/Lookup/USA_phone.json"
             country = "UNITED-STATES"
@@ -143,14 +141,11 @@ class Phone_search:
             sc = int(input(
                 Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "choice", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
             if sc == 1:
-                http_proxy = Proxies.proxy.final_proxis
-                http_proxy2 = Proxies.proxy.choice3
-                source = "http://ip-api.com/json/" + http_proxy2
-                access = urllib.request.urlopen(source)
-                content = access.read()
-                final = json.loads(content)
-                identity = Language.Translation.Translate_Language(filename, "Default", "ProxyLoc", "None").format(
-                    final["regionName"], final["country"])
+                _pm = ProxyManager()
+                _pm.configure(1)
+                http_proxy = _pm.get_proxy()
+                http_proxy2 = _pm.proxy_ip
+                identity = _pm.get_identity() or "None"
             else:
                 http_proxy = None
                 http_proxy2 = str(http_proxy)
@@ -172,8 +167,9 @@ class Phone_search:
                 username, username)
             json_file2 = "GUI/Reports/Phone/{}/{}.json".format(
                 username, "Name")
-            f = open(data,)
-            data = json.loads(f.read())
+            with open(data) as f:
+                data = json.loads(f.read())
+
             for sites in data:
                 for data1 in sites:
                     name = sites[data1]["name"]
@@ -252,20 +248,20 @@ class Phone_search:
                   Language.Translation.Translate_Language(filename, "Default", "Delete", "None").format(username))
         os.mkdir(folder)
         report = folder + username + ".txt"
-        f = open(report, "w")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "Date").format(Date) + "\n")
-        f.close()
+        with open(report, "w") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "Date").format(Date) + "\n")
+
         num = username
         code = 1
         international = Numbers.Phony.Number(num, report, code, Mode, Type, username)
         Phone_search.lookup(username, report, international)
         print(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Report", "None") +
          report)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "By"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "By"))
+
         Notification.Notifier.Start(Mode)
         Creds.Sender.mail(report, username)
         choice = int(input(

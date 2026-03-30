@@ -1,0 +1,242 @@
+{# Core/reporting/templates/report.html.j2
+   Story 6.4 — PDF Export via Jinja2
+   AC2: Jinja2 HTML template → rendered → PDF
+   AC3: header, summary, findings table, tags cloud
+   AC4: Mr.Holmes branding, date, investigation metadata
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* ── Base ── */
+    @page {
+      size: A4;
+      margin: 20mm 18mm 20mm 18mm;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+      font-size: 11pt;
+      color: #1a1a2e;
+      line-height: 1.5;
+    }
+    /* ── Header / Branding (AC4) ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #0f3460;
+      padding-bottom: 8pt;
+      margin-bottom: 16pt;
+    }
+    .header-brand { display: flex; align-items: center; gap: 10pt; }
+    .header-brand .logo-text {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #0f3460;
+      letter-spacing: 2px;
+    }
+    .header-brand .logo-sub {
+      font-size: 8pt;
+      color: #555;
+      display: block;
+    }
+    .header-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: #555;
+    }
+    /* ── Section headings ── */
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #0f3460;
+      margin: 18pt 0 8pt 0;
+      padding-bottom: 3pt;
+      border-bottom: 1px solid #d0d8e8;
+    }
+    /* ── Summary card (AC3) ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8pt;
+      margin-bottom: 14pt;
+    }
+    .summary-card {
+      background: #f0f4fc;
+      border-left: 4px solid #0f3460;
+      padding: 8pt 10pt;
+      border-radius: 3pt;
+    }
+    .summary-card .label { font-size: 8pt; color: #555; text-transform: uppercase; }
+    .summary-card .value { font-size: 14pt; font-weight: 700; color: #0f3460; }
+    /* ── Findings table (AC3) ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin-bottom: 14pt;
+    }
+    thead th {
+      background: #0f3460;
+      color: #fff;
+      padding: 6pt 8pt;
+      text-align: left;
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) { background: #f7f9ff; }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+    tbody td {
+      padding: 5pt 8pt;
+      border-bottom: 1px solid #e0e6f0;
+      vertical-align: top;
+    }
+    .status-found    { color: #1a7a1a; font-weight: 600; }
+    .status-notfound { color: #999; }
+    td.url a { color: #0f3460; text-decoration: none; word-break: break-all; }
+    /* ── Tags cloud (AC3) ── */
+    .tags-cloud { display: flex; flex-wrap: wrap; gap: 5pt; margin: 8pt 0 14pt 0; }
+    .tag {
+      background: #e8eef8;
+      color: #0f3460;
+      border: 1px solid #b8c8e8;
+      border-radius: 12pt;
+      padding: 2pt 8pt;
+      font-size: 8.5pt;
+    }
+    /* ── Footer ── */
+    .footer {
+      margin-top: 20pt;
+      padding-top: 6pt;
+      border-top: 1px solid #d0d8e8;
+      font-size: 7.5pt;
+      color: #999;
+      text-align: center;
+    }
+    /* ── Page break control ── */
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+  <!-- AC4: Branding header -->
+  <div class="header">
+    <div class="header-brand">
+      <div>
+        <span class="logo-text">MR.HOLMES</span>
+        <span class="logo-sub">OSINT Investigation Report</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <strong>Generated:</strong> {{ generated_at }}<br>
+      <strong>Investigation ID:</strong> {{ investigation.id }}<br>
+      <strong>Subject Type:</strong> {{ investigation.subject_type | title }}
+    </div>
+  </div>
+
+  <!-- AC3: Summary section -->
+  <h2>Investigation Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Subject</div>
+      <div class="value">{{ investigation.subject }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Sites Found</div>
+      <div class="value">{{ investigation.total_found }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Sites Checked</div>
+      <div class="value">{{ investigation.total_sites }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Date Run</div>
+      <div class="value" style="font-size:10pt">{{ investigation.created_at[:10] if investigation.created_at else 'N/A' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Proxy Used</div>
+      <div class="value" style="font-size:10pt">{{ 'Yes' if investigation.proxy_used else 'No' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Found Rate</div>
+      <div class="value">
+        {% if investigation.total_sites > 0 %}
+          {{ "%.0f%%" | format(investigation.total_found / investigation.total_sites * 100) }}
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- AC3: Findings table (found only) -->
+  <h2>Confirmed Findings ({{ found_findings | length }})</h2>
+  {% if found_findings %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width:22%">Site</th>
+        <th style="width:52%">URL</th>
+        <th style="width:13%">Status</th>
+        <th style="width:13%">Tags</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for f in found_findings %}
+      <tr>
+        <td>{{ f.site_name }}</td>
+        <td class="url"><a href="{{ f.url }}">{{ f.url }}</a></td>
+        <td class="status-found">Found</td>
+        <td>{% for tag in f.tags %}{{ tag }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#999;font-style:italic">No confirmed findings for this investigation.</p>
+  {% endif %}
+
+  <!-- AC3: Tags cloud (all unique tags across findings) -->
+  {% if all_tags %}
+  <h2>Tags Overview</h2>
+  <div class="tags-cloud">
+    {% for tag in all_tags %}
+      <span class="tag">{{ tag }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- All sites section (collapsed) -->
+  {% if all_findings | length > found_findings | length %}
+  <h2>All Checked Sites ({{ all_findings | length }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:30%">Site</th>
+        <th style="width:55%">URL</th>
+        <th style="width:15%">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for f in all_findings %}
+      <tr>
+        <td>{{ f.site_name }}</td>
+        <td class="url">{% if f.url %}<a href="{{ f.url }}">{{ f.url }}</a>{% else %}—{% endif %}</td>
+        <td class="{{ 'status-found' if f.status == 'found' else 'status-notfound' }}">
+          {{ f.status | replace('_', ' ') | title }}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Footer (AC4) -->
+  <div class="footer">
+    Mr.Holmes OSINT Tool &nbsp;|&nbsp; Report generated {{ generated_at }} &nbsp;|&nbsp;
+    This document may contain sensitive information. Handle with care.
+  </div>
+
+</body>
+</html>
