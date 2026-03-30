@@ -25,8 +25,8 @@ class Translation:
 
     @staticmethod
     def Translate_Language(filename, List, Row, SubRow):
-        reader = open(filename, )
-        parser = json.loads(reader.read())
+        with open(filename) as reader:
+            parser = json.loads(reader.read())
         try:
             if List == "Configuration" or List == "Username" or List == "Website" or List == "Report":
                 Phrase = parser[List][0][Row][SubRow]
@@ -35,13 +35,14 @@ class Translation:
             return Phrase
         except Exception as e:
             filename = "Lang/english.json"
-            reader = open(filename, )
-            parser = json.loads(reader.read())
+            with open(filename) as reader:
+                parser = json.loads(reader.read())
             if List == "Configuration" or List == "Username" or List == "Website" or List == "Report":
                 Phrase = parser[List][0][Row][SubRow]
             else:
                 Phrase = parser[List][Row]
             return Phrase
+
     
     @staticmethod
     def Get_Language2():

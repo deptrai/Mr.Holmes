@@ -535,6 +535,37 @@ class Config:
             os.chdir("../")
 
     @staticmethod
+    def modify_apify_token():
+        os.chdir(dest)
+        alert = int(input(
+            Font.Color.RED + "\n[!]" + Font.Color.WHITE + "ARE YOU SURE TO MODIFY YOUR APIFY API TOKEN?(1)YES(2)NO" + Font.Color.RED + "[!]" + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
+        if alert == 1:
+            if os.path.isfile(nomefile):
+                Parser = ConfigParser()
+                Parser.read(nomefile)
+                token = str(input(
+                    Font.Color.WHITE + "\nINSERT YOUR APIFY TOKEN(INSERT NONE FOR QUITTING)" + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
+                while token == "":
+                    token = str(input(
+                        Font.Color.WHITE + "\nINSERT YOUR APIFY TOKEN(INSERT NONE FOR QUITTING)" + Font.Color.GREEN + "\n\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
+                if token.lower() == "none":
+                    out = input("\nAPIFY TOKEN NOT CHANGED PRESS ENTER TO EXIT")
+                    os.chdir("../")
+                else:
+                    Parser.set("Settings", "apify_token", token)
+                    with open(nomefile, 'w') as configfile:
+                        Parser.write(configfile)
+                    print("\nAPIFY TOKEN CHANGED SUCCESSFULLY")
+                    out = input("\nPRESS ENTER TO EXIT")
+                    os.chdir("../")
+            else:
+                inp = input(
+                    Font.Color.RED + "\n[!]" + Font.Color.WHITE + "FILE NOT FOUND")
+                os.chdir("../")
+        else:
+            os.chdir("../")
+
+    @staticmethod
     def main(Mode):
         filename = Language.Translation.Get_Language()
         filename
@@ -551,7 +582,7 @@ class Config:
                 print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE + "INFO:" + "[{}]\n".format(Font.Color.GREEN + Language.Translation.Translate_Language(filename,"Configuration","Main","Explanation") + Font.Color.WHITE) )
                 option = Language.Translation.Translate_Language(
                     filename, "Configuration", "Main", "Options")
-                options = str(option)
+                options = str(option) + "\n(17)MODIFY-APIFY-TOKEN"
                 print(Font.Color.GREEN + Language.Translation.Translate_Language(
                     filename, "Configuration", "Main", "Text"))
                 print(Font.Color.WHITE + options)
@@ -591,6 +622,8 @@ class Config:
                     inp = input(Language.Translation.Translate_Language(
                         filename, "Configuration", "Main", "Exit"))
                     holmes.Main.Menu(Mode)
+                elif sce == 17:
+                    Config.modify_apify_token()
                 else:
                     Config.main(Mode)
         else:

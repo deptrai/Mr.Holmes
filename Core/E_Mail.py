@@ -130,20 +130,20 @@ class Mail_search:
                             Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "RECORD N {}: ".format(i) + record)
                         i = i+1
                 sleep(2)
-                f = open(report, "a")
-                f.write("\n\nEMAIL DATA:" + "\r\n")
-                f.write("NAME: " + name + "\r\n")
-                f.write("DOMAIN: " + domain + "\r\n")
-                f.write("EMAIL: " + completemail + "\r\n")
-                f.write("SMTP: " + smtp + "\r\n")
-                f.write("FREE-DOMAIN: " + freeDomain + "\r\n")
-                f.write("TEMPORARY: " + Temporary + "\r\n")
-                f.write("CATCH-ALL: " + CatchAll + "\r\n")
-                f.write("\n\nFOUND MX-RECORDS(DNS)" + "\r\n")
-                i = 1
-                for record in RecList:
-                    f.write("RECORD N {}: ".format(i) + record + "\r\n")
-                    i = i+1
+                with open(report, "a") as f:
+                    f.write("\n\nEMAIL DATA:" + "\r\n")
+                    f.write("NAME: " + name + "\r\n")
+                    f.write("DOMAIN: " + domain + "\r\n")
+                    f.write("EMAIL: " + completemail + "\r\n")
+                    f.write("SMTP: " + smtp + "\r\n")
+                    f.write("FREE-DOMAIN: " + freeDomain + "\r\n")
+                    f.write("TEMPORARY: " + Temporary + "\r\n")
+                    f.write("CATCH-ALL: " + CatchAll + "\r\n")
+                    f.write("\n\nFOUND MX-RECORDS(DNS)" + "\r\n")
+                    i = 1
+                    for record in RecList:
+                        f.write("RECORD N {}: ".format(i) + record + "\r\n")
+                        i = i+1
             except Exception as e:
                 pass
 
@@ -152,8 +152,8 @@ class Mail_search:
         #nomefile = "Temp/E-Mail/Code.txt"
         #if os.path.isfile(nomefile):
             list_file = "Site_lists/E-Mail/Lists.json"
-            reader = open(list_file,)
-            data = json.loads(reader.read())
+            with open(list_file) as reader:
+                data = json.loads(reader.read())
             for sites in data:
                 for data1 in sites:
                     name = sites[data1]["name"]
@@ -162,11 +162,10 @@ class Mail_search:
                         Font.Color.GREEN + "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "Link", "None").format(name))
                     sleep(2)
                     print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + url)
-                    f = open(report, "a")
-                    f.write("\nGENERATING {} LINK".format(name))
-                    f.write("\n{}".format(url))
-                f.close()
-            f.close()
+                    with open(report, "a") as f:
+                        f.write("\nGENERATING {} LINK".format(name))
+                        f.write("\n{}".format(url))
+
             #os.remove(nomefile)
         #else:
         #    holmes.Main.Menu(Mode)
@@ -192,9 +191,9 @@ class Mail_search:
                   Language.Translation.Translate_Language(filename, "Default", "Delete", "None").format(username))
         else:
             os.mkdir(folder)
-        f = open(report, "w")
-        f.write("SCANNING EXECUTED ON:\n" + Date + "\n")
-        f.close()
+        with open(report, "w") as f:
+            f.write("SCANNING EXECUTED ON:\n" + Date + "\n")
+
         isvalid = mail.Validator.Mail(username, report)
         if isvalid:
             Mail_search.Lookup(username, report)
@@ -211,10 +210,10 @@ class Mail_search:
                 pass
             print(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Report", "None") +
                 os.getcwd() + "/" + report)
-            f = open(report, "a")
-            f.write(Language.Translation.Translate_Language(
-                filename, "Report", "Default", "By"))
-            f.close()
+            with open(report, "a") as f:
+                f.write(Language.Translation.Translate_Language(
+                    filename, "Report", "Default", "By"))
+
             print(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Report", "None") +
                 report)
             Notification.Notifier.Start(Mode)
