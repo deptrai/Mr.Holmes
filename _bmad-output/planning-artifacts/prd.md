@@ -12,12 +12,13 @@ stepsCompleted: [init, discovery, vision, executive-summary, success, journeys, 
 
 Mr.Holmes là công cụ OSINT (Open Source Intelligence) mã nguồn mở cho phép thu thập thông tin công khai về usernames, phone numbers, emails, websites và ports. Hiện tại, hệ thống gặp bottleneck hiệu suất nghiêm trọng do kiến trúc synchronous, code monolithic khó maintain, và thiếu test coverage.
 
-**Mục tiêu:** Chuyển đổi Mr.Holmes từ một script OSINT cá nhân thành platform chuyên nghiệp — nhanh, ổn định, modular, có test coverage — sẵn sàng cho community contribution và mở rộng tính năng.
+**Mục tiêu:** Chuyển đổi Mr.Holmes từ một script OSINT cá nhân thành OSINT Autonomous Agent chuyên nghiệp — nhanh, ổn định, tự động hóa đệ quy, có test coverage — sẵn sàng cho community contribution và mở rộng.
 
 ## Vision
 
 Trở thành **công cụ OSINT CLI hàng đầu** với:
 - Tốc độ quét concurrent nhanh gấp 10-30x
+- Trở thành Autonomous Agent có khả năng đệ quy tự chắp nối manh mối và báo cáo bằng LLM
 - Kiến trúc plugin-based dễ mở rộng
 - Chất lượng enterprise-grade với test coverage và structured logging
 
@@ -87,6 +88,12 @@ Trở thành **công cụ OSINT CLI hàng đầu** với:
 - FR24: User có thể cấu hình API keys cho external services
 - FR25: User có thể tra cứu data breach thông qua API miễn phí của Leak-Lookup (Fallback cho HIBP)
 - FR26: Hệ thống có thể thực hiện Dorking ẩn danh không lo Captcha thông qua metasearch SearxNG
+
+### Autonomous Profiler (Epic 8)
+
+- FR27: Hệ thống có thể tự động quét đệ quy (recursive scan) từ một hạt giống thông tin gốc tùy chỉnh theo độ sâu (depth).
+- FR28: Hệ thống có thể tổng hợp và phân tích báo cáo tri thức tự động thông qua các API tương thích OpenAPI của LLM.
+- FR29: Hệ thống có thể xuất kết quả dưới định dạng Mindmap (Interactive HTML Graph), JSON, và PDF.
 
 ## Non-Functional Requirements
 
