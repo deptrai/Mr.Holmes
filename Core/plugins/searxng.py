@@ -79,8 +79,8 @@ class SearxngPlugin(IntelligencePlugin):
         params = {
             "q": query,
             "format": "json",
-            "engines": "google,duckduckgo,bing",
-            "language": "en"
+            "language": "all",
+            "pageno": 1,
         }
         
         headers = {

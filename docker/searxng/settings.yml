@@ -2,7 +2,7 @@
 # Minimal valid config for SearxNG — tuned for Mr.Holmes OSINT JSON API
 # Ref: https://docs.searxng.org/admin/settings/settings.html
 
-use_default_settings: true          # Kế thừa toàn bộ default, chỉ override phần cần
+use_default_settings: true
 
 general:
   debug: false
@@ -15,9 +15,56 @@ server:
 
 search:
   safe_search: 0
+  default_lang: "all"               # Không filter theo địa lý
   formats:
     - html
-    - json                           # CRITICAL: bắt buộc phải có để plugin .check() gọi được
+    - json                           # CRITICAL: cho phép JSON API
 
 ui:
   default_locale: "vi"
+
+# Tắt các engine hay bị block, bật engine ổn định hơn
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: true                   # Thường 403 với IP thường
+
+  - name: bing
+    engine: bing
+    shortcut: b
+    disabled: true                   # Rate limit cao
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: d
+    disabled: true                   # CAPTCHA thường xuyên
+
+  - name: brave
+    engine: brave
+    shortcut: brave
+    disabled: false                  # Ít bị block nhất
+
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    disabled: false                  # Ít bị block, EU-based
+
+  - name: startpage
+    engine: startpage
+    shortcut: sp
+    disabled: false                  # Google proxy ẩn danh
+
+  - name: mojeek
+    engine: mojeek
+    shortcut: mjk
+    disabled: false                  # Crawler riêng, không bị block
+
+  - name: presearch
+    engine: presearch
+    shortcut: ps
+    disabled: false
+
+outgoing:
+  request_timeout: 20.0
+  max_request_timeout: 30.0
