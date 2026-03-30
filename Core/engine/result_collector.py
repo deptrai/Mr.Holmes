@@ -21,6 +21,7 @@ from typing import Optional
 
 from Core.models.scan_result import ScanResult, ScanStatus
 from Core.Support.Requests_Search import UNIQUE_TAGS
+from Core.plugins.base import PluginResult
 
 
 class ScanResultCollector:
@@ -64,6 +65,21 @@ class ScanResultCollector:
         with self._lock:
             self._results.append(result)
             self._process_tags(result.tags)
+
+    def add_plugin_result(self, result: PluginResult) -> None:
+        """
+        Story 7.1 — Maps and adds a PluginResult as an internal ScanResult.
+        Thread-safe.
+        """
+        mapped = ScanResult(
+            url="",
+            site_name=f"Plugin: {result.plugin_name}",
+            status=ScanStatus.FOUND if result.is_success else ScanStatus.NOT_FOUND,
+            tags=[],
+            is_scrapable=False,
+            plugin_data=result.data,
+        )
+        self.add(mapped)
 
     def add_many(self, results: list[ScanResult]) -> None:
         """

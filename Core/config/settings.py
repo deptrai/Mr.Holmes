@@ -175,6 +175,21 @@ class Settings:
             and bool(self.smtp_server)
         )
 
+    # ------------------------------------------------------------------
+    # Plugin Dynamic Keys (AC4)
+    # ------------------------------------------------------------------
+
+    def get_plugin_key(self, plugin_name: str) -> str:
+        """
+        Dynamically extracts API key from env variable corresponding to plugin_name.
+        e.g. 'HaveIBeenPwned' -> search OS env 'MH_HAVEIBEENPWNED_API_KEY'.
+        Sanitizes spaces, hyphens, dots, and other non-alphanumeric chars.
+        """
+        import re
+        normalized = re.sub(r'[^A-Za-z0-9]', '_', plugin_name).upper()
+        env_key = f"MH_{normalized}_API_KEY"
+        return os.environ.get(env_key, "")
+
 
 # ---------------------------------------------------------------------------
 # Singleton — import and use directly

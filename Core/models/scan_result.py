@@ -60,6 +60,7 @@ class ScanResult:
     tags: list[str] = field(default_factory=list)
     main_identifier: str = ""    # thay thế `main` param — profile ID/username on that site
     error_message: Optional[str] = None
+    plugin_data: dict = field(default_factory=dict)
 
     @property
     def found(self) -> bool:
@@ -81,6 +82,7 @@ class ScanResult:
             "tags": self.tags,
             "main_identifier": self.main_identifier,
             "error_message": self.error_message,
+            "plugin_data": self.plugin_data,
         }, ensure_ascii=False, indent=2)
 
     def to_dict(self) -> dict:
@@ -95,4 +97,6 @@ class ScanResult:
             "tags": self.tags,
             "main_identifier": self.main_identifier,
             "error_message": self.error_message,
+            "plugin_data": self.plugin_data,
         }
+

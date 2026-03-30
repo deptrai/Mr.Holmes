@@ -97,7 +97,7 @@ development_status:
 
   # === Epic 7: External Intelligence APIs ===
   epic-7: in-progress
-  7-1-plugin-interface-design: ready-for-dev
+  7-1-plugin-interface-design: done
   7-2-haveibeenpwned-integration: ready-for-dev
   7-3-shodan-integration: ready-for-dev
   7-4-api-key-management-ui: ready-for-dev

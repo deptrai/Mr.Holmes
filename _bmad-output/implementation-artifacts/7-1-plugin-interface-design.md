@@ -1,6 +1,6 @@
 # Story 7.1: Plugin Interface Design
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -52,3 +52,15 @@ Core/plugins/
 ### Agent Model Used
 ### Completion Notes List
 ### File List
+
+### Review Findings
+- [x] [Review][Patch] Status mapping bug — `is_success=True, data={}` maps to NOT_FOUND [Core/engine/result_collector.py:79]
+- [x] [Review][Patch] `get_plugin_key` doesn't sanitize hyphens/dots → invalid env var names [Core/config/settings.py:186]
+- [x] [Review][Patch] Duplicate plugin registration allowed — no dedup check [Core/plugins/manager.py:25]
+- [x] [Review][Patch] `_safe_execute` — `plugin.name` can throw in error handler [Core/plugins/manager.py:44]
+- [x] [Review][Patch] Redundant ternary `result.data if result.data else {}` [Core/engine/result_collector.py:80]
+- [x] [Review][Patch] Unused `MagicMock` import [tests/plugins/test_plugins.py:9]
+- [x] [Review][Patch] AC3: `discover_plugins()` method missing per spec [Core/plugins/manager.py]
+- [x] [Review][Patch] Thin test coverage — add edge case tests for _safe_execute, empty plugins, status mapping [tests/plugins/test_plugins.py]
+- [x] [Review][Defer] No logging in `_safe_execute` error path [Core/plugins/manager.py:44] — deferred, enhancement
+- [x] [Review][Defer] Import coupling: result_collector ↔ plugins.base [Core/engine/result_collector.py:24] — deferred, architectural
