@@ -41,15 +41,14 @@ class Ports:
             print(Font.Color.BLUE + "[I]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Default", "Delete", "None").format(username))
             os.remove(report)
-        f = open(report, "a")
-        f.write("SCANNING EXECUTED ON:\n" + Date + "\r\n")
-        f.write("OPEN PORTS:\r\n")
-        f.close()
+        with open(report, "a") as f:
+            f.write("SCANNING EXECUTED ON:\n" + Date + "\r\n")
+            f.write("OPEN PORTS:\r\n")
         Scanner.Port.Scan(username, report)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "By"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "By"))
+
         print(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Report", "None") +
             report)
         Notification.Notifier.Start(Mode)

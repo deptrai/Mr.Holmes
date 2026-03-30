@@ -41,16 +41,15 @@ class Downloader:
             exist = "True"
             pass
         else:
-            f = open(json_file, "w")
-            f.write('''{
-                        "List":[
+            with open(json_file, "w") as f:
+                f.write('''{
+                            "List":[
 
-                        ]
-                    }''')
-            f.close()
+                            ]
+                        }''')
             exist = "False"
-        opener = open(json_file, "r")
-        reader = json.load(opener)
+        with open(json_file, "r") as opener:
+            reader = json.load(opener)
         v = 0
         try:
             for Parameter in Tagged:
@@ -147,7 +146,8 @@ class Downloader:
                                 Font.Color.BLUE + "[I]" + Font.Color.WHITE + Language.Translation.Translate_Language(LangFile, "Username", "Default", "CheckFalse"))
                             getter = requests.get(
                                 profile_pic, headers=headers, allow_redirects=False)
-                            open(image, "wb").write(getter.content)
+                            with open(image, "wb") as img_f:
+                                img_f.write(getter.content)
                             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                                   Language.Translation.Translate_Language(LangFile, "Username", "Default", "Success"))
                             Downloader.checkFile(image,"Image")
@@ -228,17 +228,17 @@ class Downloader:
                                 Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TAGGED-HASHTAGS:{}".format(Font.Color.WHITE + "[" + Font.Color.GREEN + ", ".join(TempHash) + Font.Color.WHITE + "]"))
                             print(
                                 Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINKS:{}".format(Font.Color.WHITE + "[" + Font.Color.GREEN + ", ".join(TempLink) + Font.Color.WHITE + "]"))
-                            f = open(filename, "w", encoding="utf-8")
-                            f.write("POST ID {} DATA:\n".format(str(name)))
-                            f.write("DESCRIPTION: {}\r\n".format(descr.strip()))
-                            f.write("LOCATION: {}\r\n".format(
-                                    location.strip()))
-                            f.write(
-                                "TAGGED-USERS: {}\r\n".format(", ".join(TempTag)))
-                            f.write(
-                                "TAGGED-HASHTAGS: {}\r\n".format(", ".join(TempHash)))
-                            f.write(
-                                "LINKS: {}\r\n".format(", ".join(TempLink)))
+                            with open(filename, "w", encoding="utf-8") as f:
+                                f.write("POST ID {} DATA:\n".format(str(name)))
+                                f.write("DESCRIPTION: {}\r\n".format(descr.strip()))
+                                f.write("LOCATION: {}\r\n".format(
+                                        location.strip()))
+                                f.write(
+                                    "TAGGED-USERS: {}\r\n".format(", ".join(TempTag)))
+                                f.write(
+                                    "TAGGED-HASHTAGS: {}\r\n".format(", ".join(TempHash)))
+                                f.write(
+                                    "LINKS: {}\r\n".format(", ".join(TempLink)))
                             TempTag.clear()
                             if location.strip() == "":
                                 pass
@@ -290,7 +290,6 @@ class Downloader:
                                 except Exception as e:
                                     print(Font.Color.RED + "\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                                         LangFile, "Username", "Instagram", "NoGeoData") + str(e))
-                            f.close()
                             j = j+1
                             sleep(2)
                         except ConnectionError:
@@ -354,9 +353,8 @@ class Downloader:
                             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                                   "POSTED: {}".format(time.strip()))
 
-                            f = open(filename, "a")
-                            f.write("POSTED: {}\r\n".format(time.strip()))
-                            f.close()
+                            with open(filename, "a") as f:
+                                f.write("POSTED: {}\r\n".format(time.strip()))
                             t = t+1
                         except ConnectionError:
                             print(Font.Color.RED + "[!]" +
@@ -379,15 +377,14 @@ class Downloader:
                         Opt, name2, name2)
                     print(Font.Color.GREEN +
                           "\n[+]" + Font.Color.WHITE + "GETTING INSTAGRAM TAGGED USERS")
-                    f = open(report, "a")
-                    f.write("\nGETTING INSTAGRAM TAGGED USERS:\n")
-                    for User in TaggedUser:
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
-                            str(j)) + User + ": https://instagram.com/{}".format(User))
-                        f.write("USER N°{}: ".format(
-                            str(j)) + User + ": https://instagram.com/{}".format(User) + "\n")
-                        j = j + 1
-                    f.close()
+                    with open(report, "a") as f:
+                        f.write("\nGETTING INSTAGRAM TAGGED USERS:\n")
+                        for User in TaggedUser:
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
+                                str(j)) + User + ": https://instagram.com/{}".format(User))
+                            f.write("USER N°{}: ".format(
+                                str(j)) + User + ": https://instagram.com/{}".format(User) + "\n")
+                            j = j + 1
                     json_file = "GUI/Reports/{}/{}/Profile_pics/Instagram_Posts/Users.json".format(
                         Opt, name2)
                     Downloader.InsertToFile(
@@ -401,15 +398,14 @@ class Downloader:
                         Opt, name2, name2)
                     print(Font.Color.GREEN +
                           "\n[+]" + Font.Color.WHITE + "GETTING INSTAGRAM TAGGED HASHTAGS")
-                    f = open(report, "a")
-                    f.write("\nGETTING INSTAGRAM TAGGED HASHTAGS:\n")
-                    for Tag in TaggedHashtag:
-                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TAG N°{}: ".format(
-                            str(i)) + Tag + ": https://instagram.com/explore/tags/{}".format(Tag))
-                        f.write("HASHTAG N°{}: ".format(
-                            str(i)) + Tag + ": https://instagram.com/explore/tags/{}".format(Tag) + "\n")
-                        i = i + 1
-                    f.close()
+                    with open(report, "a") as f:
+                        f.write("\nGETTING INSTAGRAM TAGGED HASHTAGS:\n")
+                        for Tag in TaggedHashtag:
+                            print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TAG N°{}: ".format(
+                                str(i)) + Tag + ": https://instagram.com/explore/tags/{}".format(Tag))
+                            f.write("HASHTAG N°{}: ".format(
+                                str(i)) + Tag + ": https://instagram.com/explore/tags/{}".format(Tag) + "\n")
+                            i = i + 1
                     json_file = "GUI/Reports/{}/{}/Profile_pics/Instagram_Posts/Hashtags.json".format(
                         Opt, name2)
                     Downloader.InsertToFile(
@@ -493,7 +489,8 @@ class Downloader:
                         getter = requests.get(
                             profile_pic, headers=headers, allow_redirects=False)
                         try:
-                            open(image, "wb").write(getter.content)
+                            with open(image, "wb") as img_f:
+                                img_f.write(getter.content)
                             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                                   Language.Translation.Translate_Language(LangFile, "Username", "Default", "Success"))
                             Downloader.checkFile(image,"Image")
@@ -521,7 +518,8 @@ class Downloader:
                                 getter = requests.get(
                                     profile_pic, headers=headers, allow_redirects=False)
                                 try:
-                                    open(image, "wb").write(getter.content)
+                                    with open(image, "wb") as img_f:
+                                        img_f.write(getter.content)
                                     print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                                           "DOWNLOAD SUCCESSFULL..")
                                     j = j+1
@@ -617,24 +615,24 @@ class Downloader:
                     os.mkdir(data_fold)
                     filename = data_fold + \
                         "/Post_{}_details.txt".format(str(i))
-                    f = open(filename, "w", encoding="utf-8")
-                    f.write("POST N°{} DATA:\n".format(str(i)))
-                    f.write("IS A RETWEET: {}\r\n".format(text))
-                    if retweet2 == "TRUE":
-                        f.write("FULL-NAME: {}\r\n".format(nameOrig))
-                        f.write("DESCRIPTION: {}\r\n".format(userOrig))
-                    f.write("IS A REPLY: {}\r\n".format(comment))
-                    if replayed == "TRUE":
-                        f.write("DESCRIPTION: {}\r\n".format(repUser))
-                    f.write("DESCRIPTION: {}\r\n".format(text))
-                    f.write("COMMENTS: {}\r\n".format(comment))
-                    f.write("LIKES: {}\r\n".format(likes))
-                    f.write("RETWEETS: {}\r\n".format(retweet))
-                    f.write("QUOTES: {}\r\n".format(quote))
-                    f.write("POSTED ON: {}\r\n".format(date))
-                    f.write("TAGGED-USERS: {}\r\n".format(", ".join(TempUser)))
-                    f.write("HASHTAGS: {}\r\n".format(", ".join(TempHashtag)))
-                    f.write("LINKS: {}\r\n".format(", ".join(TempLinks)))
+                    with open(filename, "w", encoding="utf-8") as f:
+                        f.write("POST N°{} DATA:\n".format(str(i)))
+                        f.write("IS A RETWEET: {}\r\n".format(text))
+                        if retweet2 == "TRUE":
+                            f.write("FULL-NAME: {}\r\n".format(nameOrig))
+                            f.write("DESCRIPTION: {}\r\n".format(userOrig))
+                        f.write("IS A REPLY: {}\r\n".format(comment))
+                        if replayed == "TRUE":
+                            f.write("DESCRIPTION: {}\r\n".format(repUser))
+                        f.write("DESCRIPTION: {}\r\n".format(text))
+                        f.write("COMMENTS: {}\r\n".format(comment))
+                        f.write("LIKES: {}\r\n".format(likes))
+                        f.write("RETWEETS: {}\r\n".format(retweet))
+                        f.write("QUOTES: {}\r\n".format(quote))
+                        f.write("POSTED ON: {}\r\n".format(date))
+                        f.write("TAGGED-USERS: {}\r\n".format(", ".join(TempUser)))
+                        f.write("HASHTAGS: {}\r\n".format(", ".join(TempHashtag)))
+                        f.write("LINKS: {}\r\n".format(", ".join(TempLinks)))
                     i = i+1
                     TempUser.clear()
                     sleep(3)
@@ -665,15 +663,14 @@ class Downloader:
                 j = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TWITTER TAGGED USERS")
-                f = open(report, "a")
-                f.write("\nGETTING TWITTER TAGGED USERS:\n")
-                for User in TaggedUser:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
-                        str(j)) + User + ": https://twitter.com/{}".format(User))
-                    f.write("USER N°{}: ".format(
-                        str(j)) + User + ": https://twitter.com/{}".format(User) + "\n")
-                    j = j + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TWITTER TAGGED USERS:\n")
+                    for User in TaggedUser:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
+                            str(j)) + User + ": https://twitter.com/{}".format(User))
+                        f.write("USER N°{}: ".format(
+                            str(j)) + User + ": https://twitter.com/{}".format(User) + "\n")
+                        j = j + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/Twitter_Posts/Users.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(
@@ -687,15 +684,14 @@ class Downloader:
                 x = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TWITTER TAGGED-HASHTAGS")
-                f = open(report, "a")
-                f.write("\nGETTING TWITTER TAGGED HASHTAGS:\n")
-                for Tag in TaggedHastag:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
-                        str(x)) + Tag + ": https://twitter.com/hashtag/{}".format(Tag))
-                    f.write("USER N°{}: ".format(
-                        str(x)) + Tag + ": https://twitter.com/hashtag/{}".format(Tag) + "\n")
-                    x = x + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TWITTER TAGGED HASHTAGS:\n")
+                    for Tag in TaggedHastag:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
+                            str(x)) + Tag + ": https://twitter.com/hashtag/{}".format(Tag))
+                        f.write("USER N°{}: ".format(
+                            str(x)) + Tag + ": https://twitter.com/hashtag/{}".format(Tag) + "\n")
+                        x = x + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/Twitter_Posts/Hashtags.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(
@@ -709,15 +705,14 @@ class Downloader:
                 x = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TWITTER POST HYPERLINKS:")
-                f = open(report, "a")
-                f.write("\nGETTING TWITTER POST HYPERLINKS:\n")
-                for Link in TaggedLink:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK N°{}: ".format(
-                        str(x)) + Link)
-                    f.write("LINK N°{}: ".format(
-                        str(x)) + Link + "\n")
-                    x = x + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TWITTER POST HYPERLINKS:\n")
+                    for Link in TaggedLink:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK N°{}: ".format(
+                            str(x)) + Link)
+                        f.write("LINK N°{}: ".format(
+                            str(x)) + Link + "\n")
+                        x = x + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/Twitter_Posts/Links.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(
@@ -788,7 +783,8 @@ class Downloader:
                         sleep(2)
                         getter = requests.get(
                             video, headers=headers, allow_redirects=True)
-                        open(filename, "wb").write(getter.content)
+                        with open(filename, "wb") as vid_f:
+                            vid_f.write(getter.content)
                         print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                             LangFile, "Username", "Default", "Success"))
                         Downloader.checkFile(filename,"Video")
@@ -797,7 +793,8 @@ class Downloader:
                         sleep(2)
                         getter2 = requests.get(
                             poster, headers=headers, allow_redirects=True)
-                        open(reportImage, "wb").write(getter2.content)
+                        with open(reportImage, "wb") as img_f:
+                            img_f.write(getter2.content)
                         print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                             LangFile, "Username", "Default", "Success"))
                         Downloader.checkFile(reportImage,"Image")
@@ -867,18 +864,17 @@ class Downloader:
                         print(
                             Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "TAGGED-LINKS:{}".format(Font.Color.WHITE + "[" + Font.Color.GREEN + ", ".join(TempLinks) + Font.Color.WHITE + "]"))
 
-                        f = open(report, "w", encoding="utf-8")
-                        f.write("TITLE: {}\n".format(name))
-                        f.write("DETAILS: {}".format(
-                            details.replace("\n", "")))
-                        f.write("\nPOSTED ON: {}\n".format(date))
-                        """f.write("\nPLAYED: {}".format(play))
-                        f.write("\nCOMMENTS: {}".format(comments))
-                        f.write("\nSHARES: {}\n".format(shares))"""
-                        f.write("SONG: {}\r\n".format(music.replace("\n", "")))
-                        f.write("TAGGED-USERS: {}\n".format(", ".join(TempUser)))
-                        f.write("TAGGED-HASHTAG: {}".format(", ".join(TempTag)))
-                        f.close()
+                        with open(report, "w", encoding="utf-8") as f:
+                            f.write("TITLE: {}\n".format(name))
+                            f.write("DETAILS: {}".format(
+                                details.replace("\n", "")))
+                            f.write("\nPOSTED ON: {}\n".format(date))
+                            """f.write("\nPLAYED: {}".format(play))
+                            f.write("\nCOMMENTS: {}".format(comments))
+                            f.write("\nSHARES: {}\n".format(shares))"""
+                            f.write("SONG: {}\r\n".format(music.replace("\n", "")))
+                            f.write("TAGGED-USERS: {}\n".format(", ".join(TempUser)))
+                            f.write("TAGGED-HASHTAG: {}".format(", ".join(TempTag)))
                         TempTag.clear()
                         TempUser.clear()
                     i = i+1
@@ -911,15 +907,14 @@ class Downloader:
                 j = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TIKTOK TAGGED USERS")
-                f = open(report, "a")
-                f.write("\nGETTING TIKTOK TAGGED USERS:\n")
-                for User in TaggedUser:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
-                        str(j)) + User + ": https://tiktok.com/{}".format(User))
-                    f.write("USER N°{}: ".format(
-                        str(j)) + User + ": https://tiktok.com/{}".format(User) + "\n")
-                    j = j + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TIKTOK TAGGED USERS:\n")
+                    for User in TaggedUser:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER N°{}: ".format(
+                            str(j)) + User + ": https://tiktok.com/{}".format(User))
+                        f.write("USER N°{}: ".format(
+                            str(j)) + User + ": https://tiktok.com/{}".format(User) + "\n")
+                        j = j + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/TikTok_Posts/Users.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(
@@ -931,15 +926,14 @@ class Downloader:
                 x = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TIKTOK TAGGED HASHTAG")
-                f = open(report, "a")
-                f.write("\nGETTING TIKTOK TAGGED HASHTAG:\n")
-                for Tag in TaggedHashtag:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASHTAG N°{}: ".format(
-                        str(x)) + Tag + ": https://tiktok.com/tag/{}".format(Tag))
-                    f.write("HASHTAG N°{}: ".format(
-                        str(x)) + Tag + ": https://tiktok.com/tag/{}".format(Tag) + "\n")
-                    x = x + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TIKTOK TAGGED HASHTAG:\n")
+                    for Tag in TaggedHashtag:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASHTAG N°{}: ".format(
+                            str(x)) + Tag + ": https://tiktok.com/tag/{}".format(Tag))
+                        f.write("HASHTAG N°{}: ".format(
+                            str(x)) + Tag + ": https://tiktok.com/tag/{}".format(Tag) + "\n")
+                        x = x + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/TikTok_Posts/Hashtags.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(
@@ -951,15 +945,14 @@ class Downloader:
                 v = 1
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + "GETTING TIKTOK TAGGED LINKS")
-                f = open(report, "a")
-                f.write("\nGETTING TIKTOK TAGGED LINKS:\n")
-                for Link in TaggedLink:
-                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK N°{}: ".format(
-                        str(v)) + Link)
-                    f.write("LINK N°{}: ".format(
-                        str(v)) + Link + "\n")
-                    v = v + 1
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nGETTING TIKTOK TAGGED LINKS:\n")
+                    for Link in TaggedLink:
+                        print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK N°{}: ".format(
+                            str(v)) + Link)
+                        f.write("LINK N°{}: ".format(
+                            str(v)) + Link + "\n")
+                        v = v + 1
                 json_file = "GUI/Reports/{}/{}/Profile_pics/TikTok_Posts/Links.json".format(
                     Opt, name2)
                 Downloader.InsertToFile(

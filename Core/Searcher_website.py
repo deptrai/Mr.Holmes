@@ -15,6 +15,7 @@ from Core.Support import Headers
 from Core.Support.Phone import Numbers
 from Core import E_Mail as Mail
 from Core.Support import Proxies
+from Core.proxy.manager import ProxyManager
 from Core.Support import Requests_Search
 from Core.Support import Clear
 from Core.Support.Websites import Scanner
@@ -44,20 +45,11 @@ class Web:
         choice = int(input(
             Font.Color.BLUE + "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "choice", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if choice == 1:
-            http_proxy = Proxies.proxy.final_proxis
-            http_proxy2 = Proxies.proxy.choice3
-            source = "http://ip-api.com/json/" + http_proxy2
-            access = urllib.request.urlopen(source)
-            try:
-                content = access.read()
-                final = json.loads(content)
-                identity = Language.Translation.Translate_Language(
-                    filename, "Default", "ProxyLoc", "None").format(final["regionName"], final["country"])
-            except Exception as e:
-                print("SOMETHING WENT WRONG SORRY")
-                http_proxy = None
-                http_proxy2 = str(http_proxy)
-                identity = "None"
+            _pm = ProxyManager()
+            _pm.configure(1)
+            http_proxy = _pm.get_proxy()
+            http_proxy2 = _pm.proxy_ip
+            identity = _pm.get_identity() or "None"
 
         else:
             http_proxy = None
@@ -132,10 +124,10 @@ class Web:
 
     @staticmethod
     def Ports(username, report):
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Website", "Ports"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Website", "Ports"))
+
         Scanner.Port.Scan(username, report)
         choice = int(input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Website", "Questions", "Traceroute") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
@@ -152,22 +144,19 @@ class Web:
     def Reputation(username, report):
         subject = "DOMAIN/WEBSITE/IP"
         data = "Site_lists/Websites/Lookup.json"
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Website", "Malicious"))
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Website", "Malicious"))
         print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
               Language.Translation.Translate_Language(filename, "Website", "Default", "Research").format(username))
         sc = int(input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "choice", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if sc == 1:
-            http_proxy = Proxies.proxy.final_proxis
-            http_proxy2 = Proxies.proxy.choice3
-            source = "http://ip-api.com/json/" + http_proxy2
-            access = urllib.request.urlopen(source)
-            content = access.read()
-            final = json.loads(content)
-            identity = Language.Translation.Translate_Language(filename, "Default", "ProxyLoc", "None").format(
-                final["regionName"], final["country"])
+            _pm = ProxyManager()
+            _pm.configure(1)
+            http_proxy = _pm.get_proxy()
+            http_proxy2 = _pm.proxy_ip
+            identity = _pm.get_identity() or "None"
         else:
             http_proxy = None
             http_proxy2 = str(http_proxy)
@@ -188,8 +177,9 @@ class Web:
             username, username)
         json_file2 = "GUI/Reports/Websites/{}/{}.json".format(
             username, "Name")
-        f = open(data,)
-        data = json.loads(f.read())
+        with open(data) as f:
+            data = json.loads(f.read())
+
         for sites in data:
             for data1 in sites:
                 name = sites[data1]["name"]
@@ -225,27 +215,27 @@ class Web:
             else:
                 print(Font.Color.YELLOW + "\n[v]" + Font.Color.WHITE +
                       Language.Translation.Translate_Language(filename, "Website", "Default", "Secure").format(username))
-                f = open(report, "a")
-                f.write(Language.Translation.Translate_Language(
-                    filename, "Report", "Website", "Safe"))
-                f.close()
+                with open(report, "a") as f:
+                    f.write(Language.Translation.Translate_Language(
+                        filename, "Report", "Website", "Safe"))
+
             consultFile = "Site_lists/Websites/Consult.json"
             print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Website", "Default", "Info"))
-            f = open(consultFile,)
-            data = json.loads(f.read())
+            with open(consultFile) as f:
+                data = json.loads(f.read())
             for sites in data:
                 for data1 in sites:
                     site1 = sites[data1]["url"].replace("{}", username)
                     print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site1)
-            f = open(report, "a")
-            f.write(Language.Translation.Translate_Language(
-                filename, "Report", "Website", "Info"))
-            for sites in data:
-                for data1 in sites:
-                    site1 = sites[data1]["url"].replace("{}", username)
-                    f.write(site1+"\n")
-            f.close()
+            with open(report, "a") as f:
+                f.write(Language.Translation.Translate_Language(
+                    filename, "Report", "Website", "Info"))
+                for sites in data:
+                    for data1 in sites:
+                        site1 = sites[data1]["url"].replace("{}", username)
+                        f.write(site1+"\n")
+
             choice = int(input(
                     Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Website", "Questions", "Soc") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
             if choice == 1:
@@ -270,20 +260,17 @@ class Web:
     def Robots(username, report):
         headers = Headers.Get.classic()
         name = "Site_lists/Websites/Robots.json"
-        f = open(name,)
-        print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
-              "DOWNLOADING {} Robots.txt".format(username))
+        with open(name) as f:
+            final = json.loads(f.read())
+
         choice = int(input(
             Font.Color.BLUE + "\n[?]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "choice", "None") + Font.Color.GREEN + "[#MR.HOLMES#]" + Font.Color.WHITE + "-->"))
         if choice == 1:
-            http_proxy = Proxies.proxy.final_proxis
-            http_proxy2 = Proxies.proxy.choice3
-            source = "http://ip-api.com/json/" + http_proxy2
-            access = urllib.request.urlopen(source)
-            content = access.read()
-            final = json.loads(content)
-            identity = Language.Translation.Translate_Language(
-                filename, "Default", "ProxyLoc", "None").format(final["regionName"], final["country"])
+            _pm = ProxyManager()
+            _pm.configure(1)
+            http_proxy = _pm.get_proxy()
+            http_proxy2 = _pm.proxy_ip
+            identity = _pm.get_identity() or "None"
         else:
             http_proxy = None
             http_proxy2 = str(http_proxy)
@@ -351,10 +338,10 @@ class Web:
         proces = os.popen(command)
         results = str(proces.read())
         print(results)
-        f = open(report, "a")
-        f.write("\n\nTRACEROUTE SEQUENCE:" + "\r\n")
-        f.write(results)
-        f.close()
+        with open(report, "a") as f:
+            f.write("\n\nTRACEROUTE SEQUENCE:" + "\r\n")
+            f.write(results)
+
 
     @staticmethod
     def google_dork(username, number, num, email, email2):
@@ -370,40 +357,38 @@ class Web:
         Dorks.Search.dork(username, report, nomefile, Type)
         Web.yandex_dork(username, report)
         if number == True:
-            f = open(report, "a")
-            f.write("\nGENERATING LINK FOR {} PHONE NUMBER {}...\n".format(
-                username, num))
-            f.close()
+            with open(report, "a") as f:
+                f.write("\nGENERATING LINK FOR {} PHONE NUMBER {}...\n".format(
+                    username, num))
+
             print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Website", "Default", "Phone").format(username, num))
             phonen = "Site_lists/Websites/ExtraDorks.txt"
-            f = open(phonen, "r")
-            for sites in f:
-                site = sites.rstrip("\n")
-                site = site.replace("{}", num)
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
-                f = open(report, "a")
-                f.write(site + "\n")
-                f.close()
-                sleep(2)
-            f.close()
+            with open(phonen, "r") as fp_file:
+                for sites in fp_file:
+                    site = sites.rstrip("\n")
+                    site = site.replace("{}", num)
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
+                    with open(report, "a") as f:
+                        f.write(site + "\n")
+                    sleep(2)
+
         if email == True:
-            f = open(report, "a")
-            f.write("\nGENERATING LINK FOR {} EMAIL {}...\n".format(
-                username, email2))
-            f.close()
+            with open(report, "a") as f:
+                f.write("\nGENERATING LINK FOR {} EMAIL {}...\n".format(
+                    username, email2))
+
             print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE +
                   Language.Translation.Translate_Language(filename, "Website", "Default", "Email").format(username, email2))
-            f = open(phonen, "r")
-            for sites in f:
-                site = sites.rstrip("\n")
-                site = site.replace("{}", email2)
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
-                f = open(report, "a")
-                f.write(site + "\n")
-                f.close()
-                sleep(2)
-            f.close()
+            with open(phonen, "r") as fp_file:
+                for sites in fp_file:
+                    site = sites.rstrip("\n")
+                    site = site.replace("{}", email2)
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + site)
+                    with open(report, "a") as f:
+                        f.write(site + "\n")
+                    sleep(2)
+
         else:
             pass
         report = "GUI/Reports/Websites/{}/{}.txt".format(username, username)
@@ -454,10 +439,10 @@ class Web:
                 results = str(proces.read())
                 final = results + command
                 print(Font.Color.WHITE + results)
-                f = open(report, "a")
-                f.write("\nWEBSITE DATA:" + "\r\n")
-                f.write(results)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nWEBSITE DATA:" + "\r\n")
+                    f.write(results)
+
                 num = None
                 number = False
                 em = None
@@ -548,21 +533,21 @@ class Web:
                 print(Font.Color.GREEN +
                       "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Website", "Default", "Maps"))
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + link)
-                f = open(report, "a")
-                f.write("\nWEBSITE DATA:" + "\r\n")
-                f.write(created + "\r\n")
-                f.write(modified + "\r\n")
-                f.write(expired + "\r\n")
-                f.write(domain + "\r\n")
-                f.write(organization + "\r\n")
-                f.write(nation + "\r\n")
-                f.write(nationCode + "\r\n")
-                f.write(state + "\r\n")
-                f.write(city + "\r\n")
-                f.write(street + "\r\n")
-                f.write(email + "\r\n")
-                f.write(telephone + "\r\n")
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nWEBSITE DATA:" + "\r\n")
+                    f.write(created + "\r\n")
+                    f.write(modified + "\r\n")
+                    f.write(expired + "\r\n")
+                    f.write(domain + "\r\n")
+                    f.write(organization + "\r\n")
+                    f.write(nation + "\r\n")
+                    f.write(nationCode + "\r\n")
+                    f.write(state + "\r\n")
+                    f.write(city + "\r\n")
+                    f.write(street + "\r\n")
+                    f.write(email + "\r\n")
+                    f.write(telephone + "\r\n")
+
                 try:
                     link_json = "https://nominatim.openstreetmap.org/search?q={}+{}&format=json".format(
                         street2, city2).replace(" ", "%20")
@@ -607,9 +592,9 @@ class Web:
                             shutil.rmtree(folder)
                         os.mkdir(folder)
                         report2 = folder + "/{}.txt".format(num)
-                        f = open(report2, "w")
-                        f.write("\nPHONE NUMBER DATA:\n")
-                        f.close()
+                        with open(report2, "w") as f:
+                            f.write("\nPHONE NUMBER DATA:\n")
+
                         code = 0
                         try:
                             Numbers.Phony.Number(
@@ -654,10 +639,10 @@ class Web:
                 results = str(proces.read())
                 final = results + command
                 print(Font.Color.WHITE + results)
-                f = open(report, "a")
-                f.write("\nWEBSITE DATA:" + "\r\n")
-                f.write(results)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\nWEBSITE DATA:" + "\r\n")
+                    f.write(results)
+
             print(Font.Color.GREEN +
                   "\n[+]" + Font.Color.WHITE + "GETTING REPUTATION RATING...")
             try:
@@ -670,30 +655,30 @@ class Web:
                 tests = final["testResults"]
                 print(Font.Color.YELLOW +
                       "[v]" + Font.Color.WHITE + "REPUTATION RATING: {}".format(repu))
-                f = open(report, "a")
-                f.write("\n\nREPUTATION RATING: {}\r\n".format(repu))
-                for test1 in tests:
-                    print(Font.Color.GREEN +
-                          "\n[+]" + Font.Color.WHITE + "TEST-NAME: {}".format(test1["test"]))
-                    print(Font.Color.YELLOW +
-                          "[v]" + Font.Color.WHITE + "TEST-CODE: {}".format(test1["testCode"]))
-                    print(Font.Color.GREEN +
-                          "[+]" + Font.Color.WHITE + "WARNING LISTS FOR TEST: {}".format(test1["test"]))
-                    f.write("TEST-NAME: {}".format(test1["test"]) + "\r\n")
-                    f.write("TEST-CODE: {}".format(test1["testCode"]) + "\r\n")
-                    f.write("TEST-NAME: {}".format(test1["test"]) + "\r\n")
-                    f.write("WARNING LISTS FOR TEST: {}".format(
-                        test1["test"]) + "\r\n")
-                    for warning1 in test1["warnings"]:
+                with open(report, "a") as f:
+                    f.write("\n\nREPUTATION RATING: {}\r\n".format(repu))
+                    for test1 in tests:
+                        print(Font.Color.GREEN +
+                              "\n[+]" + Font.Color.WHITE + "TEST-NAME: {}".format(test1["test"]))
                         print(Font.Color.YELLOW +
-                              "[v]" + Font.Color.WHITE + "DESCRIPTION: {}".format(warning1["warningDescription"]))
-                        print(Font.Color.YELLOW +
-                              "[v]" + Font.Color.WHITE + "CODE: {}".format(warning1["warningCode"]))
-                        f.write("DESCRIPTION: {}".format(
-                            warning1["warningDescription"]) + "\r\n")
-                        f.write("CODE: {}".format(
-                            warning1["warningCode"]) + "\r\n")
-                    f.close()
+                              "[v]" + Font.Color.WHITE + "TEST-CODE: {}".format(test1["testCode"]))
+                        print(Font.Color.GREEN +
+                              "[+]" + Font.Color.WHITE + "WARNING LISTS FOR TEST: {}".format(test1["test"]))
+                        f.write("TEST-NAME: {}".format(test1["test"]) + "\r\n")
+                        f.write("TEST-CODE: {}".format(test1["testCode"]) + "\r\n")
+                        f.write("TEST-NAME: {}".format(test1["test"]) + "\r\n")
+                        f.write("WARNING LISTS FOR TEST: {}".format(
+                            test1["test"]) + "\r\n")
+                        for warning1 in test1["warnings"]:
+                            print(Font.Color.YELLOW +
+                                  "[v]" + Font.Color.WHITE + "DESCRIPTION: {}".format(warning1["warningDescription"]))
+                            print(Font.Color.YELLOW +
+                                  "[v]" + Font.Color.WHITE + "CODE: {}".format(warning1["warningCode"]))
+                            f.write("DESCRIPTION: {}".format(
+                                warning1["warningDescription"]) + "\r\n")
+                            f.write("CODE: {}".format(
+                                warning1["warningCode"]) + "\r\n")
+
             except Exception as e:
                 pass
         choice = int(input(
@@ -785,23 +770,23 @@ class Web:
                   "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Website", "Default", "Maps"))
             sleep(2)
             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + link)
-            f = open(report, "a")
-            f.write(Language.Translation.Translate_Language(
-                filename, "Report", "Default", "Date").format(Date) + "\r\n")
-            f.write(ip + "\r\n")
-            f.write(country + "\r\n")
-            f.write(country_code + "\r\n")
-            f.write(region + "\r\n")
-            f.write(regionName + "\r\n")
-            f.write(city + "\r\n")
-            f.write(timezone + "\r\n")
-            f.write(isp + "\r\n")
-            f.write(org + "\r\n")
-            f.write(asp + "\r\n")
-            f.write(final_lat + "\r\n")
-            f.write(final_lon + "\r\n")
-            f.write(zip_data + "\r\n")
-            f.close()
+            with open(report, "a") as f:
+                f.write(Language.Translation.Translate_Language(
+                    filename, "Report", "Default", "Date").format(Date) + "\r\n")
+                f.write(ip + "\r\n")
+                f.write(country + "\r\n")
+                f.write(country_code + "\r\n")
+                f.write(region + "\r\n")
+                f.write(regionName + "\r\n")
+                f.write(city + "\r\n")
+                f.write(timezone + "\r\n")
+                f.write(isp + "\r\n")
+                f.write(org + "\r\n")
+                f.write(asp + "\r\n")
+                f.write(final_lat + "\r\n")
+                f.write(final_lon + "\r\n")
+                f.write(zip_data + "\r\n")
+
             data = {
                 "Geolocation": {
                     "Latitude": lat2.replace(" ", "%20"),
@@ -854,10 +839,10 @@ class Web:
                                 if choice == 1:
                                     Web.trace(username, report)
 
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "By"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "By"))
+
         print(Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Report", "None") +
               report)
         Notification.Notifier.Start(Mode)

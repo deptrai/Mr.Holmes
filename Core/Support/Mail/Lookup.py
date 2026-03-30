@@ -31,9 +31,9 @@ class List:
         else:
             response = Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name)
             print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name))
-        f = open(report,"a")
-        f.write("\n"+ response)
-        f.close()
+        with open(report, "a") as f:
+            f.write("\n"+ response)
+
 
     @staticmethod
     def Twitter(report,email,name):
@@ -50,9 +50,9 @@ class List:
             elif output == True:
                 response = Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name)
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name))
-            f = open(report,"a")
-            f.write("\n"+ response)
-            f.close()
+            with open(report, "a") as f:
+                f.write("\n"+ response)
+
         except Exception as e:
             print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
     
@@ -67,9 +67,9 @@ class List:
         else:
             response = Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name)
             print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name))
-        f = open(report,"a")
-        f.write("\n"+ response)
-        f.close()
+        with open(report, "a") as f:
+            f.write("\n"+ response)
+
     
     @staticmethod
     def Github(report,email,name):
@@ -86,21 +86,20 @@ class List:
             if output == 0:
                 response = Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name)
                 print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name))
-                f = open(report,"a")
-                f.write("\n"+ response)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\n"+ response)
+
             elif output == 1:
                 response = Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name)
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name) + "\n")
-                f = open(report,"a")
-                f.write("\n"+ response)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\n"+ response)
             elif output >1:
                 response = Language.Translation.Translate_Language(filename, "Email", "MultipleRes", "None").format(name,(str(output)))
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +  Language.Translation.Translate_Language(filename, "Email", "MultipleRes", "None").format(name,str(output)) + "\n")
-                f = open(report,"a")
-                f.write("\n"+ response)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\n"+ response)
+
             if output == 0:
                 pass
             else:
@@ -115,22 +114,19 @@ class List:
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USER FOUND: {}".format(Font.Color.WHITE + usern + Font.Color.WHITE))
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(Font.Color.WHITE + profile_pic + Font.Color.WHITE))
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "LINK: {}\n".format(Font.Color.WHITE + link + Font.Color.WHITE))
-                f = open(report,"a")
-                f.write("\nUSER FOUND: {}".format(usern))
-                f.write("\nPROFILE-PIC: {}".format(profile_pic))
-                f.write("\nLINK: {}\n".format(link))
+                with open(report, "a") as f:
+                    f.write("\nUSER FOUND: {}".format(usern))
+                    f.write("\nPROFILE-PIC: {}".format(profile_pic))
+                    f.write("\nLINK: {}\n".format(link))
                 Image.append(profile_pic)
                 username.append(usern)
                 Link.append(link)
-                f.close()
+
                 if len(username):
                     json_file = "GUI/Reports/E-Mail/{}/Github.json".format(email)
-                    f = open(json_file, "w")
-                    f.write('''{
-                                "List":[
-                                ]
-                            }''')
-                    f.close()
+                    with open(json_file, "w") as f:
+                        f.write('''{\n                                "List":[\n                                ]\n                            }''')
+
 
                     i = 0
                     for image in Image:
@@ -163,15 +159,15 @@ class List:
             req = requests.get(url,headers=headers)
             if "User not found" in req.text:
                 response = Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name)
-                f = open(report,"a")
-                f.write("\n"+ response)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\n"+ response)
+
                 print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "FalseRes", "None").format(name))
             else:
                 response = Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name)
-                f = open(report,"a")
-                f.write("\n"+ response)
-                f.close()
+                with open(report, "a") as f:
+                    f.write("\n"+ response)
+
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name))
                 reader = req.text
                 converted = json.loads(reader)
@@ -196,50 +192,42 @@ class List:
                     modification = converted["entry"][0]["last_profile_edit"]
                 else:
                     modification = "None"
-                f = open(report, "a", encoding="utf-8")
-                f.write("\nGRAVATAR DATA:\n")
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASH: {}".format(hashid))
-                f.write("HASH: {}\r\n".format(hashid))
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
-                f.write("USERNAME: {}\r\n".format(user))
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "DISPLAY-NAME: {}".format(displayname))
-                f.write("DISPLAY-NAME: {}\r\n".format(displayname))
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
-                f.write("NAME: {}\r\n".format(name))
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(bio))
-                f.write("BIO: {}\r\n".format(bio))
-                
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "UPADTED ON: {}".format(modification))
-                f.write("UPDATED-ON: {}\r\n".format(modification))
-                i = 1
-                if urls != "None":
-                    for url in urls:
-                        print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE +  "LINK N°{}: {}".format(i,url["value"]))
-                        f.write("LINK N°{}: {}\r\n".format(i,url["value"]))
-                        i = i +1
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
-                f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
-                print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-LINK: {}".format(link))
-                f.write("PROFILE-LINK: {}\r\n".format(link))
-                f.close()
-                Image.append(profile_pic)
-                username.append(user)
-                Link.append(link)
-                Names.append(name)
-                f.close()
+                with open(report, "a", encoding="utf-8") as f:
+                    f.write("\nGRAVATAR DATA:\n")
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "HASH: {}".format(hashid))
+                    f.write("HASH: {}\r\n".format(hashid))
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "USERNAME: {}".format(user))
+                    f.write("USERNAME: {}\r\n".format(user))
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "DISPLAY-NAME: {}".format(displayname))
+                    f.write("DISPLAY-NAME: {}\r\n".format(displayname))
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "NAME: {}".format(name))
+                    f.write("NAME: {}\r\n".format(name))
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "BIO: {}".format(bio))
+                    f.write("BIO: {}\r\n".format(bio))
+                    
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "UPADTED ON: {}".format(modification))
+                    f.write("UPDATED-ON: {}\r\n".format(modification))
+                    i = 1
+                    if urls != "None":
+                        for url in urls:
+                            print(Font.Color.YELLOW + "[V]" + Font.Color.WHITE +  "LINK N°{}: {}".format(i,url["value"]))
+                            f.write("LINK N°{}: {}\r\n".format(i,url["value"]))
+                            i = i +1
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-PIC: {}".format(profile_pic))
+                    f.write("PROFILE-PIC: {}\r\n".format(profile_pic))
+                    print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + "PROFILE-LINK: {}".format(link))
+                    f.write("PROFILE-LINK: {}\r\n".format(link))
+
                 if len(username):
                     json_file = "GUI/Reports/E-Mail/{}/Gravatar.json".format(email)
-                    f = open(json_file, "w")
-                    f.write('''{
-                                "List":[
-                                ]
-                            }''')
-                    f.close()
+                    with open(json_file, "w") as f:
+                        f.write('''{\n                                "List":[\n                                ]\n                            }''')
+
 
                     i = 0
                     for image in Image:
@@ -278,9 +266,9 @@ class List:
             elif output == False:
                 response = Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name)
                 print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "TrueRes", "None").format(name))
-            f = open(report,"a")
-            f.write("\n"+ response)
-            f.close()
+            with open(report, "a") as f:
+                f.write("\n"+ response)
+
         except Exception as e:
             print(Font.Color.RED + "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Default", "Error", "None") + str(e))
      

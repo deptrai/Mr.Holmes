@@ -23,9 +23,9 @@ class Transfer:
             new = "Transfer/{}{}".format(name,extension)
             shutil.copyfile(report,new)
             temp = "Transfer/file.txt"
-            f = open(temp,"w")
-            f.write(name + extension)
-            f.close()
+            with open(temp, "w") as f:
+                f.write(name + extension)
+
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(('8.8.8.8', 1))
             host = s.getsockname()[0]
