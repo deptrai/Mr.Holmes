@@ -1,6 +1,6 @@
 # Story 8.3: Interactive Mindmap Generation
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 **As an** OSINT Investigator
@@ -17,12 +17,12 @@ Status: ready-for-dev
 - AC7: Have appropriate unit tests.
 
 ## Tasks/Subtasks
-- [ ] 1. Define standard Vis.js HTML template (string or file) loading `vis-network` from CDN.
-- [ ] 2. Create `MindmapGenerator` class in `Core/engine/mindmap_generator.py`.
-- [ ] 3. Implement graph data serialization (convert backend nodes/edges to Vis.js nodes/edges format).
-- [ ] 4. Implement HTML file generation logic embedding the serialized JSON via `.replace()` or Jinja2.
-- [ ] 5. Write unit tests for `MindmapGenerator` (`tests/engine/test_mindmap_generator.py`).
-- [ ] 6. Update `demo_story8_2.py` (rename it to `demo_epic8.py` if wanted) to also output an `output_mindmap.html` to visually verify.
+- [x] 1. Define standard Vis.js HTML template (string or file) loading `vis-network` from CDN.
+- [x] 2. Create `MindmapGenerator` class in `Core/engine/mindmap_generator.py`.
+- [x] 3. Implement graph data serialization (convert backend nodes/edges to Vis.js nodes/edges format).
+- [x] 4. Implement HTML file generation logic embedding the serialized JSON via `.replace()` or Jinja2.
+- [x] 5. Write unit tests for `MindmapGenerator` (`tests/engine/test_mindmap_generator.py`).
+- [x] 6. Update `demo_story8_2.py` to also output an `output_mindmap.html` to visually verify.
 
 ## Dev Notes
 - **Architecture**: The `MindmapGenerator` should be fully decoupled from the RecursiveProfiler (Story 8.1) and LLMSynthesizer (Story 8.2). It expects the exact same `graph_dict` interface (`nodes`, `edges`, `plugin_results`).
@@ -31,12 +31,14 @@ Status: ready-for-dev
 - **Visuals**: Map `depth == 0` (Seed) to a distinct color (e.g., Red/Star), `depth == 1` to Orange, etc. Include standard physics to let the graph "settle" beautifully.
 
 ## Dev Agent Record
-- **Debug Log**:
-- **Completion Notes**:
+- **Debug Log**: Không có lỗi đáng kể. vis-network CDN load suôn sẻ. Template dùng `.format()` thay Jinja2 (không cần dependency mới).
+- **Completion Notes**: 28/28 unit tests PASSED. HTML được verify thực tế trên browser — star node đỏ (seed), diamond xanh (IP), box xanh lá (DOMAIN), ellipse tím (USERNAME). Edge labels hiển thị tên plugin (Shodan, SearxngOSINT, LeakLookup). UI có controls Fit/Physics và Legend.
 
 ## File List
 - `[NEW] Core/engine/mindmap_generator.py`
 - `[NEW] tests/engine/test_mindmap_generator.py`
+- `[MODIFY] demo_story8_2.py` (thêm Phase 3 Mindmap)
 
 ## Change Log
 - 2026-03-31: Story created and marked ready-for-dev.
+- 2026-03-31: Implementation complete — 28 tests pass, HTML verified in browser. Status → review.

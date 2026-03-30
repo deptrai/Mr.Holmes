@@ -4,6 +4,7 @@ import dotenv
 
 from Core.engine.autonomous_agent import RecursiveProfiler
 from Core.engine.llm_synthesizer import LLMSynthesizer
+from Core.engine.mindmap_generator import MindmapGenerator
 from Core.plugins.manager import PluginManager
 
 DIVIDER = "=" * 70
@@ -11,7 +12,7 @@ DIVIDER = "=" * 70
 async def main():
     dotenv.load_dotenv(".env")
     print(DIVIDER)
-    print("🧠 DEMO: RECURSIVE PROFILER + LLM SYNTHESIS (Stories 8.1 + 8.2)")
+    print("🧠 DEMO: RECURSIVE PROFILER + LLM SYNTHESIS + MINDMAP (Stories 8.1 + 8.2 + 8.3)")
     print(DIVIDER)
     
     # 1. Init plugins
@@ -36,7 +37,7 @@ async def main():
     
     print(f"[*] Mồi câu ban đầu (Seed): {target} ({target_type})")
     print(f"[*] Chiều sâu quét đệ quy (Max Depth): {max_depth}")
-    print("\n⏳ [Phase 1/2] Đang chạy lõi đệ quy thu thập dữ liệu (Takes ~10-20s)...")
+    print("\n⏳ [Phase 1/3] Đang chạy lõi đệ quy thu thập dữ liệu (Takes ~10-20s)...")
     
     # 2. Run ReconEngine
     agent = RecursiveProfiler(max_depth=max_depth)
@@ -51,11 +52,9 @@ async def main():
     print(f"✅ Thu thập hoàn tất: {nodes_count} Entities, {edges_count} Relationships.")
     
     # 3. Run LLM Synthesizer
-    print("\n⏳ [Phase 2/2] Đang chuyển dữ liệu nguyên thủy cho LLM (v98store) tổng hợp Báo Cáo...")
+    print("\n⏳ [Phase 2/3] Đang chuyển dữ liệu nguyên thủy cho LLM (v98store) tổng hợp Báo Cáo...")
     
     synth = LLMSynthesizer() 
-    # Notice synth reads env vars: MH_LLM_BASE_URL, MH_LLM_API_KEY, MH_LLM_MODEL
-    
     result = await synth.synthesize(graph_dict)
     
     print("\n" + DIVIDER)
@@ -66,7 +65,19 @@ async def main():
     print(DIVIDER)
     print(result.report_markdown)
     print(DIVIDER)
+
+    # 4. Generate Interactive Mindmap HTML  ← Story 8.3
+    print("\n⏳ [Phase 3/3] Đang tạo biểu đồ HTML Mindmap tương tác...")
+    gen = MindmapGenerator()
+    html_content = gen.generate(graph_dict)
+
+    output_path = "output_mindmap.html"
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
     
+    print(f"✅ Mindmap HTML đã được lưu tại: {output_path}")
+    print(f"   → Mở bằng trình duyệt để xem biểu đồ tương tác!")
+    print(DIVIDER)
     print("DEMO HOÀN TẤT.")
 
 if __name__ == "__main__":
