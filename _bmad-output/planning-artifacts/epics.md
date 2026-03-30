@@ -115,6 +115,19 @@ stepsCompleted: [validate-prerequisites, design-epics]
 
 ---
 
+---
+
+### Epic 8: Autonomous Profiler (Deep OSINT Agent)
+**Mục tiêu:** User có thể nhập một manh mối khởi điểm và hệ thống sẽ tự động quét đệ quy các module, sau đó gọi LLM tổng hợp ra một profile chi tiết. Hệ thống thay thế tra cứu thủ công bằng một lõi AI.
+
+**FRs covered:** (Mới) Recursive Scanning, LLM Synthesis, Multi-format Output (JSON, PDF, Mindmap)
+
+**Stories:**
+1. **Story 8.1:** Thiết kế lõi chạy đệ quy (Recursive Profiling Engine) để tự động hóa cross-trigger plugins.
+2. **Story 8.2:** Tích hợp OpenAI Compatible API để xử lý mạn dữ liệu JSON thành Analyst Report.
+3. **Story 8.3:** Tạo module xuất biểu đồ mạng (Interactive HTML Mindmap).
+4. **Story 8.4:** Tích hợp tùy chọn 16 vào CLI Menu và xử lý Data I/O.
+
 ## FR Coverage Map
 
 | FR | Epic | Mô tả |

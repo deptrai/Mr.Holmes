@@ -104,3 +104,11 @@ development_status:
   7-5-leak-lookup-integration: done
   7-6-searxng-osint-integration: done
   epic-7-retrospective: optional
+
+  # === Epic 8: Autonomous Profiler (Deep OSINT Agent) ===
+  epic-8: in-progress
+  8-1-autonomous-profiler-engine: ready-for-dev
+  8-2-llm-synthesis-integration: backlog
+  8-3-interactive-mindmap-generation: backlog
+  8-4-cli-menu-integration: backlog
+  epic-8-retrospective: optional
