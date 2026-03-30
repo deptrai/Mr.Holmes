@@ -1,6 +1,6 @@
 # Story 7.2: HaveIBeenPwned Integration
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,10 +18,10 @@ so that data breach exposure được phát hiện trong OSINT investigation.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Implement `HIBPPlugin` class
-- [ ] Task 2 — HIBP API v3 client (with rate limiting)
-- [ ] Task 3 — Parse breach results into PluginResult
-- [ ] Task 4 — Unit tests with mocked API responses
+- [x] Task 1 — Implement `HIBPPlugin` class
+- [x] Task 2 — HIBP API v3 client (with rate limiting)
+- [x] Task 3 — Parse breach results into PluginResult
+- [x] Task 4 — Unit tests with mocked API responses
 
 ## Dev Notes
 
@@ -41,5 +41,18 @@ Core/plugins/
 
 ## Dev Agent Record
 ### Agent Model Used
+Gemini 1.5 Pro
+
 ### Completion Notes List
+- Bmad Dev Agent successfully implemented `HIBPPlugin` complying with the OSINT platform `IntelligencePlugin` pattern.
+- Robust, global async rate limitation handling constructed using `asyncio.Lock()` enforcing the required API v3 1500ms delay.
+- Exhaustive API mocking and exception trapping covering endpoints states: 404, 401, 429, general networking drops.
+- Test coverage hits all structural constraints. Full suite regression 100% green (523 tests).
+
 ### File List
+- `Core/plugins/hibp.py`
+- `tests/plugins/test_hibp.py`
+
+### Review Findings
+- [x] [Review][Patch] Lock is held during network request, creating bottleneck. Move `ClientSession` out of `async with lock:` [Core/plugins/hibp.py:75]
+- [x] [Review][Defer] ClientSession created per request instead of pooling. Minor performance hit, acceptable for now without global session changes. — deferred, architectural

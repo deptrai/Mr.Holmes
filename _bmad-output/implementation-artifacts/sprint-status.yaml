@@ -1,5 +1,5 @@
 # generated: 2026-03-26T23:06:00+07:00
-# last_updated: 2026-03-26T23:06:00+07:00
+# last_updated: 2026-03-30
 # project: Mr.Holmes
 # project_key: NOKEY
 # tracking_system: file-system
@@ -98,7 +98,7 @@ development_status:
   # === Epic 7: External Intelligence APIs ===
   epic-7: in-progress
   7-1-plugin-interface-design: done
-  7-2-haveibeenpwned-integration: ready-for-dev
+  7-2-haveibeenpwned-integration: done
   7-3-shodan-integration: ready-for-dev
   7-4-api-key-management-ui: ready-for-dev
   epic-7-retrospective: optional
