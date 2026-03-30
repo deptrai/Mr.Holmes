@@ -1,0 +1,23 @@
+# docker/searxng/settings.yml
+# Minimal valid config for SearxNG — tuned for Mr.Holmes OSINT JSON API
+# Ref: https://docs.searxng.org/admin/settings/settings.html
+
+use_default_settings: true          # Kế thừa toàn bộ default, chỉ override phần cần
+
+general:
+  debug: false
+  instance_name: "Mr.Holmes OSINT"
+
+server:
+  base_url: "http://localhost:8888/"
+  secret_key: "mrholmes-change-this-secret-in-prod-000000"
+  limiter: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json                           # CRITICAL: bắt buộc phải có để plugin .check() gọi được
+
+ui:
+  default_locale: "vi"
