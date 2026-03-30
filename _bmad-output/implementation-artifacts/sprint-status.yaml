@@ -109,6 +109,6 @@ development_status:
   epic-8: in-progress
   8-1-autonomous-profiler-engine: done
   8-2-llm-synthesis-integration: done
-  8-3-interactive-mindmap-generation: backlog
+  8-3-interactive-mindmap-generation: ready-for-dev
   8-4-cli-menu-integration: backlog
   epic-8-retrospective: optional
