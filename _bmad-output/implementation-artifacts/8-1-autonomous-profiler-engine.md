@@ -1,6 +1,6 @@
 # Story 8.1: Thiết kế Lõi Đệ Quy (Recursive Profiling Engine)
 
-Status: review
+Status: done
 
 ## Story
 **As an** OSINT Investigator
@@ -63,3 +63,12 @@ Cần parse the `data` chunk returned by Plugins. Example: standardizing data ou
 
 ## Change Log
 - 2026-03-30: Story 8.1 implemented by AI Developer. Status → review.
+- 2026-03-30: Code review passed (Claude Opus Thinking). 3 patches applied, 3 deferred, 2 dismissed. Status → done.
+
+### Review Findings
+- [x] [Review][Patch] `_DOMAIN_RE` dead code — compiled but never used [autonomous_agent.py:32-34] — removed
+- [x] [Review][Patch] Unused import `patch` in test file [test_autonomous_agent.py:13] — removed
+- [x] [Review][Patch] `_extract_clues_from_result` skips nested dict values — added recursive `_scan_value()` [autonomous_agent.py:125-131]
+- [x] [Review][Defer] `_SEMAPHORE_LIMIT` hardcoded — deferred, pre-existing pattern
+- [x] [Review][Defer] Missing input validation for empty seed_target/seed_type — deferred to Story 8.4 CLI Integration
+- [x] [Review][Defer] `_EMAIL_RE` greedy regex may match filenames — deferred, system-wide regex refinement

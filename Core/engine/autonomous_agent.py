@@ -29,9 +29,7 @@ _EMAIL_RE = re.compile(r"[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}", re.IGNORECASE)
 _IP_RE = re.compile(
     r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
 )
-_DOMAIN_RE = re.compile(
-    r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b"
-)
+
 
 
 @dataclass
@@ -122,13 +120,18 @@ def _extract_clues_from_result(result: PluginResult) -> list[tuple[str, str]]:
         for ip in _IP_RE.findall(s):
             clues.append((ip, "IP"))
 
+    def _scan_value(v: Any) -> None:
+        if isinstance(v, str):
+            _scan_string(v)
+        elif isinstance(v, list):
+            for item in v:
+                _scan_value(item)
+        elif isinstance(v, dict):
+            for sub_v in v.values():
+                _scan_value(sub_v)
+
     for key, value in data.items():
-        if isinstance(value, str):
-            _scan_string(value)
-        elif isinstance(value, list):
-            for item in value:
-                if isinstance(item, str):
-                    _scan_string(item)
+        _scan_value(value)
 
     # Deduplicate while preserving first-seen order
     seen: set[tuple[str, str]] = set()
