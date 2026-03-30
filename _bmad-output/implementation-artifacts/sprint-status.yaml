@@ -99,6 +99,6 @@ development_status:
   epic-7: in-progress
   7-1-plugin-interface-design: done
   7-2-haveibeenpwned-integration: done
-  7-3-shodan-integration: ready-for-dev
+  7-3-shodan-integration: done
   7-4-api-key-management-ui: ready-for-dev
   epic-7-retrospective: optional
