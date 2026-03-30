@@ -3,11 +3,14 @@ Core/plugins/searxng.py
 
 Story 7.6 — SearxNG OSINT Integration
 Uses SearxNG JSON format to bypass captchas and perform dork queries.
+
+Update: Implemented random node rotation and robust User-Agent to bypass HTTP 403 / 429 errors from public instances.
 """
 from __future__ import annotations
 
 import asyncio
 import os
+import random
 
 import aiohttp
 
@@ -17,17 +20,25 @@ from Core.plugins.base import IntelligencePlugin, PluginResult
 class SearxngPlugin(IntelligencePlugin):
     """
     Intelligence plugin interfacing with a SearxNG instance.
-    Uses 'MH_SEARXNG_URL' environment variable or defaults to a public instance.
+    Uses 'MH_SEARXNG_URL' environment variable or defaults to a public instance pool.
     """
 
     SUPPORTED_TYPES = {"EMAIL", "USERNAME", "IP", "DOMAIN"}
+    
+    # Pool of public nodes known to support API calls (often transiently blocked, so we rotate)
+    FALLBACK_NODES = [
+        "https://searx.roflcopter.fr/search",
+        "https://search.ononoki.org/search",
+        "https://searx.tiekoetter.com/search",
+        "https://searxng.au/search",
+        "https://searx.be/search"
+    ]
 
     def __init__(self, api_key: str = "") -> None:
         """SearxNG public JSON APIs do not strictly require an API key by default."""
         self.api_key = api_key
         # Check environment for custom instance
-        custom_url = os.environ.get("MH_SEARXNG_URL", "").strip()
-        self.base_url = custom_url if custom_url else "https://searx.be/search"
+        self.custom_url = os.environ.get("MH_SEARXNG_URL", "").strip()
 
     @property
     def name(self) -> str:
@@ -40,7 +51,6 @@ class SearxngPlugin(IntelligencePlugin):
 
     def _build_query(self, target: str, target_type: str) -> str:
         """Creates the dorking query based on user target type."""
-        # A simple base query looking for leaks, passwords or dumps
         safe_target = f'"{target}"'
         if target_type == "EMAIL" or target_type == "USERNAME":
             return f"{safe_target} password OR leak OR dump"
@@ -52,7 +62,6 @@ class SearxngPlugin(IntelligencePlugin):
         """
         Query SearxNG for the given target via a JSON call.
         """
-        # Validate target type
         target_type_upper = target_type.upper()
         if target_type_upper not in self.SUPPORTED_TYPES:
             return PluginResult(
@@ -70,70 +79,72 @@ class SearxngPlugin(IntelligencePlugin):
             "engines": "google,duckduckgo,bing",
             "language": "en"
         }
+        
+        headers = {
+            # Realistic User-Agent defeats many basic WAF/Anti-Bot checks (e.g. Cloudflare, searx.be JS challenge)
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
 
-        try:
-            # Using ephemeral local session to comply with IntelligencePlugin decoupled constraint
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.base_url, params=params, timeout=15) as response:
-                    if response.status == 429:
-                        return PluginResult(
-                            plugin_name=self.name,
-                            is_success=False,
-                            data={},
-                            error_message=f"429 Too Many Requests - SearxNG node rate limit. Switch MH_SEARXNG_URL.",
-                        )
-                    
-                    if response.status != 200:
-                        return PluginResult(
-                            plugin_name=self.name,
-                            is_success=False,
-                            data={},
-                            error_message=f"HTTP {response.status}",
-                        )
+        # Try user-configured node first. If not set, try up to 3 random public nodes to bypass 429/403.
+        urls_to_try = [self.custom_url] if self.custom_url else random.sample(self.FALLBACK_NODES, min(3, len(self.FALLBACK_NODES)))
+        last_error = "All nodes failed."
+
+        for base_url in urls_to_try:
+            try:
+                # Using ephemeral local session to comply with plugin isolated scope
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get(base_url, params=params, timeout=10) as response:
+                        if response.status == 429:
+                            last_error = f"HTTP 429 (Rate limit) at {base_url}"
+                            continue
                         
-                    data = await response.json()
-                    
-                    results = data.get("results") or []
-                    
-                    osint_urls = []
-                    for item in results:
-                        url = item.get("url")
-                        title = item.get("title", "Unknown Title")
-                        if url:
-                            osint_urls.append({"url": url, "title": title})
+                        if response.status == 403:
+                            last_error = f"HTTP 403 (Blocked/Captcha) at {base_url}"
+                            continue
 
-                    return PluginResult(
-                        plugin_name=self.name,
-                        is_success=True,
-                        data={
-                            "data_found": len(osint_urls) > 0,
-                            "osint_urls": osint_urls,
-                            "metadata": {
-                                "searxng_node": self.base_url,
-                                "total_clues": len(osint_urls),
-                                "query_used": query
-                            }
-                        },
-                    )
+                        if response.status != 200:
+                            last_error = f"HTTP {response.status} at {base_url}"
+                            continue
+                            
+                        data = await response.json()
+                        
+                        results = data.get("results") or []
+                        osint_urls = []
+                        for item in results:
+                            url = item.get("url")
+                            title = item.get("title", "Unknown Title")
+                            if url:
+                                osint_urls.append({"url": url, "title": title})
 
-        except asyncio.TimeoutError:
-            return PluginResult(
-                plugin_name=self.name,
-                is_success=False,
-                data={},
-                error_message="Request timed out. SearxNG node might be down.",
-            )
-        except aiohttp.ClientError as e:
-            return PluginResult(
-                plugin_name=self.name,
-                is_success=False,
-                data={},
-                error_message=f"Network error: {str(e)}. Consider changing MH_SEARXNG_URL.",
-            )
-        except Exception as e:
-            return PluginResult(
-                plugin_name=self.name,
-                is_success=False,
-                data={},
-                error_message=f"Unexpected error: {str(e)}",
-            )
+                        return PluginResult(
+                            plugin_name=self.name,
+                            is_success=True,
+                            data={
+                                "data_found": len(osint_urls) > 0,
+                                "osint_urls": osint_urls,
+                                "metadata": {
+                                    "searxng_node": base_url,
+                                    "total_clues": len(osint_urls),
+                                    "query_used": query
+                                }
+                            },
+                        )
+
+            except asyncio.TimeoutError:
+                last_error = f"Timeout at {base_url}"
+                continue
+            except aiohttp.ClientError as e:
+                last_error = f"Network error at {base_url}: {e}"
+                continue
+            except Exception as e:
+                last_error = f"Unexpected error at {base_url}: {e}"
+                continue
+                
+        # Exhausted all attempts
+        return PluginResult(
+            plugin_name=self.name,
+            is_success=False,
+            data={},
+            error_message=f"SearxNG Nodes exhausted. Last error: {last_error}. Consider setting working MH_SEARXNG_URL.",
+        )
