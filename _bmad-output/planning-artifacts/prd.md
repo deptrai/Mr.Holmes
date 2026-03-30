@@ -85,6 +85,8 @@ Trở thành **công cụ OSINT CLI hàng đầu** với:
 - FR22: User có thể check email breach history qua HaveIBeenPwned API
 - FR23: User có thể tra cứu IP/port intelligence qua Shodan API
 - FR24: User có thể cấu hình API keys cho external services
+- FR25: User có thể tra cứu data breach thông qua API miễn phí của Leak-Lookup (Fallback cho HIBP)
+- FR26: Hệ thống có thể thực hiện Dorking ẩn danh không lo Captcha thông qua metasearch SearxNG
 
 ## Non-Functional Requirements
 

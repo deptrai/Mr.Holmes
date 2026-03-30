@@ -110,6 +110,8 @@ stepsCompleted: [validate-prerequisites, design-epics]
 2. **Story 7.2:** Implement HaveIBeenPwned integration (email breach check)
 3. **Story 7.3:** Implement Shodan integration (IP/port intelligence)
 4. **Story 7.4:** Config UI cho API key management
+5. **Story 7.5:** Tích hợp Leak-Lookup API làm DB rò rỉ (Fallback HIBP)
+6. **Story 7.6:** Tích hợp metasearch SearxNG để cào OSINT Dorks chống Captcha
 
 ---
 
