@@ -25,13 +25,16 @@ class SearxngPlugin(IntelligencePlugin):
 
     SUPPORTED_TYPES = {"EMAIL", "USERNAME", "IP", "DOMAIN"}
     
-    # Pool of public nodes known to support API calls (often transiently blocked, so we rotate)
+    # Pool of public nodes — verified working ones listed first, rest as fallback.
+    # Last verified: 2026-03-31. Swap if nodes rotate offline.
     FALLBACK_NODES = [
-        "https://searx.roflcopter.fr/search",
+        "https://search.inetol.net/search",   # verified 200 OK
         "https://search.ononoki.org/search",
+        "https://paulgo.io/search",
         "https://searx.tiekoetter.com/search",
-        "https://searxng.au/search",
-        "https://searx.be/search"
+        "https://priv.au/search",
+        "https://search.mdosch.de/search",
+        "https://searx.be/search",
     ]
 
     def __init__(self, api_key: str = "") -> None:
@@ -94,7 +97,7 @@ class SearxngPlugin(IntelligencePlugin):
             try:
                 # Using ephemeral local session to comply with plugin isolated scope
                 async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get(base_url, params=params, timeout=10) as response:
+                    async with session.get(base_url, params=params, timeout=15) as response:
                         if response.status == 429:
                             last_error = f"HTTP 429 (Rate limit) at {base_url}"
                             continue
