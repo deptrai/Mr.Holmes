@@ -102,5 +102,5 @@ development_status:
   7-3-shodan-integration: done
   7-4-api-key-management-ui: done
   7-5-leak-lookup-integration: done
-  7-6-searxng-osint-integration: ready-for-dev
+  7-6-searxng-osint-integration: review
   epic-7-retrospective: optional

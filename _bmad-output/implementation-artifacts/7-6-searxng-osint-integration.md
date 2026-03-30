@@ -1,6 +1,6 @@
 # Story 7.6: SearxNG OSINT Integration
 
-Status: in-progress
+Status: review
 
 ## Story
 **As an** OSINT investigator
@@ -14,6 +14,18 @@ Status: in-progress
 - [x] **AC4: Payload Orchestration.** Must query SearxNG using `"format": "json"` and process the `results[]` array, extracting valid `.url` fields for scraping targets.
 - [x] **AC5: Multi-target Formatting.** Target types (IP, EMAIL, USERNAME) map out to OSINT Dorking strings (e.g. `"email_address" password OR leak`).
 
+## Tasks / Subtasks
+- [x] Task 1: Create SearxngPlugin (`Core/plugins/searxng.py`)
+  - [x] Implement fallbacks to `https://searx.be/search`
+  - [x] Define queries dynamically based on target types
+- [x] Task 2: Implement SearxNG API call logic
+  - [x] Send requests via `aiohttp.ClientSession()` handling HTTP 429
+  - [x] Map responses directly to `data["osint_urls"]`
+- [x] Task 3: Author Tests (`tests/plugins/test_searxng.py`)
+  - [x] Test fallbacks (`test_searxng_init_default`, `test_searxng_init_custom_env`)
+  - [x] Test Dork query builder
+  - [x] Test API JSON parsing and error handling
+
 ## Dev Agent Guardrails & Technical Restrictions
 **Architecture Compliance:**
 - 🚫 Forbidden to create global variables outside of class scopes.
@@ -24,6 +36,22 @@ Status: in-progress
 **Testing Requirements:**
 - Must mock multiple SearxNG response variations using `aioresponses` (200 OK, 429 Limit, 404 Target down).
 - Must verify that missing `.env` gracefully falls back to `"https://searx.be/search"`.
+
+## Dev Agent Record
+### Agent Model Used: Gemini 3.1 Pro
+### Completion Notes List
+- Story được developer implement cùng lúc với Story 7.5.
+- Code hoàn toàn thỏa mãn ACs: `requires_api_key=False`, payload trả về `osint_urls`, mapping dork string tùy loại target.
+- Tests (9/9) passed coverage cho SearxngPlugin. Full regression passed.
+
+### File List
+- `Core/plugins/searxng.py` (NEW)
+- `tests/plugins/test_searxng.py` (NEW)
+- `_bmad-output/implementation-artifacts/7-6-searxng-osint-integration.md` (MODIFIED)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (MODIFIED)
+
+### Change Log
+- 2026-03-30: Tests implemented, status → review. 556/556 regression tests passed.
 
 ## Project Context Reference
 - Epic context: Epic 7 - External Intelligence APIs
