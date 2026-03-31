@@ -27,6 +27,7 @@ from Core.Support import Language
 from datetime import datetime
 from Core.models.validators import sanitize_username, safe_int_input
 from Core.models.exceptions import ConfigurationError
+from Core import autonomous_cli
 
 
 class Main:
@@ -118,7 +119,7 @@ class Main:
                 print(Font.Color.WHITE + options)
                 sce = safe_int_input(
                     Font.Color.GREEN + "\n[#MR.HOLMES#]" + Font.Color.WHITE + "-->",
-                    valid_range=range(1, 16),
+                    valid_range=range(1, 17),
                 )
                 if (sce == 1):
                     print(Font.Color.RED + "\n[!]" + Font.Color.WHITE +
@@ -215,6 +216,8 @@ class Main:
                     print(Language.Translation.Translate_Language(
                         filename, "Main", "Exit", "None"))
                     exit()
+                elif sce == 16:
+                    autonomous_cli.AutonomousCLI.run(Mode)
                 elif sce == 0:
                     Main.main(Mode)
                 else:
