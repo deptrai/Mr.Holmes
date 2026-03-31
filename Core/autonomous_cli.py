@@ -21,10 +21,10 @@ import asyncio
 import json
 import os
 import re
-import sys
 from datetime import datetime, timezone
 
 from Core.Support import Font
+from Core.config import settings  # noqa: F401 — triggers .env load at import time
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -171,16 +171,9 @@ async def _run_async(target: str, target_type: str, max_depth: int) -> None:
     manager.discover_plugins()
     plugins = manager.plugins
 
-    # Inject API keys from environment
+    # Inject API keys from environment using centralized settings
     for p in plugins:
-        key_map = {
-            "LeakLookup": "MH_LEAKLOOKUP_API_KEY",
-            "HaveIBeenPwned": "MH_HAVEIBEENPWNED_API_KEY",
-            "Shodan": "MH_SHODAN_API_KEY",
-        }
-        env_key = key_map.get(p.name)
-        if env_key:
-            p.api_key = os.environ.get(env_key, "")
+        p.api_key = settings.get_plugin_key(p.name)
 
     _print_ok(f"Đã tải {len(plugins)} plugins: {', '.join(p.name for p in plugins)}")
 
