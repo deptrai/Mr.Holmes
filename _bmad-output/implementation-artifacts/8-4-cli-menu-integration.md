@@ -1,6 +1,6 @@
 # Story 8.4: CLI Menu Integration
 
-Status: review
+Status: done
 
 ## Story
 **As a** User of Mr.Holmes
@@ -48,3 +48,13 @@ Status: review
 ## Change Log
 - 2026-03-31: Story created and marked ready-for-dev.
 - 2026-03-31: Implementation complete — 19 tests pass, AC1-AC6 satisfied. Status → review.
+- 2026-03-31: Code review — 3 patches applied (F1 .env load, F2 unused import, F4 settings.get_plugin_key). Status → done.
+
+### Review Findings
+- [x] [Review][Patch] F1: .env not loaded → empty API keys (HIGH) — fixed via settings import
+- [x] [Review][Patch] F2: Unused import sys (LOW) — removed
+- [x] [Review][Patch] F4: Hardcoded key_map → settings.get_plugin_key() (MED) — forward-compatible
+- [x] [Review][Dismiss] F3: dot-only folder names — unrealistic target
+- [x] [Review][Dismiss] F6: _print_info used in error path — not dead code
+- [x] [Review][Dismiss] F8: test mock path works due to lazy import timing
+- [x] [Review][Defer] F5: asyncio.run() nested loop — for Story 9.x
