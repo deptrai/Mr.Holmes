@@ -277,3 +277,141 @@ class TestEmptyGraph:
         gen = MindmapGenerator()
         html = gen.generate(empty_graph)
         assert "OSINT Report" in html
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Security & Edge Cases — F11 (added by code review 2026-03-31)
+# Covers: XSS escaping (F1), script breakout (F2), curly-brace crash (F6),
+#         empty target guard (F7), bad depth guard (F8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSecurityAndEdgeCases:
+
+    # F1: XSS via title
+    def test_xss_in_title_is_escaped(self):
+        """XSS in <title> and <h1> must be HTML-escaped. Raw tag OK inside JSON data block."""
+        import re
+        gen = MindmapGenerator()
+        xss_graph = {
+            "nodes": [{"target": '<script>alert("xss")</script>', "target_type": "EMAIL", "depth": 0}],
+            "edges": [], "plugin_results": [],
+        }
+        html = gen.generate(xss_graph)
+        title_content = re.search(r"<title>(.*?)</title>", html, re.DOTALL).group(1)
+        h1_content = re.search(r"<h1>(.*?)</h1>", html, re.DOTALL).group(1)
+        # HTML context must be escaped
+        assert "<script>" not in title_content
+        assert "<script>" not in h1_content
+        assert "&lt;script&gt;" in title_content
+
+    def test_angle_brackets_escaped_in_title(self):
+        """Angle brackets in title/h1 must be escaped, raw string OK in JSON block."""
+        import re
+        gen = MindmapGenerator()
+        graph = {
+            "nodes": [{"target": "user<admin>@test.com", "target_type": "EMAIL", "depth": 0}],
+            "edges": [], "plugin_results": [],
+        }
+        html = gen.generate(graph)
+        title_content = re.search(r"<title>(.*?)</title>", html, re.DOTALL).group(1)
+        assert "<admin>" not in title_content
+        assert "&lt;admin&gt;" in title_content
+
+    # F2: </script> breakout
+    def test_script_close_tag_in_node_target_is_neutralised(self):
+        gen = MindmapGenerator()
+        evil_graph = {
+            "nodes": [{"target": "foo</script><script>alert(1)</script>", "target_type": "IP", "depth": 1}],
+            "edges": [], "plugin_results": [],
+        }
+        html = gen.generate(evil_graph)
+        assert "</script><script>" not in html
+
+    # F6: curly braces in target
+    def test_curly_braces_in_target_dont_crash(self):
+        gen = MindmapGenerator()
+        graph = {
+            "nodes": [{"target": "user{admin}", "target_type": "USERNAME", "depth": 0}],
+            "edges": [], "plugin_results": [],
+        }
+        html = gen.generate(graph)
+        assert isinstance(html, str)
+        assert len(html) > 100
+
+    def test_complex_braces_in_multiple_nodes(self):
+        gen = MindmapGenerator()
+        graph = {
+            "nodes": [
+                {"target": "{seed}", "target_type": "EMAIL", "depth": 0},
+                {"target": "normal@test.com", "target_type": "EMAIL", "depth": 1},
+                {"target": "{discovered}", "target_type": "IP", "depth": 1},
+            ],
+            "edges": [
+                {"source": "{seed}", "discovered": "{discovered}", "type": "IP", "via_plugin": "{plugin}"},
+            ],
+            "plugin_results": [],
+        }
+        html = gen.generate(graph)
+        assert isinstance(html, str)
+        assert "vis.DataSet" in html
+
+    # F7: empty target string
+    def test_empty_target_is_skipped(self):
+        gen = MindmapGenerator()
+        nodes = [
+            {"target": "", "target_type": "EMAIL", "depth": 0},
+            {"target": "real@test.com", "target_type": "EMAIL", "depth": 0},
+        ]
+        vis_nodes = gen._build_vis_nodes(nodes)
+        ids = [n["id"] for n in vis_nodes]
+        assert "" not in ids
+        assert "real@test.com" in ids
+
+    def test_all_empty_targets_returns_empty_list(self):
+        gen = MindmapGenerator()
+        nodes = [
+            {"target": "", "target_type": "EMAIL", "depth": 0},
+            {"target": "", "target_type": "IP", "depth": 1},
+        ]
+        vis_nodes = gen._build_vis_nodes(nodes)
+        assert vis_nodes == []
+
+    # F8: non-numeric depth
+    def test_string_depth_defaults_to_zero(self):
+        gen = MindmapGenerator()
+        nodes = [{"target": "test@test.com", "target_type": "EMAIL", "depth": "unknown"}]
+        vis_nodes = gen._build_vis_nodes(nodes)
+        assert len(vis_nodes) == 1
+        assert vis_nodes[0]["color"]["background"] == "#c0392b"
+
+    def test_none_depth_defaults_to_zero(self):
+        gen = MindmapGenerator()
+        nodes = [{"target": "test@test.com", "target_type": "EMAIL", "depth": None}]
+        vis_nodes = gen._build_vis_nodes(nodes)
+        assert len(vis_nodes) == 1
+        assert vis_nodes[0]["size"] == 30
+
+    # Full hostile graph
+    def test_generate_survives_hostile_graph(self):
+        """Full pipeline must not crash with a mix of hostile inputs."""
+        import re
+        gen = MindmapGenerator()
+        graph = {
+            "nodes": [
+                {"target": "<xss>", "target_type": "EMAIL", "depth": 0},
+                {"target": "", "target_type": "IP", "depth": 1},
+                {"target": "normal.com", "target_type": "DOMAIN", "depth": "bad"},
+                {"target": "user{0}", "target_type": "USERNAME", "depth": 1},
+            ],
+            "edges": [
+                {"source": "<xss>", "discovered": "normal.com", "type": "DOMAIN", "via_plugin": "</evil>"},
+            ],
+            "plugin_results": [],
+        }
+        html = gen.generate(graph)
+        assert isinstance(html, str)
+        assert "vis.DataSet" in html
+        # Title/h1 HTML context must escape XSS
+        title_content = re.search(r"<title>(.*?)</title>", html, re.DOTALL).group(1)
+        assert "<xss>" not in title_content
+        assert "&lt;xss&gt;" in title_content

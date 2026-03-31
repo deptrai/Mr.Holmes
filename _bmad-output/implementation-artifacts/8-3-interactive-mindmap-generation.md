@@ -1,6 +1,6 @@
 # Story 8.3: Interactive Mindmap Generation
 
-Status: review
+Status: done
 
 ## Story
 **As an** OSINT Investigator
@@ -42,3 +42,17 @@ Status: review
 ## Change Log
 - 2026-03-31: Story created and marked ready-for-dev.
 - 2026-03-31: Implementation complete — 28 tests pass, HTML verified in browser. Status → review.
+
+- 2026-03-31: Code review: 7 patches, 1 deferred, 3 dismissed.
+
+### Review Findings
+
+- [x] [Review][Patch] XSS via unescaped title in HTML [mindmap_generator.py:275]
+- [x] [Review][Patch] script breakout in JSON embed [mindmap_generator.py:276]
+- [x] [Review][Patch] font.bold invalid vis-network option [mindmap_generator.py:348]
+- [x] [Review][Patch] Curly braces in target crash format() [mindmap_generator.py:275]
+- [x] [Review][Patch] Empty target string creates empty node [mindmap_generator.py:319]
+- [x] [Review][Patch] Non-numeric depth throws ValueError [mindmap_generator.py:321]
+- [x] [Review][Patch] Tests missing edge case coverage
+- [x] [Review][Defer] CDN missing SRI integrity hash - deferred
+- [x] [Review][Decision] Depth-1 color: kept type-based colors (user choice)
