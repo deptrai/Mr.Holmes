@@ -136,6 +136,9 @@ class LeakLookupPlugin(IntelligencePlugin):
                         data={
                             "data_found": len(db_names) > 0,
                             "vulnerabilities": db_names,
+                            # Expose breach source domains as hostnames so
+                            # RecursiveProfiler can treat them as DOMAIN clues
+                            "hostnames": db_names,
                             "metadata": {
                                 "total_breaches": len(db_names)
                             }
