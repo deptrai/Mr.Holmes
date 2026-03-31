@@ -77,60 +77,60 @@ _HTML_TEMPLATE = """\
     src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js">
   </script>
   <style>
-    *, *::before, *::after {{ box-sizing: border-box; }}
-    body {{
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
       margin: 0; padding: 0;
       background: #0d1117;
       color: #c9d1d9;
       font-family: 'Segoe UI', Arial, sans-serif;
-    }}
-    #header {{
+    }
+    #header {
       padding: 14px 20px;
       background: linear-gradient(135deg, #161b22 0%, #21262d 100%);
       border-bottom: 1px solid #30363d;
       display: flex; align-items: center; gap: 10px;
-    }}
-    #header h1 {{
+    }
+    #header h1 {
       margin: 0; font-size: 1.1rem; font-weight: 600;
       color: #f0883e;
       flex: 1;
-    }}
-    #header span {{
+    }
+    #header span {
       font-size: 0.75rem; color: #8b949e;
-    }}
-    #controls {{
+    }
+    #controls {
       padding: 8px 20px;
       background: #161b22;
       border-bottom: 1px solid #30363d;
       display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-    }}
-    #controls button {{
+    }
+    #controls button {
       background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
       padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
       transition: background 0.2s;
-    }}
-    #controls button:hover {{ background: #30363d; }}
-    #legend {{
+    }
+    #controls button:hover { background: #30363d; }
+    #legend {
       display: flex; gap: 12px; flex-wrap: wrap; margin-left: auto;
-    }}
-    #legend .litem {{
+    }
+    #legend .litem {
       display: flex; align-items: center; gap: 5px;
       font-size: 0.72rem; color: #8b949e;
-    }}
-    #legend .dot {{
+    }
+    #legend .dot {
       width: 10px; height: 10px; border-radius: 50%;
       display: inline-block; flex-shrink: 0;
-    }}
-    #network-container {{
+    }
+    #network-container {
       width: 100%; height: calc(100vh - 100px);
-    }}
-    #stats {{
+    }
+    #stats {
       position: fixed; bottom: 10px; right: 14px;
       background: rgba(22,27,34,0.9);
       border: 1px solid #30363d; border-radius: 8px;
       padding: 8px 14px; font-size: 0.75rem; color: #8b949e;
       backdrop-filter: blur(4px);
-    }}
+    }
   </style>
 </head>
 <body>
@@ -141,8 +141,8 @@ _HTML_TEMPLATE = """\
 
   <div id="controls">
     <button onclick="network.fit()">⛶ Fit tất cả</button>
-    <button onclick="network.setOptions({{physics:{{enabled:true}}}})">▶ Bật Physics</button>
-    <button onclick="network.setOptions({{physics:{{enabled:false}}}})">⏸ Tắt Physics</button>
+    <button onclick="network.setOptions({physics:{enabled:true}})">▶ Bật Physics</button>
+    <button onclick="network.setOptions({physics:{enabled:false}})">⏸ Tắt Physics</button>
     <div id="legend">
       <div class="litem"><span class="dot" style="background:#c0392b"></span>Seed (Depth 0)</div>
       <div class="litem"><span class="dot" style="background:#e67e22"></span>Depth 1</div>
@@ -172,55 +172,55 @@ _HTML_TEMPLATE = """\
     document.getElementById("edge-count").textContent = RAW_EDGES.length;
 
     // ── network options ───────────────────────────────────────────────────────
-    var options = {{
-      nodes: {{
+    var options = {
+      nodes: {
         borderWidth: 2,
         shadow: true,
-        font: {{ color: "#f0f6fc", size: 13, face: "Segoe UI, Arial" }},
-        chosen: {{
-          node: function(values, id, selected) {{
+        font: { color: "#f0f6fc", size: 13, face: "Segoe UI, Arial" },
+        chosen: {
+          node: function(values, id, selected) {
             values.size = values.size * 1.2;
-          }}
-        }}
-      }},
-      edges: {{
-        arrows: {{ to: {{ enabled: true, scaleFactor: 0.6 }} }},
-        color: {{ color: "#30363d", highlight: "#f0883e", hover: "#58a6ff" }},
-        font: {{ color: "#8b949e", size: 10, align: "middle" }},
-        smooth: {{ type: "dynamic" }},
+          }
+        }
+      },
+      edges: {
+        arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+        color: { color: "#30363d", highlight: "#f0883e", hover: "#58a6ff" },
+        font: { color: "#8b949e", size: 10, align: "middle" },
+        smooth: { type: "dynamic" },
         shadow: true,
-      }},
-      physics: {{
+      },
+      physics: {
         enabled: true,
-        stabilization: {{ iterations: 150 }},
-        barnesHut: {{
+        stabilization: { iterations: 150 },
+        barnesHut: {
           gravitationalConstant: -8000,
           springLength: 140,
           springConstant: 0.04,
-        }},
-      }},
-      interaction: {{
+        },
+      },
+      interaction: {
         hover: true,
         tooltipDelay: 200,
         navigationButtons: false,
         keyboard: true,
-      }},
-      layout: {{ randomSeed: 42 }},
-    }};
+      },
+      layout: { randomSeed: 42 },
+    };
 
     var container = document.getElementById("network-container");
-    var network = new vis.Network(container, {{ nodes: nodes, edges: edges }}, options);
+    var network = new vis.Network(container, { nodes: nodes, edges: edges }, options);
 
     // Tắt physics sau khi ổn định để tránh giật
-    network.on("stabilizationIterationsDone", function () {{
-      network.setOptions({{ physics: {{ enabled: false }} }});
-    }});
+    network.on("stabilizationIterationsDone", function () {
+      network.setOptions({ physics: { enabled: false } });
+    });
 
     // Tooltip khi hover node
-    network.on("hoverNode", function (params) {{
+    network.on("hoverNode", function (params) {
       var node = nodes.get(params.node);
       container.title = node.title || node.label;
-    }});
+    });
   </script>
 </body>
 </html>
