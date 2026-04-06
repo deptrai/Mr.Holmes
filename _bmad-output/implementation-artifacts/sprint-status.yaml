@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T23:06:00+07:00
-last_updated: 2026-03-26T23:07:47+07:00
+last_updated: 2026-04-06
 project: Mr.Holmes
 project_key: NOKEY
 tracking_system: file-system
@@ -112,3 +112,24 @@ development_status:
   8-3-interactive-mindmap-generation: done
   8-4-cli-menu-integration: done
   epic-8-retrospective: optional
+
+  # === Epic 9: Complete OSINT Profiling System ===
+  epic-9: in-progress
+  9-1-profile-entity-data-model: done
+  9-2-multi-stage-bfs-orchestration: done
+  9-3-holehe-plugin: done
+  9-4-maigret-plugin: done
+  9-5-cache-layer: review
+  9-6-cli-complete-profile-mode: done
+  9-7-github-plugin: done
+  9-8-numverify-plugin: ready-for-dev
+  9-9-instagram-plugin: ready-for-dev
+  9-10-entity-resolver: ready-for-dev
+  9-11-enhanced-llm-synthesis: ready-for-dev
+  9-12-reddit-plugin: ready-for-dev
+  9-13-youtube-plugin: ready-for-dev
+  9-14-hunter-plugin: ready-for-dev
+  9-15-cross-platform-bridge: ready-for-dev
+  9-16-personality-analysis-timeline: ready-for-dev
+  9-17-deferred-review-improvements: done
+  epic-9-retrospective: optional

@@ -3,25 +3,38 @@ Core/plugins/manager.py
 
 Story 7.1 — Plugin Interface Design
 Provides PluginManager to discover, register, and execute Intelligence plugins concurrently.
+
+Story 9.5 — Cache Layer
+PluginManager now accepts an optional PluginCache for transparent result caching.
 """
 from __future__ import annotations
 
 import asyncio
 import importlib
 import inspect
+import logging
 import pkgutil
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from Core.plugins.base import IntelligencePlugin, PluginResult
+
+if TYPE_CHECKING:
+    from Core.cache.plugin_cache import PluginCache
+
+logger = logging.getLogger(__name__)
 
 
 class PluginManager:
     """
     AC3 — Quản lý vòng đời (discover, register, load, execute) cho các plugins.
+
+    Story 9.5: accepts optional `cache` parameter for transparent result caching.
+    Plugins are unaware of caching — it is applied transparently in _safe_execute().
     """
 
-    def __init__(self) -> None:
+    def __init__(self, cache: PluginCache | None = None) -> None:
         self._plugins: list[IntelligencePlugin] = []
+        self._cache = cache
 
     @property
     def plugins(self) -> list[IntelligencePlugin]:
@@ -93,11 +106,27 @@ class PluginManager:
     async def _safe_execute(
         self, plugin: IntelligencePlugin, target: str, target_type: str
     ) -> PluginResult:
-        """Wrap plugin execution with exception safety."""
+        """
+        Wrap plugin execution with cache check and exception safety.
+
+        Cache logic (AC7):
+        - Check cache before calling plugin.
+        - On cache hit: return reconstructed PluginResult from cached data.
+        - On cache miss: run plugin, store result if is_success=True and data non-empty.
+        - Failed results are never cached.
+        """
+        # Cache check
+        if self._cache is not None:
+            key = self._cache_key(plugin, target, target_type)
+            cached = self._cache.get(key)
+            if cached is not None:
+                logger.debug("Cache hit for %s: %s", plugin.name, target)
+                return PluginResult(plugin_name=plugin.name, is_success=True, data=cached)
+
+        # Run plugin
         try:
-            return await plugin.check(target, target_type)
+            result = await plugin.check(target, target_type)
         except Exception as e:
-            # Guard: plugin.name itself might throw
             try:
                 name = plugin.name
             except Exception:
@@ -108,3 +137,18 @@ class PluginManager:
                 data={},
                 error_message=f"Plugin Exception: {str(e)}",
             )
+
+        # Cache successful results
+        if self._cache is not None and result.is_success and result.data:
+            key = self._cache_key(plugin, target, target_type)
+            await self._cache.set(key, result.data)
+
+        return result
+
+    def _cache_key(self, plugin: IntelligencePlugin, target: str, target_type: str) -> str:
+        """Build a deterministic cache key: '{plugin_name}:{TARGET_TYPE}:{target_lower}'."""
+        try:
+            name = plugin.name
+        except Exception:
+            name = "unknown"
+        return f"{name}:{target_type.upper()}:{target.lower()}"

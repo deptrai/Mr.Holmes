@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.engine.stage_router import StageRouter
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,9 @@ class ProfileGraph:
 # Clue extraction helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+_MAX_CLUES_PER_RESULT = 15  # Prevent BFS explosion from noisy breach databases
+
+
 def _extract_clues_from_result(result: PluginResult) -> list[tuple[str, str]]:
     """
     Parse a PluginResult.data dict and extract new (target, type) clues.
@@ -94,7 +98,7 @@ def _extract_clues_from_result(result: PluginResult) -> list[tuple[str, str]]:
     - data["hostnames"]: list[str]    → ("value", "DOMAIN")
     - data["osint_urls"]: list[str]   → scan for embedded emails/IPs
     - Any string value in data        → regex scan for emails and IPs
-    Returns: deduplicated list of (value, type) tuples.
+    Returns: deduplicated list of (value, type) tuples, capped at _MAX_CLUES_PER_RESULT.
     """
     clues: list[tuple[str, str]] = []
 
@@ -133,13 +137,15 @@ def _extract_clues_from_result(result: PluginResult) -> list[tuple[str, str]]:
     for key, value in data.items():
         _scan_value(value)
 
-    # Deduplicate while preserving first-seen order
+    # Deduplicate while preserving first-seen order, cap at limit
     seen: set[tuple[str, str]] = set()
     deduped: list[tuple[str, str]] = []
     for clue in clues:
         if clue not in seen:
             seen.add(clue)
             deduped.append(clue)
+            if len(deduped) >= _MAX_CLUES_PER_RESULT:
+                break
 
     return deduped
 
@@ -175,8 +181,8 @@ class RecursiveProfiler:
     _SEMAPHORE_LIMIT: int = 5
 
     def __init__(self, max_depth: int = 2) -> None:
-        if max_depth < 1:
-            raise ValueError(f"max_depth must be >= 1, got {max_depth}")
+        if max_depth < 0:
+            raise ValueError(f"max_depth must be >= 0, got {max_depth}")
         self.max_depth = max_depth
 
     async def run_profiler(
@@ -226,6 +232,35 @@ class RecursiveProfiler:
                 if depth >= self.max_depth:
                     continue
 
+                # Auto-derive USERNAME from EMAIL prefix (e.g. "user@gmail.com" → "user")
+                if t_type.upper() == "EMAIL" and "@" in target:
+                    prefix = target.split("@")[0].lower()
+                    domain_part = target.split("@")[1].lower()
+                    if len(prefix) >= 3:
+                        prefix_key = (prefix, "USERNAME")
+                        if prefix_key not in visited:
+                            next_layer.append((prefix, "USERNAME", depth + 1))
+                            graph.edges.append(ProfileEdge(
+                                source_target=target,
+                                discovered_target=prefix,
+                                discovered_type="USERNAME",
+                                via_plugin="auto:email-prefix",
+                            ))
+                    # Also derive DOMAIN for non-freemail providers
+                    _FREEMAIL = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+                                 "protonmail.com", "icloud.com", "aol.com", "mail.com",
+                                 "yandex.com", "zoho.com", "gmx.com", "live.com"}
+                    if domain_part not in _FREEMAIL:
+                        domain_key = (domain_part, "DOMAIN")
+                        if domain_key not in visited:
+                            next_layer.append((domain_part, "DOMAIN", depth + 1))
+                            graph.edges.append(ProfileEdge(
+                                source_target=target,
+                                discovered_target=domain_part,
+                                discovered_type="DOMAIN",
+                                via_plugin="auto:email-domain",
+                            ))
+
                 # Run all plugins concurrently for this target
                 tasks = [
                     self._safe_plugin_run(plugin, target, t_type, semaphore)
@@ -268,22 +303,205 @@ class RecursiveProfiler:
         target_type: str,
         semaphore: asyncio.Semaphore,
     ) -> PluginResult:
-        """
-        Execute a single plugin with semaphore throttling and exception safety.
-        Never raises — returns a failure PluginResult on any exception.
-        """
-        async with semaphore:
+        return await _safe_plugin_run(plugin, target, target_type, semaphore)
+
+
+async def _safe_plugin_run(
+    plugin: IntelligencePlugin,
+    target: str,
+    target_type: str,
+    semaphore: asyncio.Semaphore,
+) -> PluginResult:
+    """
+    Execute a single plugin with semaphore throttling and exception safety.
+    Never raises — returns a failure PluginResult on any exception.
+    """
+    async with semaphore:
+        try:
+            return await plugin.check(target, target_type)
+        except Exception as exc:
             try:
-                return await plugin.check(target, target_type)
-            except Exception as exc:
+                name = plugin.name
+            except Exception:
+                name = "unknown"
+            logger.warning("Plugin %s raised exception for %s: %s", name, target, exc)
+            return PluginResult(
+                plugin_name=name,
+                is_success=False,
+                data={},
+                error_message=f"Plugin Exception: {exc}",
+            )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Story 9.2 — StagedProfiler (multi-stage BFS for Epic 9)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class StagedProfiler:
+    """
+    Story 9.2 — Multi-Stage BFS Orchestration Engine.
+
+    4-phase pipeline:
+      Phase A — Stage 2 (identity expansion: Holehe, Maigret, GitHub)
+      Phase B — Clue extraction from Stage 2 results
+      Phase C — Stage 3 (deep enrichment: Numverify, Hunter on discovered PHONE/DOMAIN)
+      Phase D — Stage 1 fallback (Epic 8 plugins via RecursiveProfiler)
+
+    Backward compatible: if all plugins are stage-1, delegates entirely to
+    RecursiveProfiler.run_profiler() preserving Epic 8 behavior.
+    """
+
+    _SEMAPHORE_LIMIT: int = 5
+
+    def __init__(self, max_depth: int = 2) -> None:
+        if max_depth < 0:
+            raise ValueError(f"max_depth must be >= 0, got {max_depth}")
+        self.max_depth = max_depth
+        self._router = StageRouter()
+
+    async def run_staged(
+        self,
+        seed_target: str,
+        seed_type: str,
+        plugins: list[IntelligencePlugin] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Run the multi-stage enrichment pipeline.
+
+        Args:
+            seed_target: Starting piece of intelligence.
+            seed_type:   "EMAIL" | "USERNAME" | "PHONE" | "DOMAIN" | "IP"
+            plugins:     List of IntelligencePlugin instances.
+
+        Returns:
+            dict with keys: "nodes", "edges", "plugin_results"  (same schema as Epic 8)
+        """
+        plugins = plugins or []
+
+        # Detect staged plugins
+        has_staged = any(getattr(p, "stage", 1) >= 2 for p in plugins)
+        if not has_staged:
+            # Pure Epic 8 path — delegate entirely to RecursiveProfiler
+            flat = RecursiveProfiler(max_depth=self.max_depth)
+            return await flat.run_profiler(seed_target, seed_type, plugins)
+
+        graph = ProfileGraph()
+        visited: set[tuple[str, str]] = set()
+        semaphore = asyncio.Semaphore(self._SEMAPHORE_LIMIT)
+
+        # Record seed node
+        seed_key = (seed_target.lower(), seed_type.upper())
+        visited.add(seed_key)
+        graph.nodes.append(ProfileNode(
+            target=seed_target, target_type=seed_type, depth=0
+        ))
+
+        # ── Phase A: Stage 2 plugins on seed (if seed_type routes to stage 2) ───
+        stage2_plugins = self._router.filter_plugins(plugins, stage=2)
+        stage2_results: list[PluginResult] = []
+
+        if stage2_plugins and self._router.route(seed_type) == 2:
+            tasks = [
+                self._safe_plugin_run(p, seed_target, seed_type, semaphore)
+                for p in stage2_plugins
+            ]
+            stage2_results = list(await asyncio.gather(*tasks))
+            for result in stage2_results:
+                graph.plugin_results.append({
+                    "target": seed_target,
+                    "target_type": seed_type,
+                    "plugin": result.plugin_name,
+                    "is_success": result.is_success,
+                    "data": result.data,
+                    "error": result.error_message,
+                })
+
+        # ── Phase B: Extract stage-3 targets from stage-2 results ───────────────
+        stage3_targets: list[tuple[str, str]] = []  # (target, type) for stage 3
+
+        def _add_clue(clue_target: str, clue_type: str, via_plugin: str) -> None:
+            clue_key = (clue_target.lower(), clue_type.upper())
+            if self._router.route(clue_type) == 3 and clue_key not in visited:
+                visited.add(clue_key)
+                stage3_targets.append((clue_target, clue_type))
+                graph.nodes.append(ProfileNode(
+                    target=clue_target, target_type=clue_type, depth=1
+                ))
+                graph.edges.append(ProfileEdge(
+                    source_target=seed_target,
+                    discovered_target=clue_target,
+                    discovered_type=clue_type,
+                    via_plugin=via_plugin,
+                ))
+
+        for i, result in enumerate(stage2_results):
+            # Generic clue extraction (Epic 8 — EMAIL/DOMAIN/IP via regex)
+            for clue_target, clue_type in _extract_clues_from_result(result):
+                _add_clue(clue_target, clue_type, result.plugin_name)
+
+            # Plugin-specific clue extraction (Epic 9 — PHONE, profile emails)
+            plugin = stage2_plugins[i] if i < len(stage2_plugins) else None
+            if plugin is not None and hasattr(plugin, "extract_clues"):
                 try:
-                    name = plugin.name
-                except Exception:
-                    name = "unknown"
-                logger.warning("Plugin %s raised exception for %s: %s", name, target, exc)
-                return PluginResult(
-                    plugin_name=name,
-                    is_success=False,
-                    data={},
-                    error_message=f"Plugin Exception: {exc}",
-                )
+                    for clue_target, clue_type in plugin.extract_clues(result):
+                        _add_clue(clue_target, clue_type, result.plugin_name)
+                except Exception as exc:
+                    logger.warning("extract_clues failed for %s: %s",
+                                   result.plugin_name, exc)
+
+        # ── Phase C: Stage 3 plugins on discovered PHONE/DOMAIN clues ────────────
+        stage3_plugins = self._router.filter_plugins(plugins, stage=3)
+        if stage3_plugins and stage3_targets:
+            for clue_target, clue_type in stage3_targets:
+                tasks = [
+                    self._safe_plugin_run(p, clue_target, clue_type, semaphore)
+                    for p in stage3_plugins
+                ]
+                results = list(await asyncio.gather(*tasks))
+                for result in results:
+                    graph.plugin_results.append({
+                        "target": clue_target,
+                        "target_type": clue_type,
+                        "plugin": result.plugin_name,
+                        "is_success": result.is_success,
+                        "data": result.data,
+                        "error": result.error_message,
+                    })
+
+        # ── Phase D: Stage 1 (Epic 8) plugins via RecursiveProfiler ─────────────
+        stage1_plugins = self._router.filter_plugins(plugins, stage=1)
+        if stage1_plugins:
+            flat = RecursiveProfiler(max_depth=self.max_depth)
+            flat_result = await flat.run_profiler(seed_target, seed_type, stage1_plugins)
+            # Merge flat result — add nodes/edges/results not already in graph
+            existing_node_keys = {
+                (n.target.lower(), n.target_type.upper()) for n in graph.nodes
+            }
+            for node_dict in flat_result.get("nodes", []):
+                key = (node_dict["target"].lower(), node_dict["target_type"].upper())
+                if key not in existing_node_keys:
+                    existing_node_keys.add(key)
+                    graph.nodes.append(ProfileNode(
+                        target=node_dict["target"],
+                        target_type=node_dict["target_type"],
+                        depth=node_dict["depth"],
+                    ))
+            for edge_dict in flat_result.get("edges", []):
+                graph.edges.append(ProfileEdge(
+                    source_target=edge_dict["source"],
+                    discovered_target=edge_dict["discovered"],
+                    discovered_type=edge_dict["type"],
+                    via_plugin=edge_dict["via_plugin"],
+                ))
+            graph.plugin_results.extend(flat_result.get("plugin_results", []))
+
+        return graph.to_dict()
+
+    async def _safe_plugin_run(
+        self,
+        plugin: IntelligencePlugin,
+        target: str,
+        target_type: str,
+        semaphore: asyncio.Semaphore,
+    ) -> PluginResult:
+        return await _safe_plugin_run(plugin, target, target_type, semaphore)

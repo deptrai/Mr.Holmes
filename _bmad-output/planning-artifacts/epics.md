@@ -128,6 +128,102 @@ stepsCompleted: [validate-prerequisites, design-epics]
 3. **Story 8.3:** Tạo module xuất biểu đồ mạng (Interactive HTML Mindmap).
 4. **Story 8.4:** Tích hợp tùy chọn 16 vào CLI Menu và xử lý Data I/O.
 
+---
+
+### Epic 9: Complete OSINT Profiling System
+**Mục tiêu:** Từ 1 manh mối (email/username/SĐT) → Golden Record hoàn chỉnh (tên thật, SĐT, location, personality) trong 15-20 phút, tự động, không thao tác thủ công.
+
+**FRs covered:** FR1-FR39 (prd-epic9.md)
+**NFRs covered:** NFR1-NFR15 (prd-epic9.md)
+**Source:** `_bmad-output/planning-artifacts/prd-epic9.md`
+
+#### Phase 1 — Foundation (Tuần 1-2)
+
+**Story 9.1: ProfileEntity Data Model**
+- **User Story:** As a developer, I want a `ProfileEntity` dataclass that can hold merged OSINT data from multiple sources so that the system has a unified data model for Golden Record synthesis.
+- **Acceptance Criteria:**
+  - `ProfileEntity` dataclass với fields: `seed`, `seed_type`, `real_names[]`, `emails[]`, `phones[]`, `usernames[]`, `locations[]`, `avatars[]`, `bios[]`, `platforms{}`, `breach_sources[]`, `active_hours{}`, `confidence: float`, `sources[]`
+  - `SourcedField` helper: mỗi value có `value`, `source`, `confidence` attributes
+  - `merge(other: ProfileEntity)` method: merge 2 entities với confidence scoring
+  - `to_dict()` và `from_dict()` cho JSON serialization
+  - Unit tests ≥ 80% coverage cho merge logic
+- **Technical Notes:** Python dataclass với `field(default_factory=list)`, confidence 0.0-1.0, immutable sources list
+
+**Story 9.2: Multi-Stage BFS Orchestration**
+- **User Story:** As the BFS engine, I want to route clues to the correct enrichment stage so that plugins run in the right order (identity expansion before deep enrichment).
+- **Acceptance Criteria:**
+  - `StageRouter` class: EMAIL/USERNAME → Stage 2, PHONE/DOMAIN → Stage 3
+  - `AutonomousAgent.run()` chạy Stage 2 trước, sau đó Stage 3 với clues mới từ Stage 2
+  - Each stage chạy async/parallel (asyncio.gather)
+  - 1 plugin fail không crash stage (try/except per plugin)
+  - Integration test: email seed → Stage 2 plugins chạy → clues extracted → Stage 3 plugins nhận clues
+- **Technical Notes:** Extend `Core/engine/autonomous_agent.py`, không break Epic 8 behavior khi chạy ở depth=1
+
+**Story 9.3: HolehPlugin**
+- **User Story:** As an OSINT analyst, I want to check an email against 120+ services via Holehe so that I can discover which platforms the target is registered on and extract recovery phone/email.
+- **Acceptance Criteria:**
+  - `HolehPlugin` implement `IntelligencePlugin` protocol: `check()`, `run()`, `extract_clues()`
+  - `run(email)` → trả về list registered services + partial recovery phone/email nếu có
+  - `extract_clues()` → extract `PHONE` và `EMAIL` clues từ Holehe recovery data
+  - `tos_risk = "tos_risk"` (Holehe gửi requests thật tới services)
+  - Graceful fallback nếu holehe không installed (raise `PluginUnavailableError`)
+  - Rate limit: async semaphore, retry với exponential backoff on 429
+  - Unit tests mock holehe output, integration test với real email
+- **Technical Notes:** holehe ≥ 1.4.0 dùng trio/httpx, cần bridge qua `subprocess` hoặc `asyncio.run(maincore(...))` pattern
+
+**Story 9.4: MaigretPlugin**
+- **User Story:** As an OSINT analyst, I want to scan a username across 3000+ sites via Maigret so that I can discover profiles and extract real names, bios, and avatar URLs.
+- **Acceptance Criteria:**
+  - `MaigretPlugin` implement `IntelligencePlugin` protocol
+  - `run(username)` → list of `{site, url, name, bio, avatar_url}` dicts
+  - `extract_clues()` → extract `EMAIL` clues từ discovered profiles nếu có
+  - Chạy qua subprocess (Python version isolation), parse JSON output
+  - `tos_risk = "safe"` (chỉ kiểm tra URL existence)
+  - Subprocess timeout = 300s, fallback message nếu timeout
+  - Unit tests mock subprocess output, test JSON parse robustness
+- **Technical Notes:** `maigret --json output.json --timeout 30 {username}`, Python ≥3.10 required cho maigret subprocess
+
+**Story 9.5: Cache Layer**
+- **User Story:** As the plugin system, I want a transparent cache layer so that repeated queries for the same target don't re-hit external APIs, reducing ban risk and improving speed.
+- **Acceptance Criteria:**
+  - `PluginCache` class: SQLite backend, TTL configurable via `MH_CACHE_TTL` (default 86400s)
+  - Cache key = `f"{plugin_name}:{target_type}:{target_value}"`
+  - `get(key)` → returns cached result or None
+  - `set(key, value, ttl=None)` → stores with expiry timestamp
+  - `invalidate(target)` → force-clears all cache entries for a target
+  - Plugins không cần biết cache tồn tại — cache wrapping xảy ra trong `PluginManager`
+  - Unit tests: cache hit, cache miss, TTL expiry, invalidation
+- **Technical Notes:** `_bmad-output/cache/` directory, SQLite file `plugin_cache.db`, thread-safe với asyncio.Lock
+
+**Story 9.6: CLI Integration — Complete Profile Mode**
+- **User Story:** As an OSINT analyst, I want Option 16 in the CLI to run the complete profiling pipeline so that I can get a Golden Record from a single input without manual steps.
+- **Acceptance Criteria:**
+  - Option 16 prompt: "Enter email/username/phone for Complete Profile Mode"
+  - System auto-detect input type (EMAIL/USERNAME/PHONE)
+  - Show ToS risk summary trước khi chạy: list plugins + risk levels
+  - Progress display: stage names + plugin status (running/done/failed)
+  - Output: 3 files saved to `GUI/Reports/Autonomous/{target}/` (raw_data.json, ai_report.md, mindmap.html) + new `golden_record.json`
+  - E2E test: `deptraidapxichlo@gmail.com` → Golden Record với ≥1 real_name field populated
+- **Technical Notes:** Extend `Core/autonomous_cli.py`, reuse existing `MindmapGenerator` và `LLMSynthesizer`
+
+#### Phase 2 — Deep Enrichment (Tuần 3-4)
+
+**Story 9.7: GitHubPlugin** — tên thật từ commit history (GitHub API, rate: 60/h free)
+**Story 9.8: NumverifyPlugin** — xác minh SĐT từ Holehe recovery (Numverify API, 100 free/month)
+**Story 9.9: InstagramPlugin** — bio + GPS posts via Instaloader (opt-in, ban risk cao)
+**Story 9.10: EntityResolver** — Golden Record merge với Jaro-Winkler + pHash confidence scoring
+**Story 9.11: Enhanced LLM Synthesis** — ProfileEntity-aware prompts, personality traits
+
+#### Phase 3 — Social Intelligence (Tuần 5-6)
+
+**Story 9.12: RedditPlugin** — interests, writing style via PRAW
+**Story 9.13: YouTubePlugin** — channel analysis
+**Story 9.14: HunterPlugin** — email discovery từ domain
+**Story 9.15: Cross-Platform Bridge** — username bridging qua avatar hash/recovery info
+**Story 9.16: Personality Analysis + Timeline** — Big-5 traits, behavioral timeline
+
+---
+
 ## FR Coverage Map
 
 | FR | Epic | Mô tả |

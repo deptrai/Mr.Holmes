@@ -6,6 +6,7 @@ Phần của Story 1.1 — Foundation Refactoring, Epic 1.
 """
 from Core.models.scan_context import ScanContext, ScanConfig
 from Core.models.scan_result import ScanResult, ScanStatus, ErrorStrategy
+from Core.models.profile_entity import ProfileEntity, SourcedField
 from Core.models.exceptions import (
     OSINTError,
     TargetSiteTimeout,
@@ -21,6 +22,8 @@ __all__ = [
     "ScanContext",
     "ScanConfig",
     "ScanResult",
+    "ProfileEntity",
+    "SourcedField",
     # Enums
     "ScanStatus",
     "ErrorStrategy",

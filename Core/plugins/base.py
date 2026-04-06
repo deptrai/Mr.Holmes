@@ -25,6 +25,12 @@ class IntelligencePlugin(Protocol):
     """
     AC1 — Chuẩn giao tiếp (Protocol) bắt buộc dành cho các External OSINT sources.
     Bất cứ plugin nào (HIBP, Shodan, v.v) đều phải implement Protocol này.
+
+    Epic 9 additions (backward compatible — existing plugins not required to implement):
+        stage: int  — enrichment stage (1=legacy, 2=identity expansion, 3=deep enrichment)
+                      Default: 1 (Epic 8 plugins without this attribute default to stage 1
+                      via getattr(plugin, 'stage', 1) in StageRouter.filter_plugins())
+        tos_risk: str — "safe" | "tos_risk" | "ban_risk" (for CLI ToS summary display)
     """
     @property
     def name(self) -> str:

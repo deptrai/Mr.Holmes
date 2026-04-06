@@ -7,9 +7,13 @@ Calls any OpenAI-compatible API endpoint to synthesize a ProfileGraph dict
 (output from RecursiveProfiler) into a professional Markdown analyst report.
 
 Configuration via environment variables:
-    MH_LLM_BASE_URL : e.g. "https://api.openai.com/v1" or "http://localhost:11434/v1"
-    MH_LLM_API_KEY  : API key (use "ollama" for local Ollama)
-    MH_LLM_MODEL    : Model name e.g. "gpt-4o", "gemma3:latest"
+    MH_LLM_BASE_URL         : Primary endpoint, e.g. "https://generativelanguage.googleapis.com/v1beta/openai"
+    MH_LLM_API_KEY          : Primary API key
+    MH_LLM_MODEL            : Primary model name, e.g. "gemini-3.1-flash-lite-preview"
+
+    MH_LLM_FALLBACK_BASE_URL : Fallback endpoint (used when primary fails/quota exceeded)
+    MH_LLM_FALLBACK_API_KEY  : Fallback API key
+    MH_LLM_FALLBACK_MODEL    : Fallback model name
 """
 from __future__ import annotations
 
@@ -76,7 +80,8 @@ class LLMSynthesizer:
         print(result.report_markdown)
     """
 
-    _DEFAULT_TIMEOUT: int = 120  # seconds — LLMs can be slow
+    _DEFAULT_TIMEOUT: int = 180  # seconds — LLMs can be slow on large prompts
+    _MAX_RETRIES: int = 2       # retry on transient server disconnects
 
     def __init__(
         self,
@@ -88,6 +93,11 @@ class LLMSynthesizer:
         self.api_key = api_key if api_key is not None else os.environ.get("MH_LLM_API_KEY", "")
         self.model = model if model is not None else os.environ.get("MH_LLM_MODEL", "gpt-4o")
 
+        # Fallback endpoint — used when primary fails (rate limit, network error, etc.)
+        self.fallback_base_url = os.environ.get("MH_LLM_FALLBACK_BASE_URL", "").rstrip("/")
+        self.fallback_api_key = os.environ.get("MH_LLM_FALLBACK_API_KEY", "")
+        self.fallback_model = os.environ.get("MH_LLM_FALLBACK_MODEL", "")
+
     # ─────────────────────────────────────────────────────────────────────────
     # Public API
     # ─────────────────────────────────────────────────────────────────────────
@@ -96,14 +106,12 @@ class LLMSynthesizer:
         """
         Synthesize a ProfileGraph dict into a Markdown analyst report.
 
-        Args:
-            graph: dict as returned by RecursiveProfiler.run_profiler()
-                   Keys: "nodes", "edges", "plugin_results"
+        Tries the primary endpoint first; on any failure (rate limit, network error,
+        non-200 response), falls back to MH_LLM_FALLBACK_* if configured.
 
         Returns:
-            SynthesisResult — never raises; returns fallback on any error.
+            SynthesisResult — never raises; returns fallback report on all errors.
         """
-        # AC4 — Graceful fallback when credentials are missing
         if not self.base_url or not self.api_key:
             fallback = self._build_fallback_report(graph, reason="LLM credentials not configured.")
             return SynthesisResult(
@@ -114,77 +122,111 @@ class LLMSynthesizer:
             )
 
         user_prompt = self._build_user_prompt(graph)
-        endpoint = f"{self.base_url}/chat/completions"
+
+        # Try primary, then fallback if configured
+        endpoints_to_try = [
+            (self.base_url, self.api_key, self.model, "primary"),
+        ]
+        if self.fallback_base_url and self.fallback_api_key and self.fallback_model:
+            endpoints_to_try.append(
+                (self.fallback_base_url, self.fallback_api_key, self.fallback_model, "fallback")
+            )
+
+        import asyncio as _asyncio
+
+        last_error = ""
+        for base_url, api_key, model, label in endpoints_to_try:
+            result = await self._call_endpoint(
+                base_url=base_url,
+                api_key=api_key,
+                model=model,
+                user_prompt=user_prompt,
+                label=label,
+            )
+            if result is not None:
+                return result
+            # Primary failed — log and try fallback
+            logger.warning("LLM %s endpoint failed, trying next option.", label)
+
+        fallback = self._build_fallback_report(graph, reason="All LLM endpoints exhausted.")
+        return SynthesisResult(
+            is_success=False,
+            report_markdown=fallback,
+            model_used=self.model,
+            error_message="All LLM endpoints exhausted.",
+        )
+
+    async def _call_endpoint(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        user_prompt: str,
+        label: str,
+    ) -> "SynthesisResult | None":
+        """
+        Attempt a single LLM endpoint with retries.
+        Returns SynthesisResult on success, None if all attempts fail.
+        """
+        import asyncio as _asyncio
+
+        endpoint = f"{base_url}/chat/completions"
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         payload = {
-            "model": self.model,
+            "model": model,
             "messages": [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
             "temperature": 0.3,
+            "max_tokens": 4000,
         }
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    endpoint,
-                    headers=headers,
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=self._DEFAULT_TIMEOUT),
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logger.warning("LLM API returned HTTP %d: %s", response.status, error_text[:200])
-                        fallback = self._build_fallback_report(graph, reason=f"API HTTP {response.status}")
+        for attempt in range(1, self._MAX_RETRIES + 1):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        endpoint,
+                        headers=headers,
+                        json=payload,
+                        timeout=aiohttp.ClientTimeout(total=self._DEFAULT_TIMEOUT),
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.warning(
+                                "LLM %s HTTP %d: %s", label, response.status, error_text[:200]
+                            )
+                            return None  # signal caller to try next endpoint
+
+                        data = await response.json()
+                        try:
+                            content = data["choices"][0]["message"]["content"]
+                        except (KeyError, IndexError, TypeError) as parse_err:
+                            logger.warning("LLM %s malformed response: %s", label, parse_err)
+                            return None
+
+                        model_used = data.get("model", model)
+                        logger.info("LLM synthesis succeeded via %s (%s)", label, model_used)
                         return SynthesisResult(
-                            is_success=False,
-                            report_markdown=fallback,
-                            model_used=self.model,
-                            error_message=f"LLM API HTTP {response.status}: {error_text[:200]}",
+                            is_success=True,
+                            report_markdown=content,
+                            model_used=model_used,
                         )
 
-                    data = await response.json()
-                    try:
-                        content = data["choices"][0]["message"]["content"]
-                    except (KeyError, IndexError, TypeError) as parse_err:
-                        logger.warning("LLM API returned malformed JSON: %s", parse_err)
-                        fallback = self._build_fallback_report(graph, reason=f"Malformed API response: {parse_err}")
-                        return SynthesisResult(
-                            is_success=False,
-                            report_markdown=fallback,
-                            model_used=self.model,
-                            error_message=f"Malformed API response: {parse_err}",
-                        )
-                    model_used = data.get("model", self.model)
+            except (aiohttp.ServerDisconnectedError, aiohttp.ClientOSError) as exc:
+                logger.warning("LLM %s attempt %d/%d: %s", label, attempt, self._MAX_RETRIES, exc)
+                if attempt < self._MAX_RETRIES:
+                    await _asyncio.sleep(2 * attempt)
+                    continue
+                return None
+            except (aiohttp.ClientError, Exception) as exc:
+                logger.warning("LLM %s error: %s", label, exc)
+                return None
 
-                    return SynthesisResult(
-                        is_success=True,
-                        report_markdown=content,
-                        model_used=model_used,
-                    )
-
-        except aiohttp.ClientError as exc:
-            logger.warning("LLM API network error: %s", exc)
-            fallback = self._build_fallback_report(graph, reason=str(exc))
-            return SynthesisResult(
-                is_success=False,
-                report_markdown=fallback,
-                model_used=self.model,
-                error_message=f"Network error: {exc}",
-            )
-        except Exception as exc:
-            logger.warning("LLM synthesizer unexpected error: %s", exc)
-            fallback = self._build_fallback_report(graph, reason=str(exc))
-            return SynthesisResult(
-                is_success=False,
-                report_markdown=fallback,
-                model_used=self.model,
-                error_message=f"Unexpected error: {exc}",
-            )
+        return None
 
     # ─────────────────────────────────────────────────────────────────────────
     # Prompt construction (AC5 — testable independently)
@@ -243,15 +285,17 @@ class LLMSynthesizer:
                 edge_lines += f"\n  ... and {len(edges) - 15} more relationships"
             edge_summary = f"\n\nRelationships Found ({len(edges)} total):\n{edge_lines}"
 
-        # Detailed plugin findings (data fields from successful results)
+        # Detailed plugin findings — limit to first 5 successful results to avoid bloat
         findings_lines: list[str] = []
         for pr in plugin_results:
+            if len(findings_lines) >= 5:
+                break
             if pr.get("is_success") and pr.get("data"):
                 data = pr["data"]
                 if data.get("data_found"):
                     findings_lines.append(
                         f"  - {pr['plugin']} found data for {pr['target']}: "
-                        + json.dumps({k: v for k, v in data.items() if k != "data_found"}, ensure_ascii=False)[:300]
+                        + json.dumps({k: v for k, v in data.items() if k != "data_found"}, ensure_ascii=False)[:200]
                     )
         findings_text = (
             "\n\nKey Findings from Plugins:\n" + "\n".join(findings_lines)

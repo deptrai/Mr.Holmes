@@ -74,8 +74,10 @@ _HTML_TEMPLATE = """\
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mr.Holmes OSINT Mindmap — TITLE__PLACEHOLDER</title>
   <script type="text/javascript"
-    src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js">
+    src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"
+    onerror="document.getElementById('cdn-error').style.display='block'">
   </script>
+  <noscript><p style="color:red">JavaScript is required to view this mindmap.</p></noscript>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
