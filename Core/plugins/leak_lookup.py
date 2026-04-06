@@ -11,7 +11,7 @@ import time
 
 import aiohttp
 
-from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
 
 class LeakLookupPlugin(IntelligencePlugin):
@@ -84,10 +84,8 @@ class LeakLookupPlugin(IntelligencePlugin):
 
         # Issue network call
         try:
-            # Using ephemeral local session to comply with IntelligencePlugin decoupled constraint
-            # (Deferred Epic-wide Session Pool: Review Record 7.3)
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.BASE_URL, data=payload, timeout=10) as response:
+            async with get_http_session(self) as session:
+                async with session.post(self.BASE_URL, data=payload, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     
                     if response.status == 429:
                         return PluginResult(

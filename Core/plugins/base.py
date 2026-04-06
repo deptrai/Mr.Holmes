@@ -6,8 +6,11 @@ Defines standard interfaces and dataclasses for external intelligence API plugin
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, AsyncIterator, Protocol
+
+import aiohttp
 
 
 @dataclass
@@ -50,3 +53,19 @@ class IntelligencePlugin(Protocol):
             target_type: Phân loại target (e.g. 'EMAIL', 'IP', 'USERNAME').
         """
         ...
+
+
+@asynccontextmanager
+async def get_http_session(plugin: object) -> AsyncIterator[aiohttp.ClientSession]:
+    """Yield a shared aiohttp session from PluginManager if available, else create one.
+
+    PluginManager sets ``plugin._shared_session`` before calling ``check()``.
+    When used standalone (no manager), a fresh session is created and closed
+    automatically — fully backward compatible.
+    """
+    shared = getattr(plugin, "_shared_session", None)
+    if shared is not None and not shared.closed:
+        yield shared
+    else:
+        async with aiohttp.ClientSession() as session:
+            yield session

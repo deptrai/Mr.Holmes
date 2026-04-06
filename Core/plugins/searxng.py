@@ -15,7 +15,7 @@ import random
 
 import aiohttp
 
-from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
 
 # Diverse User-Agent pool to reduce fingerprinting-based blocks
@@ -110,9 +110,9 @@ class SearxngPlugin(IntelligencePlugin):
             }
 
             try:
-                async with aiohttp.ClientSession(headers=headers) as session:
+                async with get_http_session(self) as session:
                     async with session.get(
-                        base_url, params=params,
+                        base_url, params=params, headers=headers,
                         timeout=aiohttp.ClientTimeout(total=15),
                     ) as response:
                         if response.status == 429:

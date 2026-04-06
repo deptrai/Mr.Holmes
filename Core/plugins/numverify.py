@@ -13,7 +13,7 @@ import unicodedata
 
 import aiohttp
 
-from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class NumverifyPlugin(IntelligencePlugin):
             _HTTP_WARNING_ISSUED = True
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with get_http_session(self) as session:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 429:
                         return PluginResult(

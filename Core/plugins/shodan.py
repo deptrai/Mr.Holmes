@@ -10,7 +10,7 @@ import time
 import aiohttp
 from typing import Any
 
-from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
 
 class ShodanPlugin(IntelligencePlugin):
@@ -74,8 +74,8 @@ class ShodanPlugin(IntelligencePlugin):
 
         # Outside lock - perform I/O
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=10) as response:
+            async with get_http_session(self) as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 404:
                         return PluginResult(
                             plugin_name=self.name,

@@ -29,7 +29,7 @@ from urllib.parse import quote
 
 import aiohttp
 
-from Core.plugins.base import IntelligencePlugin, PluginResult
+from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
 
 _BASE_URL = "https://api.github.com"
@@ -165,7 +165,7 @@ class GitHubPlugin(IntelligencePlugin):
         events_url = f"{_BASE_URL}/users/{username}/events/public?per_page=100"
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with get_http_session(self) as session:
                 # Fetch profile
                 status, profile_data, _ = await self._get_json(session, profile_url, headers)
 
@@ -273,7 +273,7 @@ class GitHubPlugin(IntelligencePlugin):
         search_url = f"{_BASE_URL}/search/commits?q=author-email:{quote(email)}&per_page=10"
 
         try:
-            async with aiohttp.ClientSession() as session:
+            async with get_http_session(self) as session:
                 status, search_data, _ = await self._get_json(session, search_url, headers)
 
                 if status == -1:

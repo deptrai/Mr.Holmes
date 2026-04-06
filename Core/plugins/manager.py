@@ -16,6 +16,8 @@ import logging
 import pkgutil
 from typing import TYPE_CHECKING, List
 
+import aiohttp
+
 from Core.plugins.base import IntelligencePlugin, PluginResult
 
 if TYPE_CHECKING:
@@ -96,12 +98,19 @@ class PluginManager:
     async def run_all(self, target: str, target_type: str) -> List[PluginResult]:
         """
         Khởi chạy kiểm tra đồng thời (concurrent execution) cho TẤT CẢ plugins đã đăng ký.
+        Uses a shared aiohttp session for connection pooling across plugins.
         """
-        tasks = [
-            self._safe_execute(plugin, target, target_type)
-            for plugin in self._plugins
-        ]
-        return list(await asyncio.gather(*tasks))
+        async with aiohttp.ClientSession() as shared_session:
+            for plugin in self._plugins:
+                plugin._shared_session = shared_session  # type: ignore[attr-defined]
+            tasks = [
+                self._safe_execute(plugin, target, target_type)
+                for plugin in self._plugins
+            ]
+            results = list(await asyncio.gather(*tasks))
+            for plugin in self._plugins:
+                plugin._shared_session = None  # type: ignore[attr-defined]
+        return results
 
     async def _safe_execute(
         self, plugin: IntelligencePlugin, target: str, target_type: str
