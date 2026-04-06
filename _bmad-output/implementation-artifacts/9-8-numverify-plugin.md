@@ -1,6 +1,6 @@
 # Story 9.8: NumverifyPlugin
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -51,12 +51,12 @@ so that I can confirm phone validity and learn carrier/region information.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Tạo `Core/plugins/numverify.py` với skeleton (AC: 1)
-- [ ] Task 2: Implement `check()` với phone normalization (AC: 2, 3)
-  - [ ] `re.sub(r"[^\d+]", "", phone)` normalization
-  - [ ] aiohttp GET với timeout
-  - [ ] Parse JSON response
-- [ ] Task 3: Viết unit tests (AC: 4)
+- [x] Task 1: Tạo `Core/plugins/numverify.py` với skeleton (AC: 1)
+- [x] Task 2: Implement `check()` với phone normalization (AC: 2, 3)
+  - [x] `re.sub(r"[^\d+]", "", phone)` normalization
+  - [x] aiohttp GET với timeout
+  - [x] Parse JSON response
+- [x] Task 3: Viết unit tests (AC: 4)
 
 ## Dev Notes
 
@@ -93,8 +93,24 @@ def _normalize_phone(phone: str) -> str:
 ## Dev Agent Record
 
 ### Agent Model Used
+
+claude-opus-4-6
+
 ### Debug Log References
+
+- `_normalize_phone("(+84)...")` → bug: `+` không ở đầu string khi có `(` prefix. Fix: dùng `re.sub(r"[^\d+]", "", ...)` rồi reconstruct leading `+`.
+- Test `test_invalid_phone_response_is_success_true` dùng `"0000"` (4 chars, quá ngắn) → reject trước API. Fix: đổi sang `"00000000000"`.
+
 ### Completion Notes List
+
+- `NumverifyPlugin` implements `IntelligencePlugin` protocol: `name="Numverify"`, `requires_api_key=True`, `stage=3`, `tos_risk="safe"`
+- `_normalize_phone()`: strip all non-digit/non-plus → preserve leading `+` only → min 7 chars
+- `check()`: target_type guard → API key guard → normalize → HTTP GET → parse JSON
+- `valid=False` từ API → `is_success=True` (kết quả hợp lệ, không phải lỗi)
+- 429/non-200 → failure PluginResult (no retry)
+- 21 tests, 98% coverage
+
 ### File List
+
 - `Core/plugins/numverify.py` (created)
 - `tests/plugins/test_numverify_plugin.py` (created)

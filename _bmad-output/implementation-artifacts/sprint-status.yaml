@@ -122,7 +122,7 @@ development_status:
   9-5-cache-layer: done
   9-6-cli-complete-profile-mode: done
   9-7-github-plugin: done
-  9-8-numverify-plugin: ready-for-dev
+  9-8-numverify-plugin: done
   9-9-instagram-plugin: ready-for-dev
   9-10-entity-resolver: ready-for-dev
   9-11-enhanced-llm-synthesis: ready-for-dev
