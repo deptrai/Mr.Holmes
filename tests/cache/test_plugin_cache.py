@@ -261,8 +261,8 @@ async def test_plugin_manager_cache_hit(tmp_path):
     key = "MockPlugin:EMAIL:target@test.com"
     await cache.set(key, cached_data)
 
-    # Mock plugin
-    mock_plugin = MagicMock()
+    # Mock plugin — use spec to prevent MagicMock auto-creating normalize_target
+    mock_plugin = MagicMock(spec=["name", "requires_api_key", "check"])
     mock_plugin.name = "MockPlugin"
     mock_plugin.requires_api_key = False
     mock_plugin.check = AsyncMock()
@@ -282,7 +282,7 @@ async def test_plugin_manager_cache_miss_calls_plugin(tmp_path):
     """On cache miss, PluginManager calls the plugin and stores result."""
     cache = make_cache(tmp_path)
 
-    mock_plugin = MagicMock()
+    mock_plugin = MagicMock(spec=["name", "requires_api_key", "check"])
     mock_plugin.name = "MockPlugin"
     mock_plugin.requires_api_key = False
     mock_plugin.check = AsyncMock(return_value=PluginResult(
@@ -308,7 +308,7 @@ async def test_plugin_manager_failed_result_not_cached(tmp_path):
     """PluginManager does NOT cache failed plugin results."""
     cache = make_cache(tmp_path)
 
-    mock_plugin = MagicMock()
+    mock_plugin = MagicMock(spec=["name", "requires_api_key", "check"])
     mock_plugin.name = "MockPlugin"
     mock_plugin.requires_api_key = False
     mock_plugin.check = AsyncMock(return_value=PluginResult(
@@ -327,7 +327,7 @@ async def test_plugin_manager_failed_result_not_cached(tmp_path):
 @pytest.mark.asyncio
 async def test_plugin_manager_without_cache_works_normally():
     """PluginManager without cache (cache=None) behaves as before."""
-    mock_plugin = MagicMock()
+    mock_plugin = MagicMock(spec=["name", "requires_api_key", "check"])
     mock_plugin.name = "MockPlugin"
     mock_plugin.requires_api_key = False
     mock_plugin.check = AsyncMock(return_value=PluginResult(

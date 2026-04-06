@@ -239,6 +239,55 @@ async def test_api_429_returns_failure():
 
 
 @pytest.mark.asyncio
+async def test_api_500_returns_failure():
+    """Non-200/non-429 status code returns failure."""
+    plugin = NumverifyPlugin(api_key="testkey")
+    mock_resp = make_mock_response(500, {})
+    mock_session = make_mock_session(mock_resp)
+
+    with patch("Core.plugins.numverify.aiohttp.ClientSession", return_value=mock_session):
+        result = await plugin.check("+84928881690", "PHONE")
+
+    assert result.is_success is False
+    assert "500" in result.error_message
+
+
+@pytest.mark.asyncio
+async def test_api_success_false_returns_failure():
+    """Numverify returns error JSON inside HTTP 200 — must detect success:false."""
+    plugin = NumverifyPlugin(api_key="testkey")
+    error_response = {
+        "success": False,
+        "error": {"code": 101, "type": "invalid_access_key", "info": "You have not supplied a valid API Access Key."},
+    }
+    mock_resp = make_mock_response(200, error_response)
+    mock_session = make_mock_session(mock_resp)
+
+    with patch("Core.plugins.numverify.aiohttp.ClientSession", return_value=mock_session):
+        result = await plugin.check("+84928881690", "PHONE")
+
+    assert result.is_success is False
+    assert "101" in result.error_message
+
+
+@pytest.mark.asyncio
+async def test_api_non_dict_response_returns_failure():
+    """API returning non-dict JSON (e.g. a list) → failure."""
+    plugin = NumverifyPlugin(api_key="testkey")
+    mock_resp = AsyncMock()
+    mock_resp.status = 200
+    mock_resp.json = AsyncMock(return_value=[1, 2, 3])
+    mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+    mock_resp.__aexit__ = AsyncMock(return_value=False)
+    mock_session = make_mock_session(mock_resp)
+
+    with patch("Core.plugins.numverify.aiohttp.ClientSession", return_value=mock_session):
+        result = await plugin.check("+84928881690", "PHONE")
+
+    assert result.is_success is False
+
+
+@pytest.mark.asyncio
 async def test_api_network_exception_returns_failure():
     plugin = NumverifyPlugin(api_key="testkey")
     mock_session = MagicMock()
@@ -275,3 +324,45 @@ async def test_too_short_phone_returns_failure():
     plugin = NumverifyPlugin(api_key="testkey")
     result = await plugin.check("123", "PHONE")
     assert result.is_success is False
+
+
+# ---------------------------------------------------------------------------
+# W4: extract_clues() returns empty list
+# ---------------------------------------------------------------------------
+
+
+def test_extract_clues_returns_empty():
+    """NumverifyPlugin.extract_clues() returns [] — phone data does not seed BFS."""
+    plugin = NumverifyPlugin(api_key="key")
+    result = PluginResult(plugin_name="Numverify", is_success=True, data={"valid": True, "carrier": "Mobifone"})
+    assert plugin.extract_clues(result) == []
+
+
+# ---------------------------------------------------------------------------
+# W3: normalize_target() for cache key dedup
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_target_strips_formatting():
+    """normalize_target returns normalized phone for cache dedup."""
+    plugin = NumverifyPlugin(api_key="key")
+    assert plugin.normalize_target("+84 928-881-690") == "+84928881690"
+
+
+def test_normalize_target_fallback_on_too_short():
+    """normalize_target returns original target if normalization fails."""
+    plugin = NumverifyPlugin(api_key="key")
+    assert plugin.normalize_target("123") == "123"
+
+
+# ---------------------------------------------------------------------------
+# W7: Unicode/fullwidth digit normalization
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_phone_fullwidth_digits():
+    """Fullwidth digits (e.g. ０-９) are converted to ASCII."""
+    plugin = NumverifyPlugin(api_key="key")
+    # ＋８４９２８８８１６９０ (fullwidth)
+    fullwidth = "\uff0b\uff18\uff14\uff19\uff12\uff18\uff18\uff18\uff11\uff16\uff19\uff10"
+    assert plugin._normalize_phone(fullwidth) == "+84928881690"

@@ -277,6 +277,7 @@ class RecursiveProfiler:
                         "is_success": result.is_success,
                         "data": result.data,
                         "error": result.error_message,
+                        "stage": 1,
                     })
 
                     # Extract new clues and add to next layer
@@ -414,6 +415,7 @@ class StagedProfiler:
                     "is_success": result.is_success,
                     "data": result.data,
                     "error": result.error_message,
+                    "stage": 2,
                 })
 
         # ── Phase B: Extract stage-3 targets from stage-2 results ───────────────
@@ -466,6 +468,7 @@ class StagedProfiler:
                         "is_success": result.is_success,
                         "data": result.data,
                         "error": result.error_message,
+                        "stage": 3,
                     })
 
         # ── Phase D: Stage 1 (Epic 8) plugins via RecursiveProfiler ─────────────

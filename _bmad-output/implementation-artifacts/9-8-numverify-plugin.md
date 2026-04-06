@@ -58,6 +58,19 @@ so that I can confirm phone validity and learn carrier/region information.
   - [x] Parse JSON response
 - [x] Task 3: Viết unit tests (AC: 4)
 
+### Review Findings
+
+- [x] [Review][Patch] P1: Numverify API trả error JSON trong HTTP 200 — `success: false` không được detect, bị cached là success [`numverify.py:104`]
+- [x] [Review][Patch] P2: Thiếu test cho non-200/non-429 HTTP status (e.g. 500) [`test_numverify_plugin.py`]
+- [x] [Review][Fixed] W1: HTTP plaintext — thêm `logger.warning` cảnh báo user về cleartext [`numverify.py`]
+- [x] [Review][Defer] W2: `aiohttp.ClientSession` tạo mới per request — systemic issue, cần refactor tất cả plugins
+- [x] [Review][Fixed] W3: Cache key dùng raw phone — thêm `normalize_target()` hook vào PluginManager [`manager.py`, `numverify.py`]
+- [x] [Review][Fixed] W4: `extract_clues()` stub — thêm explicit no-op method [`numverify.py`]
+- [x] [Review][Fixed] W5: `discover_plugins()` — thêm `logger.warning` thay `pass` [`manager.py`]
+- [x] [Review][Fixed] W6: `_print_progress_summary` — thêm `"stage"` key vào plugin_results (3 locations) [`autonomous_agent.py`]
+- [x] [Review][Fixed] W7: Unicode/fullwidth digits — thêm `unicodedata.normalize("NFKC")` [`numverify.py`]
+- [x] [Review][Fixed] W8: `detect_seed_type` mismatch — thêm comment documenting intent [`numverify.py`]
+
 ## Dev Notes
 
 ### Numverify API

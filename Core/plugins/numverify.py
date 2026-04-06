@@ -6,14 +6,22 @@ Free tier: 100 lookups/month via HTTP (HTTPS requires paid plan).
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
+import unicodedata
 
 import aiohttp
 
 from Core.plugins.base import IntelligencePlugin, PluginResult
 
+logger = logging.getLogger(__name__)
+
+# Shortest valid phone number (E.164 shortest is ~7 digits including country code).
+# Note: detect_seed_type() in autonomous_cli.py requires 9+ digits for auto-detection
+# as PHONE — _MIN_PHONE_LEN=7 is only reachable via explicit target_type="PHONE".
 _MIN_PHONE_LEN = 7
+_HTTP_WARNING_ISSUED = False
 
 
 class NumverifyPlugin(IntelligencePlugin):
@@ -39,14 +47,24 @@ class NumverifyPlugin(IntelligencePlugin):
     @staticmethod
     def _normalize_phone(phone: str) -> str:
         """Strip non-digit chars except a leading '+'. Return '' if result is too short."""
+        # W7: Convert fullwidth/regional digits (e.g. ０-９) to ASCII
+        phone = unicodedata.normalize("NFKC", phone.strip())
         # Strip all chars that aren't digits or '+' — this handles formats like (+84)...
-        stripped = re.sub(r"[^\d+]", "", phone.strip())
+        stripped = re.sub(r"[^\d+]", "", phone)
         # Only honour a leading '+'; any '+' in the middle is noise
         if stripped.startswith("+"):
             normalized = "+" + re.sub(r"[^\d]", "", stripped[1:])
         else:
             normalized = re.sub(r"[^\d]", "", stripped)
         return normalized if len(normalized) >= _MIN_PHONE_LEN else ""
+
+    def normalize_target(self, target: str) -> str:
+        """Normalize phone for cache key dedup — same number, different formats → same key."""
+        return self._normalize_phone(target) or target
+
+    def extract_clues(self, result: PluginResult) -> list[tuple[str, str]]:
+        """Phone enrichment data (carrier, location) does not seed further BFS."""
+        return []
 
     async def check(self, target: str, target_type: str) -> PluginResult:
         if target_type.upper() != "PHONE":
@@ -82,6 +100,15 @@ class NumverifyPlugin(IntelligencePlugin):
             f"?access_key={self.api_key}&number={phone}&format=1"
         )
 
+        # W1: Warn once about plaintext HTTP (free tier limitation)
+        global _HTTP_WARNING_ISSUED
+        if not _HTTP_WARNING_ISSUED:
+            logger.warning(
+                "Numverify free tier uses HTTP (not HTTPS). "
+                "API key and phone number are transmitted in cleartext."
+            )
+            _HTTP_WARNING_ISSUED = True
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
@@ -102,6 +129,21 @@ class NumverifyPlugin(IntelligencePlugin):
                         )
 
                     data = await response.json()
+                    if not isinstance(data, dict):
+                        return PluginResult(
+                            plugin_name=self.name,
+                            is_success=False,
+                            data={},
+                            error_message=f"Numverify unexpected response type: {type(data).__name__}",
+                        )
+                    if data.get("success") is False:
+                        err = data.get("error", {})
+                        return PluginResult(
+                            plugin_name=self.name,
+                            is_success=False,
+                            data={},
+                            error_message=f"Numverify API error {err.get('code', '?')}: {err.get('info', 'unknown')}",
+                        )
                     return PluginResult(
                         plugin_name=self.name,
                         is_success=True,

@@ -88,8 +88,8 @@ class PluginManager:
                         instance = obj()
                         self.register(instance)
                         discovered += 1
-                    except Exception:
-                        pass  # Skip classes that can't be instantiated without args
+                    except Exception as e:
+                        logger.warning("Failed to instantiate plugin %s.%s: %s", modname, _attr_name, e)
 
         return discovered
 
@@ -154,9 +154,21 @@ class PluginManager:
         return result
 
     def _cache_key(self, plugin: IntelligencePlugin, target: str, target_type: str) -> str:
-        """Build a deterministic cache key: '{plugin_name}:{TARGET_TYPE}:{target_lower}'."""
+        """Build a deterministic cache key: '{plugin_name}:{TARGET_TYPE}:{normalized_target}'.
+
+        If the plugin defines a ``normalize_target(target)`` method, it is called
+        to canonicalize the target before key construction.  This ensures that
+        different surface formats of the same value (e.g. '+84 928 881 690' vs
+        '+84928881690') share a single cache entry.
+        """
         try:
             name = plugin.name
         except Exception:
             name = "unknown"
+        # Allow plugins to normalize target for cache dedup
+        if hasattr(plugin, "normalize_target"):
+            try:
+                target = plugin.normalize_target(target)
+            except Exception:
+                pass
         return f"{name}:{target_type.upper()}:{target.casefold()}"
