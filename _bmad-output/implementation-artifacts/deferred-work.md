@@ -42,3 +42,12 @@ Items deferred from code reviews. Not blockers — tracked for future attention.
 - **D3:** `_check_email` trả input email trong `data["emails"]` mà không filter noreply domains. Feature scope.
 - **D4:** `_BOT_PATTERNS` chưa cover `web-flow`, `semantic-release-bot`, `allcontributors[bot]`. Mở rộng incremental khi cần.
 - **D5:** `extract_clues` map `real_names` → `"USERNAME"` type — full names như "Alice Smith" có thể bị BFS route vào username plugins và 404. Cần review BFS clue type design.
+
+## Deferred from: code review of story 9-5 (2026-04-06)
+
+- **D1:** Không có index trên `expires_at` — full table scan khi cleanup. Thêm index khi cache table lớn.
+- **D2:** Không giới hạn kích thước cache — DB có thể phình. Cần `MAX_ENTRIES` hoặc eviction policy.
+- **D3:** `_DEFAULT_DB_PATH` là relative path — hoạt động đúng khi chạy từ project root (Menu.py).
+- **D4:** `target.lower()` trong `_cache_key` nên dùng `casefold()` cho Unicode-safe.
+- **D5:** `time.sleep()` trong tests TTL expiry nên mock `time.time` để tránh flaky trên CI.
+- **D6:** LIKE wildcards (`%`, `_`) trong target không được escape trong `invalidate()`.

@@ -116,9 +116,13 @@ class PluginManager:
         - Failed results are never cached.
         """
         # Cache check
+        key: str | None = None
         if self._cache is not None:
             key = self._cache_key(plugin, target, target_type)
-            cached = self._cache.get(key)
+            try:
+                cached = self._cache.get(key)
+            except Exception:
+                cached = None
             if cached is not None:
                 logger.debug("Cache hit for %s: %s", plugin.name, target)
                 return PluginResult(plugin_name=plugin.name, is_success=True, data=cached)
@@ -140,8 +144,12 @@ class PluginManager:
 
         # Cache successful results
         if self._cache is not None and result.is_success and result.data:
-            key = self._cache_key(plugin, target, target_type)
-            await self._cache.set(key, result.data)
+            if key is None:
+                key = self._cache_key(plugin, target, target_type)
+            try:
+                await self._cache.set(key, result.data)
+            except Exception as e:
+                logger.warning("Cache write failed for %s: %s", plugin.name, e)
 
         return result
 
@@ -151,4 +159,4 @@ class PluginManager:
             name = plugin.name
         except Exception:
             name = "unknown"
-        return f"{name}:{target_type.upper()}:{target.lower()}"
+        return f"{name}:{target_type.upper()}:{target.casefold()}"

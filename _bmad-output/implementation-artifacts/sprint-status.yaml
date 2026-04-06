@@ -119,7 +119,7 @@ development_status:
   9-2-multi-stage-bfs-orchestration: done
   9-3-holehe-plugin: done
   9-4-maigret-plugin: done
-  9-5-cache-layer: review
+  9-5-cache-layer: done
   9-6-cli-complete-profile-mode: done
   9-7-github-plugin: done
   9-8-numverify-plugin: ready-for-dev

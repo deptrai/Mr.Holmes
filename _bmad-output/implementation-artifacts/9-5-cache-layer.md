@@ -1,6 +1,6 @@
 # Story 9.5: Cache Layer
 
-Status: review
+Status: done
 
 ## Story
 
@@ -72,6 +72,21 @@ so that ban risk is reduced and pipeline speed improves on subsequent runs.
 - [x] Task 4: Viết unit tests (AC: 8)
   - [x] `tests/cache/test_plugin_cache.py`
   - [x] Dùng `tmp_path` pytest fixture cho SQLite file
+
+### Review Findings
+
+- [x] [Review][Patch] P1: `invalidate()` + `cleanup_expired()` không acquire `asyncio.Lock` — vi phạm AC6 [`plugin_cache.py:95-121`]
+- [x] [Review][Patch] P2: `json.loads()` trong `get()` thiếu try/except — DB corruption crash pipeline [`plugin_cache.py:61-70`]
+- [x] [Review][Patch] P3: Empty target trong `invalidate()` → `LIKE '%%'` xóa toàn bộ cache [`plugin_cache.py:95-105`]
+- [x] [Review][Patch] P4: `MH_CACHE_TTL` env var non-integer → ValueError crash `__init__` [`plugin_cache.py:38-50`]
+- [x] [Review][Patch] P5: `cache.get()`/`cache.set()` trong manager cần try/except [`manager.py:106-146`]
+- [x] [Review][Patch] P6: `_cache_key` tính hai lần trong `_safe_execute` khi cache miss [`manager.py`]
+- [x] [Review][Fixed] W1: Thêm `idx_cache_expires_at` index trên `expires_at`
+- [x] [Review][Fixed] W2: Thêm `MH_CACHE_MAX_ENTRIES` eviction (default 10000, evict oldest)
+- [x] [Review][Fixed] W3: `_DEFAULT_DB_PATH` → absolute path via `Path(__file__).resolve()`
+- [x] [Review][Fixed] W4: `target.casefold()` thay `lower()` trong `_cache_key`
+- [x] [Review][Fixed] W5: Mock `time.time` thay `time.sleep` trong 3 flaky tests
+- [x] [Review][Fixed] W6: Escape LIKE wildcards (`%`, `_`, `\`) trong `invalidate()`
 
 ## Dev Notes
 
