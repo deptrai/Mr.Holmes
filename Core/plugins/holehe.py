@@ -24,13 +24,21 @@ def _run_holehe_sync(email: str) -> list[dict]:
         ImportError: if holehe or trio are not installed.
     """
     import trio
-    from holehe.core import maincore
+    import httpx
+    from holehe.core import get_functions, import_submodules, launch_module
 
+    modules = import_submodules("holehe.modules")
+    functions = get_functions(modules)
     results: list[dict] = []
 
     async def _collect() -> None:
-        async for result in maincore([email], timeout=10):
-            results.append(result)
+        async with httpx.AsyncClient(timeout=10) as client:
+            tasks = [
+                trio.lowlevel.checkpoint,  # placeholder
+            ]
+            async with trio.open_nursery() as nursery:
+                for fn in functions:
+                    nursery.start_soon(launch_module, fn, email, client, results)
 
     trio.run(_collect)
     return results
