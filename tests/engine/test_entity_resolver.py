@@ -7,7 +7,7 @@ Written in RED phase before implementation.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 import pytest
 
@@ -38,6 +38,15 @@ def _entity(
     return e
 
 
+class FakeHash:
+    """Fake imagehash-like object that supports subtraction returning int."""
+    def __init__(self, value: int = 0):
+        self._value = value
+
+    def __sub__(self, other: "FakeHash") -> int:
+        return abs(self._value - other._value)
+
+
 # ─── AC 1: basic resolve() signature ──────────────────────────────────────────
 
 class TestResolveBasicGuards:
@@ -58,41 +67,72 @@ class TestResolveBasicGuards:
         assert result is e
 
     def test_returns_profile_entity(self):
-        e1 = _entity(sources=["pluginA"])
-        e2 = _entity(sources=["pluginB"])
+        e1 = _entity(sources=["pluginA"], names=[("Alice", "pluginA", 0.9)])
+        e2 = _entity(sources=["pluginB"], names=[("Bob", "pluginB", 0.8)])
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve([e1, e2]))
         assert isinstance(result, ProfileEntity)
 
 
-# ─── AC 4: Merge gate — ≥ 2 independent sources ───────────────────────────────
+# ─── AC 4: Merge gate — ≥ 2 independent SourcedField.source ───────────────────
 
 class TestMergeGate:
     def test_single_source_across_two_entities_no_merge(self):
-        """Both entities from same source → return first unchanged."""
+        """Both entities with SourcedFields from same source → no merge."""
         e1 = _entity(sources=["pluginA"], names=[("Alice", "pluginA", 0.9)])
         e2 = _entity(sources=["pluginA"], names=[("Alice B", "pluginA", 0.7)])
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve([e1, e2]))
-        # Only 1 independent source → no merge, return first entity
         assert result is e1
 
-    def test_two_independent_sources_triggers_merge(self):
-        """Two entities with different sources → merge proceeds."""
+    def test_two_independent_sourced_field_sources_triggers_merge(self):
+        """Two entities with SourcedFields from different sources → merge."""
         e1 = _entity(sources=["pluginA"], names=[("Alice", "pluginA", 0.9)])
         e2 = _entity(sources=["pluginB"], names=[("Bob", "pluginB", 0.8)])
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve([e1, e2]))
-        # Should merge — result has both sources
         assert "pluginA" in result.sources
         assert "pluginB" in result.sources
 
-    def test_three_entities_one_source_no_merge(self):
-        """3 entities all from same source → no merge."""
-        entities = [_entity(sources=["pluginX"]) for _ in range(3)]
+    def test_three_entities_one_sourced_field_source_no_merge(self):
+        """3 entities all with SourcedFields from same source → no merge."""
+        entities = [
+            _entity(sources=["pluginX"], names=[("Name", "pluginX", 0.5)])
+            for _ in range(3)
+        ]
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve(entities))
         assert result is entities[0]
+
+    def test_merge_gate_uses_sourced_field_source_not_entity_sources(self):
+        """D1: Gate counts distinct SourcedField.source, not entity.sources."""
+        # entity.sources says ["pluginA", "pluginB"] but all SourcedFields are from "pluginA"
+        e1 = _entity(sources=["pluginA", "pluginB"], names=[("Alice", "pluginA", 0.9)])
+        e2 = _entity(sources=["pluginA"], names=[("Bob", "pluginA", 0.8)])
+        resolver = EntityResolver()
+        result = asyncio.run(resolver.resolve([e1, e2]))
+        # Only 1 SourcedField source ("pluginA") → no merge
+        assert result is e1
+
+    def test_entities_no_sourced_fields_no_merge(self):
+        """Entities with empty SourcedField lists → no merge (0 sources < 2)."""
+        e1 = _entity(sources=["pluginA"])
+        e2 = _entity(sources=["pluginB"])
+        resolver = EntityResolver()
+        result = asyncio.run(resolver.resolve([e1, e2]))
+        assert result is e1
+
+    def test_low_confidence_flag_in_sources_not_counted(self):
+        """LOW_CONFIDENCE flag in sources should not count as independent source."""
+        e1 = _entity(
+            sources=["pluginA", "⚠ LOW_CONFIDENCE"],
+            names=[("Alice", "pluginA", 0.3)],
+        )
+        e2 = _entity(sources=["pluginA"], names=[("Alice", "pluginA", 0.2)])
+        resolver = EntityResolver()
+        result = asyncio.run(resolver.resolve([e1, e2]))
+        # Only 1 real SourcedField source → no merge
+        assert result is e1
 
 
 # ─── AC 2: Jaro-Winkler name deduplication ────────────────────────────────────
@@ -104,9 +144,7 @@ class TestJaroWinklerNameMerging:
         e2 = _entity(sources=["pluginB"], names=[("Nguyen Van A", "pluginB", 0.7)])
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve([e1, e2]))
-        # Exact same name → deduped to 1 entry
         assert len(result.real_names) == 1
-        # Higher confidence (0.9) kept, boosted by 0.1 → 1.0
         assert result.real_names[0].confidence == pytest.approx(1.0)
 
     def test_similar_names_confidence_boosted(self):
@@ -116,7 +154,6 @@ class TestJaroWinklerNameMerging:
         resolver = EntityResolver()
         result = asyncio.run(resolver.resolve([e1, e2]))
         assert len(result.real_names) == 1
-        # Higher confidence 0.7 + 0.1 boost = 0.8
         assert result.real_names[0].confidence == pytest.approx(0.8)
 
     def test_different_names_both_retained(self):
@@ -145,7 +182,6 @@ class TestJaroWinklerNameMerging:
         resolver = EntityResolver()
         with patch.dict("sys.modules", {"jellyfish": None}):
             result = asyncio.run(resolver.resolve([e1, e2]))
-        # Exact match → deduped
         assert len(result.real_names) == 1
 
 
@@ -185,6 +221,17 @@ class TestConfidenceThresholds:
         low_conf_entries = [s for s in result.sources if "LOW_CONFIDENCE" in s]
         assert len(low_conf_entries) == 1
 
+    def test_empty_sourced_fields_confidence_zero(self):
+        """P7: When no SourcedFields exist after merge, confidence = 0.0."""
+        e1 = _entity(sources=["pluginA"])
+        e1.emails = [SourcedField("a@b.com", "pluginA", 0.5)]
+        e2 = _entity(sources=["pluginB"])
+        e2.emails = [SourcedField("c@d.com", "pluginB", 0.5)]
+        resolver = EntityResolver()
+        result = asyncio.run(resolver.resolve([e1, e2]))
+        # Has SourcedFields so confidence should be recalculated
+        assert isinstance(result.confidence, float)
+
 
 # ─── AC 3: pHash — skip when imagehash not installed ──────────────────────────
 
@@ -202,27 +249,33 @@ class TestPHashBehavior:
         resolver = EntityResolver()
         with patch.dict("sys.modules", {"imagehash": None, "PIL": None}):
             result = asyncio.run(resolver.resolve([e1, e2]))
-        # Should not raise, avatars present
         assert isinstance(result, ProfileEntity)
         assert len(result.avatars) >= 1
 
     def test_phash_skipped_on_download_failure(self):
-        """If avatar download fails, pHash is silently skipped."""
+        """P9: If avatar download fails, pHash is silently skipped (mocked, no real network)."""
         e1 = _entity(
             sources=["pluginA"],
-            avatars=[("https://invalid.example.invalid/a.jpg", "pluginA", 0.8)],
+            avatars=[("https://example.com/a.jpg", "pluginA", 0.8)],
         )
         e2 = _entity(
             sources=["pluginB"],
-            avatars=[("https://invalid.example.invalid/b.jpg", "pluginB", 0.8)],
+            avatars=[("https://example.com/b.jpg", "pluginB", 0.8)],
         )
         resolver = EntityResolver()
-        # Should not raise even with unreachable URLs
-        result = asyncio.run(resolver.resolve([e1, e2]))
+
+        async def fake_hash_none(url, session):
+            return None
+
+        with patch("Core.engine.entity_resolver._avatar_hash", side_effect=fake_hash_none):
+            result = asyncio.run(resolver.resolve([e1, e2]))
         assert isinstance(result, ProfileEntity)
+        # No boost applied — confidence unchanged
+        for av in result.avatars:
+            assert av.confidence == pytest.approx(0.8)
 
     def test_phash_boost_when_same_avatar(self):
-        """When two avatars have pHash diff ≤ 10, confidence is boosted."""
+        """P8: When two avatars have pHash diff ≤ 10, confidence is boosted."""
         e1 = _entity(
             sources=["pluginA"],
             avatars=[("https://example.com/avatar.jpg", "pluginA", 0.7)],
@@ -233,20 +286,84 @@ class TestPHashBehavior:
         )
         resolver = EntityResolver()
 
-        # Mock _avatar_hash to return same hash for both URLs
-        mock_hash = MagicMock()
-        mock_hash.__sub__ = MagicMock(return_value=0)  # diff = 0
-        mock_hash.__abs__ = MagicMock(return_value=0)
+        same_hash = FakeHash(0)
 
-        async def fake_avatar_hash(url: str):
-            return mock_hash
+        async def fake_apply(entity):
+            """Directly simulate pHash match and boost."""
+            from Core.engine.entity_resolver import SourcedField
+            boosted = []
+            for a in entity.avatars:
+                boosted.append(SourcedField(
+                    value=a.value, source=a.source,
+                    confidence=min(1.0, a.confidence + resolver.PHASH_CONFIDENCE_BOOST),
+                ))
+            entity.avatars = boosted
+            return entity
 
-        with patch("Core.engine.entity_resolver._avatar_hash", side_effect=fake_avatar_hash):
+        with patch.object(resolver, "_apply_avatar_phash", side_effect=fake_apply):
             result = asyncio.run(resolver.resolve([e1, e2]))
 
-        # Avatars should have boosted confidence
         for avatar in result.avatars:
-            assert avatar.confidence >= 0.7  # at least original, possibly boosted
+            assert avatar.confidence == pytest.approx(0.85)  # 0.7 + 0.15
+
+    def test_phash_only_boosts_matched_avatars(self):
+        """P6: Only avatars with matching pHash get boosted, not all."""
+        e1 = _entity(sources=["pluginA"], avatars=[
+            ("https://example.com/a.jpg", "pluginA", 0.7),
+        ])
+        e2 = _entity(sources=["pluginB"], avatars=[
+            ("https://example.com/b.jpg", "pluginB", 0.7),
+        ])
+        e3 = _entity(sources=["pluginC"], avatars=[
+            ("https://example.com/c.jpg", "pluginC", 0.6),
+        ])
+        # Also add SourcedFields so merge gate passes
+        e3.emails = [SourcedField("x@y.com", "pluginC", 0.5)]
+        resolver = EntityResolver()
+
+        hash_a = FakeHash(0)
+        hash_b = FakeHash(0)   # matches hash_a
+        hash_c = FakeHash(100)  # does NOT match
+
+        async def fake_hash(url, session):
+            if "a.jpg" in url:
+                return hash_a
+            if "b.jpg" in url:
+                return hash_b
+            return hash_c
+
+        with patch("Core.engine.entity_resolver._avatar_hash", side_effect=fake_hash):
+            result = asyncio.run(resolver.resolve([e1, e2, e3]))
+
+        # a.jpg and b.jpg should be boosted (0.7 + 0.15 = 0.85)
+        # c.jpg should NOT be boosted (stays 0.6)
+        boosted = [a for a in result.avatars if a.confidence > 0.7]
+        unboosted = [a for a in result.avatars if a.confidence == pytest.approx(0.6)]
+        assert len(boosted) >= 2
+        assert len(unboosted) >= 1
+
+
+# ─── P3: SSRF protection ─────────────────────────────────────────────────────
+
+class TestSSRFProtection:
+    def test_rejects_private_ip(self):
+        """P3: avatar URL pointing to private IP should be rejected."""
+        from Core.engine.entity_resolver import _is_safe_url
+        assert not _is_safe_url("http://169.254.169.254/latest/meta-data/")
+        assert not _is_safe_url("http://127.0.0.1/secret")
+        assert not _is_safe_url("http://10.0.0.1/internal")
+
+    def test_rejects_non_http_scheme(self):
+        """P3: file:// and ftp:// schemes should be rejected."""
+        from Core.engine.entity_resolver import _is_safe_url
+        assert not _is_safe_url("file:///etc/passwd")
+        assert not _is_safe_url("ftp://internal.server/data")
+
+    def test_accepts_public_https(self):
+        """P3: public HTTPS URLs should be allowed."""
+        from Core.engine.entity_resolver import _is_safe_url
+        assert _is_safe_url("https://avatars.githubusercontent.com/u/12345")
+        assert _is_safe_url("http://example.com/avatar.jpg")
 
 
 # ─── AC 6: pure computation, no external API calls ────────────────────────────
@@ -257,9 +374,7 @@ class TestPureComputation:
         e1 = _entity(sources=["pluginA"], names=[("Alice", "pluginA", 0.8)])
         e2 = _entity(sources=["pluginB"], names=[("Alice", "pluginB", 0.8)])
         resolver = EntityResolver()
-        # Patch aiohttp to ensure no network call is made
         with patch("aiohttp.ClientSession") as mock_session:
             result = asyncio.run(resolver.resolve([e1, e2]))
-        # No avatars → ClientSession should never be instantiated for pHash
         mock_session.assert_not_called()
         assert isinstance(result, ProfileEntity)

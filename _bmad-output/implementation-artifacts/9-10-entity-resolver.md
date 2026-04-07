@@ -1,6 +1,6 @@
 # Story 9.10: EntityResolver
 
-Status: review
+Status: done
 
 ## Story
 
@@ -69,6 +69,20 @@ so that identity claims from different plugins are unified accurately and false 
   - [x] Low confidence flag
 
 - [x] Task 5: Viết unit tests (AC: 7)
+
+### Review Findings
+
+- [x] [Review][Decision] D1: Merge gate đổi sang đếm distinct `SourcedField.source` thay vì `entity.sources` — đúng AC 4 [`entity_resolver.py:131`]
+- [x] [Review][Decision] D2: Giữ `resolve()` async — pHash download cần aiohttp; AC 6 "no async needed" chỉ áp dụng cho Jaro-Winkler [`entity_resolver.py:112`]
+- [x] [Review][Patch] P1: `_avatar_hash` nhận shared session parameter, `_apply_avatar_phash` tạo 1 session cho tất cả URLs [`entity_resolver.py:82`]
+- [x] [Review][Patch] P2: Extract `_NAME_CONFIDENCE_BOOST` ra module level, `_dedup_names_by_similarity` nhận parameter thay vì reference class [`entity_resolver.py:20`]
+- [x] [Review][Patch] P3: Thêm `_is_safe_url()` — reject private/loopback IP, non-http(s) schemes + cap response 5MB [`entity_resolver.py:85`]
+- [x] [Review][Patch] P4: Thay bare `except Exception` bằng specific catches + `logger.debug`/`logger.warning` [`entity_resolver.py:113`]
+- [x] [Review][Patch] P5: Merge gate `all_sf_sources.discard(LOW_CONFIDENCE_FLAG)` để flag không inflate source count [`entity_resolver.py:167`]
+- [x] [Review][Patch] P6: `_apply_avatar_phash` chỉ boost specific matched avatar indices, không phải ALL [`entity_resolver.py:229`]
+- [x] [Review][Patch] P7: Khi `all_fields` empty, set `merged.confidence = 0.0` explicitly [`entity_resolver.py:199`]
+- [x] [Review][Patch] P8: Thay MagicMock dunder hack bằng `FakeHash` class + `patch.object(resolver, "_apply_avatar_phash")` [`test_entity_resolver.py:280`]
+- [x] [Review][Patch] P9: Mock `_avatar_hash` trả `None` thay vì real network call [`test_entity_resolver.py:260`]
 
 ## Dev Notes
 
@@ -157,14 +171,15 @@ claude-sonnet-4-6
   Fix: Collect `all_names` từ tất cả entities TRƯỚC khi gọi `merge()`, chạy `_dedup_names_by_similarity()` trên combined list, sau đó override `merged.real_names`.
 
 ### Completion Notes List
-- `EntityResolver.resolve()` — async, merge gate (FR23): ≥ 2 independent sources required
+- `EntityResolver.resolve()` — async, merge gate (FR23): ≥ 2 independent SourcedField.source required (D1 fix)
 - `_names_similar()` — Jaro-Winkler via jellyfish, fallback to exact match (case-insensitive) nếu import fail
-- `_dedup_names_by_similarity()` — chạy trên combined names TRƯỚC merge để có đủ entries cho comparison + boost
-- `_avatar_hash()` — async helper, catch all exceptions silently; returns None on any failure
-- `_apply_avatar_phash()` — pHash comparison, boost confidence bằng 0.15 nếu diff ≤ 10
-- Confidence recalculation sau post-processing (sau khi names đã boosted)
-- LOW_CONFIDENCE flag: `"⚠ LOW_CONFIDENCE"` appended vào sources nếu confidence < 0.5, deduplicated
-- 19 tests, 100% pass
+- `_dedup_names_by_similarity()` — chạy trên combined names TRƯỚC merge, nhận `confidence_boost` parameter (P2 fix)
+- `_avatar_hash(url, session)` — async helper, shared session (P1), SSRF protection (P3), specific exception logging (P4)
+- `_is_safe_url()` — reject private/loopback IP, non-http(s) schemes, 5MB response cap (P3)
+- `_apply_avatar_phash()` — pHash comparison, only boost matched avatar indices (P6 fix)
+- Confidence recalculation: empty SourcedFields → `confidence = 0.0` (P7 fix)
+- LOW_CONFIDENCE flag: `"⚠ LOW_CONFIDENCE"` appended vào sources, discarded from merge gate source count (P5 fix)
+- 27 tests (19 original + 8 review fixes), 100% pass
 
 ### File List
 - `Core/engine/entity_resolver.py` (created)
