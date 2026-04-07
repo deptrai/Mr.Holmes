@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T23:06:00+07:00
-last_updated: 2026-04-06
+last_updated: 2026-04-07
 project: Mr.Holmes
 project_key: NOKEY
 tracking_system: file-system
@@ -124,7 +124,7 @@ development_status:
   9-7-github-plugin: done
   9-8-numverify-plugin: done
   9-9-instagram-plugin: ready-for-dev
-  9-10-entity-resolver: ready-for-dev
+  9-10-entity-resolver: review
   9-11-enhanced-llm-synthesis: ready-for-dev
   9-12-reddit-plugin: ready-for-dev
   9-13-youtube-plugin: ready-for-dev

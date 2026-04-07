@@ -1,6 +1,6 @@
 # Story 9.10: EntityResolver
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -50,25 +50,25 @@ so that identity claims from different plugins are unified accurately and false 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Tạo `Core/engine/entity_resolver.py` (AC: 1)
-  - [ ] Class skeleton với `resolve()` signature
+- [x] Task 1: Tạo `Core/engine/entity_resolver.py` (AC: 1)
+  - [x] Class skeleton với `resolve()` signature
 
-- [ ] Task 2: Implement Jaro-Winkler name merging (AC: 2)
-  - [ ] `try: import jellyfish` — graceful skip nếu không có
-  - [ ] Pairwise comparison trong `real_names`
-  - [ ] Confidence boost logic
+- [x] Task 2: Implement Jaro-Winkler name merging (AC: 2)
+  - [x] `try: import jellyfish` — graceful skip nếu không có
+  - [x] Pairwise comparison trong `real_names`
+  - [x] Confidence boost logic
 
-- [ ] Task 3: Implement pHash avatar comparison (AC: 3)
-  - [ ] `try: import imagehash, PIL` — graceful skip nếu không có
-  - [ ] Download avatar URL → compute hash → compare
-  - [ ] Confidence boost khi match
+- [x] Task 3: Implement pHash avatar comparison (AC: 3)
+  - [x] `try: import imagehash, PIL` — graceful skip nếu không có
+  - [x] Download avatar URL → compute hash → compare
+  - [x] Confidence boost khi match
 
-- [ ] Task 4: Implement merge gate (AC: 4, 5)
-  - [ ] Count independent sources
-  - [ ] Single-source guard
-  - [ ] Low confidence flag
+- [x] Task 4: Implement merge gate (AC: 4, 5)
+  - [x] Count independent sources
+  - [x] Single-source guard
+  - [x] Low confidence flag
 
-- [ ] Task 5: Viết unit tests (AC: 7)
+- [x] Task 5: Viết unit tests (AC: 7)
 
 ## Dev Notes
 
@@ -150,9 +150,23 @@ def resolve(self, entities: list[ProfileEntity]) -> ProfileEntity:
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
+
 ### Debug Log References
+- Bug: `_dedup_names_by_similarity()` chạy SAU `ProfileEntity.merge()` → merge() đã dedup bằng exact value, chỉ còn 1 entry → Jaro-Winkler không có gì để so sánh → confidence boost không được apply.
+  Fix: Collect `all_names` từ tất cả entities TRƯỚC khi gọi `merge()`, chạy `_dedup_names_by_similarity()` trên combined list, sau đó override `merged.real_names`.
+
 ### Completion Notes List
+- `EntityResolver.resolve()` — async, merge gate (FR23): ≥ 2 independent sources required
+- `_names_similar()` — Jaro-Winkler via jellyfish, fallback to exact match (case-insensitive) nếu import fail
+- `_dedup_names_by_similarity()` — chạy trên combined names TRƯỚC merge để có đủ entries cho comparison + boost
+- `_avatar_hash()` — async helper, catch all exceptions silently; returns None on any failure
+- `_apply_avatar_phash()` — pHash comparison, boost confidence bằng 0.15 nếu diff ≤ 10
+- Confidence recalculation sau post-processing (sau khi names đã boosted)
+- LOW_CONFIDENCE flag: `"⚠ LOW_CONFIDENCE"` appended vào sources nếu confidence < 0.5, deduplicated
+- 19 tests, 100% pass
+
 ### File List
 - `Core/engine/entity_resolver.py` (created)
 - `tests/engine/test_entity_resolver.py` (created)
-- `requirements.txt` (modified)
+- `requirements.txt` (modified — added jellyfish, imagehash, Pillow)

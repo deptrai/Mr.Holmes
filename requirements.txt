@@ -28,3 +28,8 @@ jinja2>=3.1.0
 
 # === Web Search Fallback (Epic 8 — SearxNG DDG fallback) ===
 duckduckgo-search>=7.0
+
+# === Entity Resolution (Story 9.10) — optional deps, graceful skip if missing ===
+jellyfish>=0.11.0   # Jaro-Winkler name similarity (optional)
+imagehash>=4.3.0    # Perceptual hash for avatar dedup (optional, requires Pillow)
+Pillow>=10.0.0      # Required by imagehash (optional)
