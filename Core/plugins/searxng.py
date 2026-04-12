@@ -17,13 +17,19 @@ import aiohttp
 
 from Core.plugins.base import IntelligencePlugin, PluginResult, get_http_session
 
-try:
-    from ddgs import DDGS
-except ImportError:
+def _load_ddgs():
+    """Lazily load DDGS to avoid module-level import errors on Python 3.9."""
     try:
-        from duckduckgo_search import DDGS
-    except ImportError:
-        DDGS = None  # type: ignore[assignment,misc]
+        from ddgs import DDGS as _D
+        return _D
+    except (ImportError, TypeError, Exception):
+        pass
+    try:
+        from duckduckgo_search import DDGS as _D  # type: ignore[no-redef]
+        return _D
+    except (ImportError, TypeError, Exception):
+        pass
+    return None
 
 
 # Diverse User-Agent pool to reduce fingerprinting-based blocks
@@ -166,6 +172,7 @@ class SearxngPlugin(IntelligencePlugin):
 
         # All SearxNG nodes failed — try DuckDuckGo as final fallback
         try:
+            DDGS = _load_ddgs()
             if DDGS is None:
                 raise ImportError("No DDG search library available")
             with DDGS() as ddgs:

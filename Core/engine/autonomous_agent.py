@@ -422,30 +422,58 @@ class StagedProfiler:
                     "stage": 2,
                 })
 
-        # ── Phase B: Extract stage-3 targets from stage-2 results ───────────────
-        stage3_targets: list[tuple[str, str]] = []  # (target, type) for stage 3
+        # ── Phase B: Extract clues from stage-2 results ─────────────────────────
+        stage3_targets: list[tuple[str, str]] = []   # (target, type) for stage 3
+        stage1_extra_seeds: list[tuple[str, str]] = []  # extra seeds for stage-1 BFS
 
         def _add_clue(clue_target: str, clue_type: str, via_plugin: str) -> None:
+            """Record a discovered clue as a graph node and route it to the right stage."""
             clue_key = (clue_target.lower(), clue_type.upper())
-            if self._router.route(clue_type) == 3 and clue_key not in visited:
-                visited.add(clue_key)
+            if clue_key in visited:
+                return
+            visited.add(clue_key)
+            graph.nodes.append(ProfileNode(
+                target=clue_target, target_type=clue_type, depth=1
+            ))
+            graph.edges.append(ProfileEdge(
+                source_target=seed_target,
+                discovered_target=clue_target,
+                discovered_type=clue_type,
+                via_plugin=via_plugin,
+            ))
+            clue_stage = self._router.route(clue_type)
+            if clue_stage == 3:
                 stage3_targets.append((clue_target, clue_type))
-                graph.nodes.append(ProfileNode(
-                    target=clue_target, target_type=clue_type, depth=1
-                ))
-                graph.edges.append(ProfileEdge(
-                    source_target=seed_target,
-                    discovered_target=clue_target,
-                    discovered_type=clue_type,
-                    via_plugin=via_plugin,
-                ))
+            elif clue_type.upper() in ("EMAIL", "USERNAME"):
+                # Feed discovered emails/usernames into stage-1 BFS
+                stage1_extra_seeds.append((clue_target, clue_type))
+
+        def _add_platform_profile(profile: dict, via_plugin: str) -> None:
+            """Add a platform profile URL as a PLATFORM node in the graph."""
+            url = profile.get("url", "")
+            site = profile.get("site", "")
+            if not url or not site:
+                return
+            node_key = (url.lower(), "PLATFORM")
+            if node_key in visited:
+                return
+            visited.add(node_key)
+            graph.nodes.append(ProfileNode(
+                target=url, target_type="PLATFORM", depth=1
+            ))
+            graph.edges.append(ProfileEdge(
+                source_target=seed_target,
+                discovered_target=url,
+                discovered_type="PLATFORM",
+                via_plugin=via_plugin,
+            ))
 
         for i, result in enumerate(stage2_results):
-            # Generic clue extraction (Epic 8 — EMAIL/DOMAIN/IP via regex)
+            # Generic clue extraction (EMAIL/DOMAIN/IP via regex)
             for clue_target, clue_type in _extract_clues_from_result(result):
                 _add_clue(clue_target, clue_type, result.plugin_name)
 
-            # Plugin-specific clue extraction (Epic 9 — PHONE, profile emails)
+            # Plugin-specific clue extraction (PHONE, profile emails, etc.)
             plugin = stage2_plugins[i] if i < len(stage2_plugins) else None
             if plugin is not None and hasattr(plugin, "extract_clues"):
                 try:
@@ -454,6 +482,15 @@ class StagedProfiler:
                 except Exception as exc:
                     logger.warning("extract_clues failed for %s: %s",
                                    result.plugin_name, exc)
+
+            # Add platform profiles as PLATFORM nodes (from Maigret/GitHub profiles)
+            if result.is_success and result.data:
+                for profile in (result.data.get("profiles") or []):
+                    _add_platform_profile(profile, result.plugin_name)
+                    # If profile has email, add as EMAIL clue for HIBP/LeakLookup
+                    email = profile.get("email", "")
+                    if email:
+                        _add_clue(email, "EMAIL", result.plugin_name)
 
         # ── Phase C: Stage 3 plugins on discovered PHONE/DOMAIN clues ────────────
         stage3_plugins = self._router.filter_plugins(plugins, stage=3)
@@ -476,10 +513,17 @@ class StagedProfiler:
                     })
 
         # ── Phase D: Stage 1 (Epic 8) plugins via RecursiveProfiler ─────────────
+        # Run on original seed + any extra EMAIL/USERNAME seeds from stage-2
         stage1_plugins = self._router.filter_plugins(plugins, stage=1)
         if stage1_plugins:
-            flat = RecursiveProfiler(max_depth=self.max_depth)
-            flat_result = await flat.run_profiler(seed_target, seed_type, stage1_plugins)
+            all_seeds = [(seed_target, seed_type)] + stage1_extra_seeds[:10]  # cap at 10 extra
+            flat_result: dict[str, Any] = {"nodes": [], "edges": [], "plugin_results": []}
+            for bfs_target, bfs_type in all_seeds:
+                flat = RecursiveProfiler(max_depth=self.max_depth)
+                partial = await flat.run_profiler(bfs_target, bfs_type, stage1_plugins)
+                flat_result["nodes"].extend(partial.get("nodes", []))
+                flat_result["edges"].extend(partial.get("edges", []))
+                flat_result["plugin_results"].extend(partial.get("plugin_results", []))
             # Merge flat result — add nodes/edges/results not already in graph
             existing_node_keys = {
                 (n.target.lower(), n.target_type.upper()) for n in graph.nodes
