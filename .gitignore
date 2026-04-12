@@ -129,3 +129,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 docker/searxng/searxng-data/
+
+# Generated reports and scan output (contains PII)
+GUI/Reports/
+Transfer/
+
+# Plugin cache
+plugin_cache.db
+
+# Demo/test output artifacts
+output_mindmap.html

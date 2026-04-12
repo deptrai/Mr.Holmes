@@ -31,6 +31,13 @@ _IP_RE = re.compile(
     r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
 )
 
+# Freemail domains — used to skip deriving DOMAIN clue from common providers
+_FREEMAIL = frozenset({
+    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+    "protonmail.com", "icloud.com", "aol.com", "mail.com",
+    "yandex.com", "zoho.com", "gmx.com", "live.com",
+})
+
 
 
 @dataclass
@@ -247,9 +254,6 @@ class RecursiveProfiler:
                                 via_plugin="auto:email-prefix",
                             ))
                     # Also derive DOMAIN for non-freemail providers
-                    _FREEMAIL = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-                                 "protonmail.com", "icloud.com", "aol.com", "mail.com",
-                                 "yandex.com", "zoho.com", "gmx.com", "live.com"}
                     if domain_part not in _FREEMAIL:
                         domain_key = (domain_part, "DOMAIN")
                         if domain_key not in visited:
