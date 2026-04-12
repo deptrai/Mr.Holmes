@@ -205,13 +205,23 @@ def _build_profile_entity(graph_data: dict, seed: str, seed_type: str):
         for profile in profiles:
             name = profile.get("name", "").strip()
             if name:
-                # F10: deduplicate by value
                 existing_names = {f.value for f in entity.real_names}
                 if name not in existing_names:
                     entity.real_names.append(SourcedField(
                         value=name,
                         source=f"{plugin}/{profile.get('site', '')}",
                         confidence=0.7,
+                    ))
+
+        # Extract real names from GitHub/other plugins (data["real_names"] list)
+        for name in (data.get("real_names") or []):
+            if name and isinstance(name, str):
+                existing_names = {f.value for f in entity.real_names}
+                if name.strip() not in existing_names:
+                    entity.real_names.append(SourcedField(
+                        value=name.strip(),
+                        source=plugin,
+                        confidence=0.8,
                     ))
 
         # Extract emails from GitHub plugin data
