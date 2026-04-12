@@ -139,3 +139,7 @@ plugin_cache.db
 
 # Demo/test output artifacts
 output_mindmap.html
+demo_story*.py
+test_run.py
+test_epic*_suite.py
+patch_dependencies.py

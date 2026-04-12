@@ -153,6 +153,7 @@ async def test_searxng_empty_results(monkeypatch):
 async def test_searxng_rate_limit_http_429(monkeypatch):
     """HTTP 429 on custom URL → falls through to public nodes → all fail → exhausted error."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
+    monkeypatch.setattr("Core.plugins.searxng.DDGS", None)
 
     with aioresponses() as mock:
         # Mock custom URL with 429
@@ -196,6 +197,7 @@ async def test_searxng_server_error(monkeypatch):
 async def test_searxng_timeout(monkeypatch):
     """Timeout on all nodes → exhausted error with 'Timeout' mention."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
+    monkeypatch.setattr("Core.plugins.searxng.DDGS", None)
 
     with aioresponses() as mock:
         pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
