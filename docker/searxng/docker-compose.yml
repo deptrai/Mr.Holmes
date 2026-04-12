@@ -1,0 +1,23 @@
+# docker/searxng/docker-compose.yml
+# SearxNG self-hosted instance cho Mr.Holmes OSINT Engine
+# Chạy: docker compose up -d
+# Stop:  docker compose down
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: mrholmes-searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+    # Không cần Redis cho setup đơn giản
+    networks:
+      - searxng-net
+
+networks:
+  searxng-net:
+    driver: bridge

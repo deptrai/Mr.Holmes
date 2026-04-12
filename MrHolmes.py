@@ -37,10 +37,17 @@ class Main:
 
 if __name__ == "__main__":
     # --- Batch (non-interactive) mode — AC1, AC2, AC3 -------------------
-    from Core.cli.parser import parse_args, has_batch_target, has_export_target
+    from Core.cli.parser import parse_args, has_batch_target, has_export_target, has_config_target
     from Core.cli.runner import BatchRunner
 
     _args = parse_args()
+
+    # --- Config Wizard mode (Story 7.4) ---------------------------------
+    if has_config_target(_args):
+        if _args.config == "api-keys":
+            from Core.cli.config_wizard import invoke_api_key_wizard
+            raise SystemExit(invoke_api_key_wizard())
+
 
     # --- Export mode (Story 6.4 / 6.5 AC1) — highest priority -----------
     if has_export_target(_args):
