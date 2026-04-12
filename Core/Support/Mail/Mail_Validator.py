@@ -22,9 +22,9 @@ class Validator:
             if Regex.fullmatch(simbols, username):
                   print(Font.Color.YELLOW + "[v]" +
                         Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "Valid", "None"))
-                  f = open(report, "a")
-                  f.write("\n\nTHIS EMAIL IS VALID")
-                  f.close()
+                  with open(report, "a") as f:
+                        f.write("\n\nTHIS EMAIL IS VALID")
+
                   Valid = True
 
             else:
@@ -32,16 +32,16 @@ class Validator:
                   if Regex.fullmatch(simbols, username):
                         print(Font.Color.YELLOW + "[v]" +
                               Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "Valid", "None"))
-                        f = open(report, "a")
-                        f.write("\n\nTHIS EMAIL IS VALID")
-                        f.close()
+                        with open(report, "a") as f:
+                              f.write("\n\nTHIS EMAIL IS VALID")
+
                         Valid = True
                   else:
                         print(Font.Color.RED +
                               "[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Email", "NotValid", "None"))
-                        f = open(report, "a")
-                        f.write("\n\nTHIS EMAIL IS NOT VALID")
-                        f.close()
+                        with open(report, "a") as f:
+                              f.write("\n\nTHIS EMAIL IS NOT VALID")
+
                         inp = input(Language.Translation.Translate_Language(filename, "Default", "Continue", "None"))
                         Valid = False
             return Valid

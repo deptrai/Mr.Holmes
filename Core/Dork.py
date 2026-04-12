@@ -161,10 +161,10 @@ class List:
                 phrase = username
         else:
             phrase = username
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-            filename, "Report", "Default", "Date").format(Date) + "\r\n")
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                filename, "Report", "Default", "Date").format(Date) + "\r\n")
+
         if type1 == 2:
             if add == 1:
                 List.GoogleDorks(report,phrase,Parameters2,data,DorksList,between="None",seconddata="None")
@@ -183,10 +183,10 @@ class List:
             else:
                 List.GoogleDorks(report,phrase,"None","None",DorksList,between="None",seconddata="None")
                 List.YandexDorks(report,phrase,"None","None",DorksList2,between,seconddata)
-        f = open(report, "a")
-        f.write(Language.Translation.Translate_Language(
-                filename, "Report", "Default", "By"))
-        f.close()
+        with open(report, "a") as f:
+            f.write(Language.Translation.Translate_Language(
+                    filename, "Report", "Default", "By"))
+
         Notification.Notifier.Start(Mode)
         Creds.Sender.mail(report, username)
         choice = int(input(

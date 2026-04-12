@@ -48,10 +48,9 @@ class Phony:
             sleep(2)
             print(Font.Color.YELLOW + "[v]" + Font.Color.WHITE +
                   "GOOGLE MAPS LINK: https://www.google.it/maps/place/{},{}".format(Lat, Lon))
-            datafile = open(jsonfile, "a", encoding="utf-8")
-            json.dump(data, datafile,
-                      ensure_ascii=False, indent=4)
-            datafile.close()
+            with open(jsonfile, "a", encoding="utf-8") as datafile:
+                json.dump(data, datafile, ensure_ascii=False, indent=4)
+
             Map.Creation.mapPhone(jsonfile, Lat, Lon, num, Type)
 
         except Exception as e:
@@ -161,23 +160,23 @@ class Phony:
                 print(Font.Color.RED +
                       "\n[!]" + Font.Color.WHITE + Language.Translation.Translate_Language(filename, "Phone", "NoExist", "None"))
 
-            f = open(report, "a")
-            f.write("INTERNATIONAL NUMBER: " + international + "\n")
-            f.write("LOCAL NUMBER: " + localNumber + "\n")
-            f.write("COUNTRY PREFIX: " + numberCode + "\n")
-            f.write("COUNTRY CODE: " + numberNation + "\n")
-            f.write("COUNTRY:" + nation + "\n")
-            f.write("AREA/ZONE" + location + "\n")
-            f.write("CARRIER/ISP: " + carrierName + "\n")
-            f.write("TIMEZONE: " + timezoneResult + "\n")
-            f.close()
+            with open(report, "a") as f:
+                f.write("INTERNATIONAL NUMBER: " + international + "\n")
+                f.write("LOCAL NUMBER: " + localNumber + "\n")
+                f.write("COUNTRY PREFIX: " + numberCode + "\n")
+                f.write("COUNTRY CODE: " + numberNation + "\n")
+                f.write("COUNTRY:" + nation + "\n")
+                f.write("AREA/ZONE" + location + "\n")
+                f.write("CARRIER/ISP: " + carrierName + "\n")
+                f.write("TIMEZONE: " + timezoneResult + "\n")
+
 
             if code == 0:
                 pass
             elif code == 1:
-                f = open("Temp/Phone/Code.txt", "w")
-                f.write(numberNation)
-                f.close()
+                with open("Temp/Phone/Code.txt", "w") as f:
+                    f.write(numberNation)
+
             formatted2 = str(international).replace(numberCode,"").replace(" ","-")
             formatted3 = formatted2.replace("-","",1)
             formatted4 = str(international).replace(numberCode,"0").replace(" ","")

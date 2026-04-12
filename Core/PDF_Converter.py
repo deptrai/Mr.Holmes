@@ -66,12 +66,11 @@ class Menu:
         </body>
         </html>'''.format(style,username,Date,str(Content)).replace("../Reports","GUI/Reports").replace("../Icon","GUI/Icon").replace("\n","").replace("''","")
         filename = filename.replace(".mh",".html")
-        f = open(filename,"w")
-        f.write(header)
-        f.close()
-        reader = open(filename,"r",newline=None)
-        htmlcontent = reader.read()
-        reader.close()
+        with open(filename, "w") as f:
+            f.write(header)
+        with open(filename, "r", newline=None) as reader:
+            htmlcontent = reader.read()
+
         parser = soup(htmlcontent,"html.parser")
         List = []
         Encoded = []
@@ -134,12 +133,11 @@ class Menu:
             username2 = username.replace(" ","_")
             encoded = "GUI/Graphs/{}/encode.mh".format(username2)
             filename = "GUI/Graphs/{}/{}.mh".format(username2,username)
-            encode = open(encoded,"r")
-            mode = encode.read()
-            encode.close()
-            reader = open(filename,"r+",encoding="utf-8")
-            f = reader.read()
-            reader.close()
+            with open(encoded, "r") as encode:
+                mode = encode.read()
+            with open(filename, "r+", encoding="utf-8") as reader:
+                f = reader.read()
+
             print(Font.Color.GREEN + "\n[+]" + Font.Color.WHITE + Language.Translation.Translate_Language(
                             langfile, "PDF", "Check", "None"))
             sleep(3)

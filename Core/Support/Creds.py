@@ -49,9 +49,10 @@ class Sender:
                     msg = "Query results:"
                     message.attach(MIMEText(msg, "plain"))
                     filename = report
-                    attachment = open(filename, "rb")
-                    file = MIMEBase("application", "octet-stream")
-                    file.set_payload(attachment.read())
+                    with open(filename, "rb") as attachment:
+                        file = MIMEBase("application", "octet-stream")
+                        file.set_payload(attachment.read())
+
                     encoders.encode_base64(file)
                     file.add_header("Content-Disposition",
                                     "attachment;filename=" + filename)

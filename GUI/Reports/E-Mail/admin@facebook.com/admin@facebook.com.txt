@@ -1,0 +1,9 @@
+SCANNING EXECUTED ON:
+Date: 30/03/2026 19:38:37
+
+
+THIS EMAIL IS VALID
+GENERATING HaveiBeenPowned LINK
+https://api.haveibeenpwned.com/unifiedsearch/admin@facebook.com
+GENERATING IntelligenceX LINK
+https://intelx.io/?s=admin@facebook.com

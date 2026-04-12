@@ -1,11 +1,11 @@
 {
   "workflow_version": "1.2.0",
   "timestamps": {
-    "started": "2026-03-26T18:19:18+07:00",
-    "last_updated": "2026-03-26T18:22:18+07:00",
-    "completed": "2026-03-26T18:22:18+07:00"
+    "started": "2026-04-05T10:30:00+07:00",
+    "last_updated": "2026-04-05T11:07:52.717055",
+    "completed": "2026-04-05T11:09:19.213406"
   },
-  "mode": "initial_scan",
+  "mode": "full_rescan",
   "scan_level": "exhaustive",
   "project_root": "/Users/luisphan/Documents/GitHub/Mr.Holmes",
   "project_knowledge": "/Users/luisphan/Documents/GitHub/Mr.Holmes/docs",
@@ -13,31 +13,178 @@
     {
       "step": "step_1",
       "status": "completed",
-      "summary": "Classified as monolith with 1 parts"
+      "timestamp": "2026-04-05T10:49:04.640099",
+      "summary": "Classified as multi-part: CLI (Python) + Web GUI (PHP), 248 py files ~74K LOC"
+    },
+    {
+      "step": "step_2",
+      "status": "completed",
+      "timestamp": "2026-04-05T10:54:25.151030",
+      "summary": "Found 12 docs in docs/, 4 root docs, CI/CD, 15+ implementation artifacts"
+    },
+    {
+      "step": "step_3",
+      "status": "completed",
+      "timestamp": "2026-04-05T10:55:23.460252",
+      "summary": "Tech stack: Python 3.9 CLI + aiohttp async + plugin arch + PHP GUI, 14 prod deps, 5 dev deps"
+    },
+    {
+      "step": "step_4",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:00:13.914936",
+      "summary": "Exhaustive scan: 3 parallel agents scanned Core/plugins (7 files, 4 plugins), Core/engine (9 files, BFS+LLM+mindmap+pipeline), Core/Support (19 scrapers, mail/phone/dork), Core/cli+models+reporting+proxy+scrapers"
+    },
+    {
+      "step": "step_5",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:07:52.717055",
+      "summary": "step_5 completed via documentation-writer agent"
+    },
+    {
+      "step": "step_6",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:07:52.717055",
+      "summary": "step_6 completed via documentation-writer agent"
+    },
+    {
+      "step": "step_8",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:07:52.717055",
+      "summary": "step_8 completed via documentation-writer agent"
+    },
+    {
+      "step": "step_9",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:07:52.717055",
+      "summary": "step_9 completed via documentation-writer agent"
+    },
+    {
+      "step": "step_10",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:07:52.717055",
+      "summary": "step_10 completed via documentation-writer agent"
+    },
+    {
+      "step": "step_11",
+      "status": "completed",
+      "timestamp": "2026-04-05T11:09:19.213406",
+      "summary": "Validation complete, user finalized"
     },
     {
       "step": "step_12",
       "status": "completed",
+      "timestamp": "2026-04-05T11:09:19.213406",
       "summary": "Workflow complete"
     }
   ],
   "current_step": "completed",
   "findings": {
-    "project_classification": "Hybrid Python CLI OSINT tool with PHP reporting GUI",
-    "technology_stack": "Python 3 on CLI, PHP passing data"
+    "project_classification": {
+      "repository_type": "multi-part",
+      "parts": [
+        {
+          "part_id": "cli",
+          "project_type_id": "cli",
+          "display_name": "Python OSINT CLI Engine",
+          "root_path": "."
+        },
+        {
+          "part_id": "gui",
+          "project_type_id": "web",
+          "display_name": "PHP Report Viewer GUI",
+          "root_path": "GUI/"
+        }
+      ]
+    },
+    "existing_docs": {
+      "docs_count": 12,
+      "root_docs": 4,
+      "ci_cd": true,
+      "design_artifacts": 7,
+      "implementation_artifacts": 15
+    },
+    "technology_stack": {
+      "primary": "Python 3.9 CLI",
+      "async": "aiohttp + asyncio",
+      "scraping": "requests + BeautifulSoup4 + aiohttp + apify-client",
+      "search": "SearxNG (self-hosted Docker) + DuckDuckGo fallback",
+      "llm": "OpenAI-compatible API (Google AI Studio primary, v98store fallback)",
+      "reporting": "jinja2 + vis-network.js (mindmap) + pdfkit",
+      "data": "SQLite (mrholmes.db) + JSON/TXT reports",
+      "ci_cd": "GitHub Actions (Python 3.9/3.10/3.11, flake8, pytest+coverage)",
+      "gui": "PHP + JavaScript (report viewer)",
+      "docker": "SearxNG container",
+      "testing": "pytest + pytest-asyncio + aioresponses"
+    },
+    "exhaustive_scan": {
+      "plugins": {
+        "files": 7,
+        "plugins": 4,
+        "target_types": [
+          "EMAIL",
+          "IP",
+          "USERNAME",
+          "DOMAIN"
+        ],
+        "missing": [
+          "PHONE"
+        ]
+      },
+      "engine": {
+        "files": 9,
+        "components": [
+          "RecursiveProfiler",
+          "LLMSynthesizer",
+          "MindmapGenerator",
+          "ScanPipeline",
+          "RetryPolicy",
+          "ResultCollector",
+          "ApifyScraper"
+        ]
+      },
+      "support": {
+        "scraper_platforms": 19,
+        "mail_lookups": 6,
+        "phone_analysis": true,
+        "dork_generator": true
+      },
+      "cli": {
+        "batch_mode": true,
+        "interactive": true,
+        "config_wizard": true,
+        "rich_output": true
+      },
+      "reporting": {
+        "sqlite": true,
+        "json": true,
+        "txt": true,
+        "pdf": true,
+        "csv": true
+      },
+      "total_files_scanned": "248 Python + 45 PHP"
+    }
   },
   "outputs_generated": [
     "project-scan-report.json",
-    "project-context.md",
+    "index.md",
+    "project-overview.md",
     "architecture.md",
     "tech-stack.md",
-    "testing-strategy.md",
-    "deployment.md",
-    "asset-inventory.md",
-    "source-tree-analysis.md",
     "component-inventory.md",
-    "development-guide.md",
-    "index.md"
+    "source-tree-analysis.md",
+    "development-guide.md"
   ],
-  "resume_instructions": "Documentation complete."
+  "resume_instructions": "Starting from step 1",
+  "project_types": [
+    {
+      "part_id": "cli",
+      "project_type_id": "cli",
+      "display_name": "Python OSINT CLI Engine"
+    },
+    {
+      "part_id": "gui",
+      "project_type_id": "web",
+      "display_name": "PHP Report Viewer GUI"
+    }
+  ]
 }

@@ -23,7 +23,7 @@ class Random:
                 filename, "Default", "DisplayError", "None"))
             exit()
         choice = random.choice(List)
-        f = open(Folder + "/" + choice, "r", newline=None)
-        banner = f.read()
-        f.close()
+        with open(Folder + "/" + choice, "r", newline=None) as f:
+            banner = f.read()
+
         print(Font.Color.GREEN + banner)

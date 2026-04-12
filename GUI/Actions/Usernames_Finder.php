@@ -299,6 +299,121 @@
         echo "</center>";
     }
  
+    // ------------------------------------------------------------------
+    // Story 6.3 — SQLite-backed result display (AC2, AC3, AC5)
+    // ------------------------------------------------------------------
+
+    /**
+     * Render findings from SQLite (AC2 + AC3).
+     * Called when SqliteHelper::isAvailable() is true.
+     */
+    function Checker_SQLite(string $username): void {
+        require_once(__DIR__ . '/Sqlite_Helper.php');
+
+        // AC2: Investigation list — find latest investigation for this subject
+        $investigations = SqliteHelper::getInvestigations($username);
+        if (empty($investigations)) {
+            // No DB record — fall through to flat-file (handled by caller)
+            return;
+        }
+
+        $latest = $investigations[0];
+        $inv_id = (int) $latest['id'];
+        $created_at = $latest['created_at'];
+        $total_found = (int) $latest['total_found'];
+        $total_sites = (int) $latest['total_sites'];
+
+        $Message = Get_Message("Positives", "Username");
+        echo "<script>alert('$Message');</script>";
+        echo "\n\t<p id = 'Const'>USERNAME DATA (from DB — " . htmlspecialchars($created_at) . ", {$total_found}/{$total_sites} found)</p>";
+
+        // AC3: Findings detail — query found results for this investigation
+        $found_findings = SqliteHelper::getFindings($inv_id, 'found');
+
+        echo "\n\t<div class = 'Wrapper'>";
+        echo "\n\t\t<div class = 'Data'>";
+        echo "\n\t\t\t<p id = Const>REPORT (SQLite):</p>\n";
+
+        if (!empty($found_findings)) {
+            foreach ($found_findings as $f) {
+                $site = htmlspecialchars($f['site_name'] ?? '');
+                $url  = htmlspecialchars($f['url'] ?? '', ENT_QUOTES);
+                echo "\t\t\t<p><a href='{$url}' target='blank'>[{$site}] {$url}</a></p>\n";
+            }
+        } else {
+            echo "\t\t\t<p id='error'>No findings in database yet.</p>\n";
+        }
+
+        echo "</p>";
+        echo "\n\t\t</div>";
+
+        // Profile pics — still read from flat files (no change)
+        echo "\n\t\t<div class = 'Data_img'>";
+        $Dir_Name = "../Reports/Usernames/{$username}/Profile_pics/";
+        if (file_exists($Dir_Name)) {
+            $image = glob($Dir_Name . "*.jpg");
+            echo "\t\t\t<p id = 'Const2'>PROFILE-PICS:{$username}</p>";
+            foreach ($image as $Content) {
+                $abbr_1 = str_replace("../Reports/Usernames/{$username}/Profile_pics/Profile_pic_", "", $Content);
+                $abbr_2 = str_replace(".jpg", "", $abbr_1);
+                if (getimagesize($Content) == false) {
+                    echo "<a href = '../Icon/Entities/Image.png' target = 'blank'><img src = '../Icon/Entities/Image.png' id = 'pics' abbr title = '$abbr_2'></a>";
+                } else {
+                    echo "\t\t\t<a href = '{$Content}' target = 'blank'><img src = '{$Content}' id = 'pics' abbr title = '$abbr_2'></a>";
+                    echo "<br>";
+                }
+            }
+        } else {
+            echo "\t\t\t<p id = 'Const2'>PROFILE-PICS:{$username}</p>";
+            echo "\n\t\t\t<p id = 'error'>NOT FIND ANY PROFILE PIC FOR THIS USER</p>";
+        }
+        echo "\n\t\t</div>";
+        echo "</div>";
+
+        // Recap / Hypothesis — flat file
+        GetHypotesi($username);
+
+        $Complete_name = "../Reports/Usernames/{$username}/{$username}.txt";
+        echo "<center>";
+        Get_List($username, $Complete_name);
+        echo "</center>";
+
+        // Posts — flat file
+        $Folder_name = "Instagram_Posts";
+        $Argument_Name = "INSTAGRAM-POSTS";
+        Get_Posts($username, $Folder_name, $Argument_Name);
+        echo "</div>";
+        $Folder_name = "Twitter_Posts";
+        $Argument_Name = "TWITTER-POSTS";
+        Get_Posts($username, $Folder_name, $Argument_Name);
+        echo "</div></div>";
+        $Folder_name = "TikTok_Posts";
+        $Argument_Name = "TIKTOK-POSTS";
+        Get_Posts($username, $Folder_name, $Argument_Name);
+        echo "</div>";
+
+        // Tagged users / Hashtags / External links — flat file
+        echo "<center><hr>";
+        echo "<p id = 'Const2'>TAGGED USERS:</p>";
+        echo "<div class = 'Wrapper'>";
+        GetDetails($username, "Instagram_Posts", "Users.json", "Instagram.png", "INSTAGRAM");
+        GetDetails($username, "TikTok_Posts", "Users.json", "TikTok.png", "TIK-TOK");
+        GetDetails($username, "Twitter_Posts", "Users.json", "Twitter.png", "TWITTER");
+        echo "<hr><p id = 'Const2'>HASHTAGS:</p>";
+        GetDetails($username, "Instagram_Posts", "Hashtags.json", "Instagram.png", "INSTAGRAM");
+        GetDetails($username, "TikTok_Posts", "Hashtags.json", "TikTok.png", "TIK-TOK");
+        GetDetails($username, "Twitter_Posts", "Hashtags.json", "Twitter.png", "TWITTER");
+        echo "<hr><p id = 'Const2'>EXTERNAL LINKS:</p>";
+        GetDetails($username, "Instagram_Posts", "Links.json", "Instagram.png", "INSTAGRAM");
+        GetDetails($username, "TikTok_Posts", "Links.json", "TikTok.png", "TIK-TOK");
+        GetDetails($username, "Twitter_Posts", "Links.json", "Twitter.png", "TWITTER");
+        echo "</div><hr>";
+
+        $Complete_name = "../Reports/Usernames/Dorks/{$username}_Dorks.txt";
+        echo "<p id = 'Const2'>DORKS:</p>";
+        Get_Dorks($Complete_name);
+    }
+
     function Checker() {
         $File_name = $_POST["Searcher"];
         $PoPups = "../Language/Errors.json";
@@ -312,6 +427,20 @@
             </script>";
         }
         else {
+            // Story 6.3 AC1+AC5: Try SQLite first, fall back to flat files
+            require_once(__DIR__ . '/Sqlite_Helper.php');
+            $use_sqlite = SqliteHelper::isAvailable();
+
+            if ($use_sqlite) {
+                $investigations = SqliteHelper::getInvestigations($File_name);
+                // Only use SQLite path when there are actual records
+                if (!empty($investigations)) {
+                    Checker_SQLite($File_name);
+                    return;
+                }
+            }
+
+            // AC5: Flat-file fallback (original logic, unchanged)
             $Complete_name = "../Reports/Usernames/{$File_name}/{$File_name}.txt";
             $Complete_name2 = "../Reports/Usernames/{$File_name}/{$File_name}.mh";
             if(file_exists($Complete_name)){
@@ -492,3 +621,4 @@
         Checker();
     }
 ?>
+
