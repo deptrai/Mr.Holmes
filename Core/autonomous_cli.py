@@ -205,6 +205,10 @@ def _build_profile_entity(graph_data: dict, seed: str, seed_type: str):
         for profile in profiles:
             name = profile.get("name", "").strip()
             if name:
+<<<<<<< HEAD
+=======
+                # F10: deduplicate by value
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
                 existing_names = {f.value for f in entity.real_names}
                 if name not in existing_names:
                     entity.real_names.append(SourcedField(
@@ -213,6 +217,7 @@ def _build_profile_entity(graph_data: dict, seed: str, seed_type: str):
                         confidence=0.7,
                     ))
 
+<<<<<<< HEAD
         # Extract real names from GitHub/other plugins (data["real_names"] list)
         for name in (data.get("real_names") or []):
             if name and isinstance(name, str):
@@ -224,6 +229,8 @@ def _build_profile_entity(graph_data: dict, seed: str, seed_type: str):
                         confidence=0.8,
                     ))
 
+=======
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
         # Extract emails from GitHub plugin data
         for email in (data.get("emails") or []):
             existing_emails = {f.value for f in entity.emails}

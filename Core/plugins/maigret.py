@@ -56,6 +56,7 @@ class MaigretPlugin:
                 error_message="maigret not found. Run: pip install maigret",
             )
 
+<<<<<<< HEAD
         tmp_dir = tempfile.mkdtemp()
         try:
             # maigret 0.4.4 uses: maigret <username> -J simple --folderoutput <dir>
@@ -66,6 +67,14 @@ class MaigretPlugin:
                 "--timeout", "30",
                 "--no-color",
                 "--no-progressbar",
+=======
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+        tmp = tmp_file.name
+        tmp_file.close()
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "maigret", target, "--json", tmp, "--timeout", "30", "--no-color",
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -90,6 +99,7 @@ class MaigretPlugin:
                     error_message=f"maigret exit {proc.returncode}: {stderr_excerpt}",
                 )
 
+<<<<<<< HEAD
             # Find the generated JSON file in the temp folder
             json_files = list(Path(tmp_dir).glob("*.json"))
             if not json_files:
@@ -101,6 +111,10 @@ class MaigretPlugin:
                 )
             try:
                 output_data = json.loads(json_files[0].read_text())
+=======
+            try:
+                output_data = json.loads(Path(tmp).read_text())
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
             except (json.JSONDecodeError, FileNotFoundError, OSError, ValueError) as e:
                 return PluginResult(
                     plugin_name=self.name,
@@ -127,9 +141,14 @@ class MaigretPlugin:
                 error_message=f"Maigret unexpected error: {e}",
             )
         finally:
+<<<<<<< HEAD
             import shutil as _shutil
             if os.path.exists(tmp_dir):
                 _shutil.rmtree(tmp_dir, ignore_errors=True)
+=======
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
     def extract_clues(self, result: PluginResult) -> list[tuple[str, str]]:
         """
@@ -154,6 +173,7 @@ def _parse_maigret_output(data: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Parse maigret JSON output into a normalized list of discovered profiles.
 
+<<<<<<< HEAD
     Supports both:
     - Old format: {"sites": {"Facebook": {...}, ...}}
     - New simple format (v0.4.4): {"Facebook": {...}, "Twitch": {...}, ...}
@@ -192,4 +212,24 @@ def _parse_maigret_output(data: dict[str, Any]) -> list[dict[str, Any]]:
                 "email": ids.get("email", extra_info.get("email", "")),
             }
         )
+=======
+    Only includes sites with status "Claimed".
+    """
+    sites = data.get("sites", {})
+    profiles = []
+    for site_name, site_data in sites.items():
+        status = site_data.get("status", {}).get("status", "")
+        if status == "Claimed":
+            extra = site_data.get("extra", {}) or {}
+            profiles.append(
+                {
+                    "site": site_name,
+                    "url": site_data.get("url_user", ""),
+                    "name": extra.get("fullname", ""),
+                    "bio": extra.get("bio", ""),
+                    "avatar_url": extra.get("img", ""),
+                    "email": extra.get("email", ""),
+                }
+            )
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
     return profiles

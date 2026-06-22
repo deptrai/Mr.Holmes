@@ -1,0 +1,19 @@
+REPORT CREATED BY MR.HOLMES
+
+GENERATING SUMMARY REPORT...
+GENERAL: deptraidapxichlo HAS BEEN FOUND ON 19 SITES OUT OF 150, deptraidapxichlo IS PRESENT ON 12.7% OF THE SITES
+GENERATING TAGS REPORT
+
+[TAGS FOUND:Video, Sharing, Youtube, Image, Social, Photo, Programming, OpenSource, Python, Hacking, Archieve, Docker, Music, Gaming, ThemeForest, Donations, Website, Gaming, Roblox, Questions, Forum, Health, Dressing, Fashion, Shopping]
+
+MOST RELEVANT TAGS:Social, Image, Photo, Programming, Music
+
+GENERATING GENERAL HYPOTESY REPORT...
+
+PERCENTUAL MID: IT LOOKS LIKE THAT deptraidapxichlo PERCENTAGE IS MID: 12.7...THAT MAY MEAN THAT IS A PERSON THAT LIKES INTERACTION WITH OTHERS,LIKE TO SHARE MOMENTS WITH OTHERS OR SIMPLY IS PRESENT IN A CERTAIN TYPE OF SOCIALS
+GETTING POSSIBLE HOBBIES/INTERESTS:
+Social
+Image
+Photo
+Programming
+Music

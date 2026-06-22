@@ -129,6 +129,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 docker/searxng/searxng-data/
+<<<<<<< HEAD
 
 # Generated reports and scan output (contains PII)
 GUI/Reports/
@@ -143,3 +144,5 @@ demo_story*.py
 test_run.py
 test_epic*_suite.py
 patch_dependencies.py
+=======
+>>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1

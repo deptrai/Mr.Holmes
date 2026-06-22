@@ -1,0 +1,25 @@
+REPORT CREATED BY MR.HOLMES
+
+GENERATING SUMMARY REPORT...
+GENERAL: john HAS BEEN FOUND ON 52 SITES OUT OF 150, john IS PRESENT ON 34.7% OF THE SITES
+GENERATING TAGS REPORT
+
+[TAGS FOUND:Image, Photo, Social, Programming, OpenSource, Chatting, Art, Streaming, Gaming, Pokemon, Python, Gaming, Steam, Hacking, Blog, Chess, Chess.com, Archieve, Music, Forum, Sublimetext, Meme, Challange, Feed, Ruby, Donations, Minecraft, Coaching, Meeting, Website, Gaming, ThemeForest, Video, Clip-Sharing, Map, Questions, Gaming, Roblox, BugBounty, Crypto, Questions, Forum, Dressing, Fashion, Shopping, Health]
+
+MOST RELEVANT TAGS:Image, Photo, Chatting, Gaming, Social, Programming, OpenSource, Music, Forum, Streaming, Hacking
+
+GENERATING GENERAL HYPOTESY REPORT...
+
+PERCENTUAL HIGH: IT LOOKS LIKE THAT john PERCENTAGE IS HIGH: 34.7...THAT MAY MEAN THAT IS A PERSON THAT LIKES SHARE MOMENTS WITH OTHERS 
+GETTING POSSIBLE HOBBIES/INTERESTS:
+Image
+Photo
+Chatting
+Gaming
+Social
+Programming
+OpenSource
+Music
+Forum
+Streaming
+Hacking
