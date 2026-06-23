@@ -6,10 +6,17 @@
 
 # === Testing Framework ===
 pytest>=8.0
-pytest-asyncio>=0.23
+# pytest-asyncio 0.24+ removed the implicit event-loop fixture API some tests
+# rely on; cap until tests migrate fully to asyncio.run().
+pytest-asyncio>=0.23,<0.24
 
 # === Async HTTP Mocking ===
-aioresponses>=0.7.6
+# aioresponses mocks aiohttp internals; aiohttp 3.11+ changed ClientResponse
+# signature and breaks the mock. Keep both within a known-compatible range.
+aioresponses>=0.7.6,<0.7.7
+
+# === E2E (CLI flow) ===
+pexpect>=4.9.0
 
 # === CI/CD & Code Quality ===
 flake8>=7.0.0

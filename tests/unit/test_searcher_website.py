@@ -44,6 +44,9 @@ def web_patches():
         patch("Core.Support.Font.Color.RED", ""),
         patch("Core.Support.ApiCheck.Check.WhoIs", return_value="None"),
         patch("Core.Support.Map.Creation.mapWeb", return_value=None),
+        # Default any interactive prompt to "0" so whois_lookup's int(input(...))
+        # branches don't read from stdin (which pytest captures → OSError).
+        patch("builtins.input", return_value="0"),
     ]
     for p in patches:
         p.start()

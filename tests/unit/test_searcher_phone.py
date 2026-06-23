@@ -42,6 +42,9 @@ def phone_patches():
         patch("Core.Support.Font.Color.WHITE", ""),
         patch("Core.Support.Font.Color.YELLOW", ""),
         patch("Core.Support.Font.Color.RED", ""),
+        # searcher() calls os.remove("Temp/Phone/Code.txt") which doesn't exist
+        # in test env. Tests that need to assert the call override this locally.
+        patch("Core.Searcher_phone.os.remove", return_value=None),
     ]
     for p in patches:
         p.start()
@@ -209,53 +212,49 @@ class TestPhoneReportStructure:
     def test_searcher_creates_report_folder(self, tmp_path):
         """Khi chạy searcher(), phải tạo folder cho username."""
         with phone_patches():
+            import importlib
+            import Core.Searcher_phone
+            importlib.reload(Core.Searcher_phone)
+            from Core.Searcher_phone import Phone_search
+
             with (
                 patch("Core.Searcher_phone.os.path.isdir", return_value=False),
                 patch("Core.Searcher_phone.os.mkdir") as mock_mkdir,
                 patch("Core.Searcher_phone.shutil.rmtree"),
-                # Patch Numbers.Phony.Number để tránh phonenumbers parse error
-                patch("Core.Support.Phone.Numbers.Phony.Number",
-                      return_value=["0033123456789", "+33123456789", "0123456789", "33123456789"]),
                 # Patch lookup để tránh đọc Temp/Phone/Code.txt thật
                 patch("Core.Searcher_phone.Phone_search.lookup"),
                 patch("Core.Searcher_phone.Phone_search.Banner"),
+                patch("Core.Searcher_phone.Numbers.Phony.Number",
+                      return_value=["0033123456789"]),
                 patch("builtins.open", mock_open()),
                 patch("builtins.input", return_value="2"),
                 patch("Core.Searcher_phone.sleep"),
             ):
-                import importlib
-                import Core.Searcher_phone
-                importlib.reload(Core.Searcher_phone)
-                from Core.Searcher_phone import Phone_search
-
-                # Patch Numbers trực tiếp trong module đã load
-                with patch("Core.Searcher_phone.Numbers.Phony.Number",
-                           return_value=["0033123456789"]):
-                    Phone_search.searcher("0612345678", "Desktop")
+                Phone_search.searcher("0612345678", "Desktop")
 
             mock_mkdir.assert_called_once()
 
     def test_searcher_deletes_existing_folder_before_creating(self, tmp_path):
         """Nếu folder đã tồn tại → xóa rồi tạo lại."""
         with phone_patches():
+            import importlib
+            import Core.Searcher_phone
+            importlib.reload(Core.Searcher_phone)
+            from Core.Searcher_phone import Phone_search
+
             with (
                 patch("Core.Searcher_phone.os.path.isdir", return_value=True),
                 patch("Core.Searcher_phone.shutil.rmtree") as mock_rmtree,
                 patch("Core.Searcher_phone.os.mkdir"),
                 patch("Core.Searcher_phone.Phone_search.lookup"),
                 patch("Core.Searcher_phone.Phone_search.Banner"),
+                patch("Core.Searcher_phone.Numbers.Phony.Number",
+                      return_value=["0033123456789"]),
                 patch("builtins.open", mock_open()),
                 patch("builtins.input", return_value="2"),
                 patch("Core.Searcher_phone.sleep"),
             ):
-                import importlib
-                import Core.Searcher_phone
-                importlib.reload(Core.Searcher_phone)
-                from Core.Searcher_phone import Phone_search
-
-                with patch("Core.Searcher_phone.Numbers.Phony.Number",
-                           return_value=["0033123456789"]):
-                    Phone_search.searcher("0612345678", "Desktop")
+                Phone_search.searcher("0612345678", "Desktop")
 
             mock_rmtree.assert_called_once()
 
@@ -298,6 +297,11 @@ class TestPhoneSiteLoopLogic:
     def test_searcher_calls_lookup_once(self):
         """searcher() phải gọi lookup() đúng 1 lần."""
         with phone_patches():
+            import importlib
+            import Core.Searcher_phone
+            importlib.reload(Core.Searcher_phone)
+            from Core.Searcher_phone import Phone_search
+
             with (
                 patch("Core.Searcher_phone.os.path.isdir", return_value=False),
                 patch("Core.Searcher_phone.os.mkdir"),
@@ -309,11 +313,6 @@ class TestPhoneSiteLoopLogic:
                 patch("builtins.input", return_value="2"),
                 patch("Core.Searcher_phone.sleep"),
             ):
-                import importlib
-                import Core.Searcher_phone
-                importlib.reload(Core.Searcher_phone)
-                from Core.Searcher_phone import Phone_search
-
                 Phone_search.searcher("0612345678", "Desktop")
 
             mock_lookup.assert_called_once()
@@ -325,6 +324,11 @@ class TestPhoneSiteLoopLogic:
             captured_args.append(args)
 
         with phone_patches():
+            import importlib
+            import Core.Searcher_phone
+            importlib.reload(Core.Searcher_phone)
+            from Core.Searcher_phone import Phone_search
+
             with (
                 patch("Core.Searcher_phone.os.path.isdir", return_value=False),
                 patch("Core.Searcher_phone.os.mkdir"),
@@ -336,11 +340,6 @@ class TestPhoneSiteLoopLogic:
                 patch("builtins.input", return_value="2"),
                 patch("Core.Searcher_phone.sleep"),
             ):
-                import importlib
-                import Core.Searcher_phone
-                importlib.reload(Core.Searcher_phone)
-                from Core.Searcher_phone import Phone_search
-
                 Phone_search.searcher("0612345678", "Desktop")
 
         assert len(captured_args) == 1

@@ -159,7 +159,7 @@ async def test_check_success_parses_claimed_profiles(tmp_path):
         return proc
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(side_effect=write_json_side_effect)):
                 result = await plugin.check("testuser", "USERNAME")
 
@@ -195,7 +195,7 @@ async def test_check_success_case_insensitive_username_type(tmp_path):
         return proc
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(side_effect=write_json_side_effect)):
                 result = await plugin.check("testuser", "username")
 
@@ -216,7 +216,7 @@ async def test_check_subprocess_timeout(tmp_path):
     proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError())
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=proc)):
                 result = await plugin.check("testuser", "USERNAME")
 
@@ -238,7 +238,7 @@ async def test_check_nonzero_returncode(tmp_path):
     proc = make_mock_process(returncode=1, stderr=b"Fatal error: something went wrong")
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=proc)):
                 result = await plugin.check("testuser", "USERNAME")
 
@@ -263,7 +263,7 @@ async def test_check_malformed_json(tmp_path):
         return proc
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(side_effect=write_bad_json)):
                 result = await plugin.check("testuser", "USERNAME")
 
@@ -281,7 +281,7 @@ async def test_check_missing_json_file(tmp_path):
     proc = make_mock_process(returncode=0)
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=proc)):
                 result = await plugin.check("testuser", "USERNAME")
 
@@ -305,7 +305,7 @@ async def test_check_temp_file_cleaned_up_on_success(tmp_path):
         return proc
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(side_effect=write_json_side_effect)):
                 await plugin.check("testuser", "USERNAME")
 
@@ -323,7 +323,7 @@ async def test_check_temp_file_cleaned_up_on_failure(tmp_path):
     proc = make_mock_process(returncode=1, stderr=b"error")
 
     with patch("shutil.which", return_value="/usr/local/bin/maigret"):
-        with patch("tempfile.NamedTemporaryFile", return_value=_mock_named_tempfile(tmp_file)):
+        with patch("tempfile.mkdtemp", return_value=str(tmp_path)):
             with patch("asyncio.create_subprocess_exec", new=AsyncMock(return_value=proc)):
                 await plugin.check("testuser", "USERNAME")
 

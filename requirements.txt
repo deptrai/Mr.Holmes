@@ -10,7 +10,9 @@ beautifulsoup4==4.9.3
 stem>=1.4.0
 
 # === Async Engine (Epic 2) ===
-aiohttp>=3.9.0
+# Cap below 3.11: aiohttp 3.11+ changed ClientResponse internals which breaks
+# aioresponses mocking in the test suite. Lift once aioresponses catches up.
+aiohttp>=3.9.0,<3.11
 aiofiles>=23.0
 
 # === Configuration & Secrets (Story 4.2 prep) ===

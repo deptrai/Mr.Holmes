@@ -90,7 +90,7 @@ class TestScanAllSites:
         sites = [make_site(f"Site{i}", f"https://s{i}.com/u") for i in range(3)]
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser")
             )
 
@@ -99,7 +99,7 @@ class TestScanAllSites:
 
     def test_empty_sites_returns_empty_list(self):
         """Zero sites → empty list."""
-        results = asyncio.get_event_loop().run_until_complete(
+        results = asyncio.run(
             ScanPipeline.scan_all_sites([], "testuser")
         )
         assert results == []
@@ -109,7 +109,7 @@ class TestScanAllSites:
         site = make_site("OnlySite", "https://only.com/user")
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites([site], "testuser")
             )
 
@@ -129,7 +129,7 @@ class TestResultOrdering:
         sites = [make_site(f"Site{i}", f"https://s{i}.com/u") for i in range(5)]
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser")
             )
 
@@ -174,7 +174,7 @@ class TestExceptionIsolation:
                 raw = await asyncio.gather(*tasks, return_exceptions=True)
             return [r for r in raw if isinstance(r, SR)]
 
-        results = asyncio.get_event_loop().run_until_complete(run())
+        results = asyncio.run(run())
         # Site1 exception filtered; only Site0 and Site2 returned
         assert len(results) == 2
         assert all(isinstance(r, ScanResult) for r in results)
@@ -197,7 +197,7 @@ class TestExceptionIsolation:
                 raw = await asyncio.gather(*tasks, return_exceptions=True)
             return [r for r in raw if isinstance(r, SR)]
 
-        results = asyncio.get_event_loop().run_until_complete(run())
+        results = asyncio.run(run())
         assert results == []
 
     def test_scan_all_sites_with_error_strategy_sites(self):
@@ -208,7 +208,7 @@ class TestExceptionIsolation:
         sites = [make_site("S0"), make_site("S1")]
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser")
             )
 
@@ -226,7 +226,7 @@ class TestConfigurableConcurrency:
         sites = [make_site("S", "https://s.com/u")]
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser", concurrency_limit=5)
             )
 
@@ -237,7 +237,7 @@ class TestConfigurableConcurrency:
         sites = [make_site(f"S{i}") for i in range(3)]
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser", concurrency_limit=1)
             )
 
@@ -261,7 +261,7 @@ class TestPerformance:
 
         with patch.object(ScanPipeline, "_scan_with_semaphore", new=_fake_scan):
             start = time.monotonic()
-            results = asyncio.get_event_loop().run_until_complete(
+            results = asyncio.run(
                 ScanPipeline.scan_all_sites(sites, "testuser", concurrency_limit=20)
             )
             elapsed = time.monotonic() - start

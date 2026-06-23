@@ -156,7 +156,7 @@ class TestMaxRetries:
             calls += 1
             return "ok"
 
-        result = asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+        result = asyncio.run(policy.execute(factory))
         assert result == "ok"
         assert calls == 1
 
@@ -169,7 +169,7 @@ class TestMaxRetries:
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             with pytest.raises(TargetSiteTimeout):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
     def test_retries_3_times_then_raises(self):
         """Default: 3 retries → 4 total attempts, then raises."""
@@ -183,7 +183,7 @@ class TestMaxRetries:
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             with pytest.raises(TargetSiteTimeout):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
         assert call_count == 4  # 1 original + 3 retries
 
@@ -200,7 +200,7 @@ class TestMaxRetries:
             return "success"
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
-            result = asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+            result = asyncio.run(policy.execute(factory))
         assert result == "success"
 
 
@@ -220,7 +220,7 @@ class TestRetryConditions:
 
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             with pytest.raises(TargetSiteTimeout):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
         assert call_count == 3      # 1 + 2 retries
         assert mock_sleep.call_count == 2
@@ -236,7 +236,7 @@ class TestRetryConditions:
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
             with pytest.raises(RateLimitExceeded):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
         assert call_count == 3
 
@@ -255,7 +255,7 @@ class TestRetryConditions:
 
         with patch("asyncio.sleep", side_effect=capture_sleep):
             with pytest.raises(RateLimitExceeded):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
         assert len(captured_delays) == 1
         assert captured_delays[0] >= 20.0  # retry_after honoured
@@ -271,7 +271,7 @@ class TestRetryConditions:
             raise SiteCheckError("Site", "https://s.com", error_type="ParseError")
 
         with pytest.raises(SiteCheckError):
-            asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+            asyncio.run(policy.execute(factory))
 
         assert call_count == 1  # không retry
 
@@ -286,7 +286,7 @@ class TestRetryConditions:
             raise ValueError("unexpected")
 
         with pytest.raises(ValueError):
-            asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+            asyncio.run(policy.execute(factory))
 
         assert call_count == 1
 
@@ -307,7 +307,7 @@ class TestProxyDeadErrorHandling:
             raise _make_proxy_exc()
 
         with pytest.raises(ProxyDeadError):
-            asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+            asyncio.run(policy.execute(factory))
 
         assert call_count == 1  # chỉ 1 lần gọi, không retry
 
@@ -320,7 +320,7 @@ class TestProxyDeadErrorHandling:
 
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             with pytest.raises(ProxyDeadError):
-                asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+                asyncio.run(policy.execute(factory))
 
         mock_sleep.assert_not_called()
 
@@ -337,7 +337,7 @@ class TestProxyDeadErrorHandling:
             return "found"
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
-            result = asyncio.get_event_loop().run_until_complete(policy.execute(factory))
+            result = asyncio.run(policy.execute(factory))
 
         assert result == "found"
         assert call_count == 2
