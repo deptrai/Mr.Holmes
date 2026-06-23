@@ -153,10 +153,7 @@ async def test_searxng_empty_results(monkeypatch):
 async def test_searxng_rate_limit_http_429(monkeypatch):
     """HTTP 429 on custom URL → falls through to public nodes → all fail → exhausted error."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
-<<<<<<< HEAD
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: None)
-=======
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
     with aioresponses() as mock:
         # Mock custom URL with 429
@@ -178,17 +175,9 @@ async def test_searxng_server_error(monkeypatch):
     plugin = _make_plugin_with_custom_url(monkeypatch)
 
     # Patch DDG fallback so it raises an exception (simulates DDG unavailable)
-<<<<<<< HEAD
     def _raise_ddg():
         raise Exception("DDG unavailable")
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: _raise_ddg)
-=======
-    monkeypatch.setattr(
-        "Core.plugins.searxng.DDGS",
-        lambda: (_ for _ in ()).throw(Exception("DDG unavailable")),
-        raising=False,
-    )
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
     with aioresponses() as mock:
         pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
@@ -206,10 +195,7 @@ async def test_searxng_server_error(monkeypatch):
 async def test_searxng_timeout(monkeypatch):
     """Timeout on all nodes → exhausted error with 'Timeout' mention."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
-<<<<<<< HEAD
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: None)
-=======
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
     with aioresponses() as mock:
         pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")

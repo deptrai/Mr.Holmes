@@ -441,3 +441,61 @@ CLI → ConfigManager → ScanPipeline
 6. `Core/reporting/` → dual-write
 7. `Core/config/` → .env migration
 8. `Core/cli/` → argparse + Rich
+
+---
+
+## Addendum — Epic 8 & 9 Architecture (cập nhật 2026-06-23)
+
+> Phần gốc ở trên (2026-03-26) chỉ phủ Epic 1-7. Addendum này đồng bộ tài liệu với
+> code thực tế sau khi Epic 8 (Autonomous Profiler) và Epic 9 (Complete OSINT
+> Profiling System) đã được implement. Được tạo qua workflow **Correct Course**.
+
+### Tầng mới: Autonomous Profiling Engine (`Core/engine/`)
+
+Epic 8-9 mở rộng kiến trúc từ "username scanner" thành "autonomous OSINT agent". Lõi
+là một pipeline BFS đa tầng gọi LLM tổng hợp Golden Record.
+
+| Module | Trách nhiệm |
+|--------|-------------|
+| `engine/autonomous_agent.py` | `RecursiveProfiler` + multi-stage BFS orchestration (Stage 1/2/3). Nhận seed → quét đệ quy → graph nodes/edges. |
+| `engine/stage_router.py` | `StageRouter` — route clue theo loại (EMAIL/USERNAME→Stage 2, PHONE/DOMAIN→Stage 3) |
+| `engine/entity_resolver.py` | `EntityResolver` — merge Golden Record bằng Jaro-Winkler (jellyfish) + pHash (imagehash) |
+| `engine/llm_synthesizer.py` | Gọi OpenAI-compatible API tổng hợp JSON thô → Analyst Report (ProfileEntity-aware prompts) |
+| `engine/mindmap_generator.py` | Xuất Interactive HTML Mindmap từ profile graph |
+| `engine/scan_pipeline.py` | Pipeline quét đồng bộ (Epic 1-2) — vẫn được dùng cho username scan |
+| `engine/async_search.py`, `result_collector.py`, `retry.py`, `apify_scraper.py` | HTTP async + result collection + retry policy |
+
+### Tầng mới: Intelligence Plugins (`Core/plugins/`)
+
+Khác với `Core/Support/*` (legacy site-checkers cho username scan), đây là hệ
+**external intelligence plugins** theo `IntelligencePlugin` Protocol.
+
+- **Contract:** `Core/plugins/base.py` — `IntelligencePlugin` Protocol (`name`, `requires_api_key`, `async check()`) + `PluginResult` dataclass. Epic 9 thêm `stage: int` và `tos_risk: str` (backward-compatible qua `getattr` default).
+- **Manager:** `Core/plugins/manager.py` — `PluginManager` auto-discovery (`pkgutil`), shared `aiohttp.ClientSession` pooling, `asyncio.gather` concurrent, transparent cache.
+- **Cache:** `Core/cache/plugin_cache.py` — `PluginCache` SQLite-backed, TTL configurable (`MH_CACHE_TTL`), wrap trong PluginManager (plugins không biết cache tồn tại).
+- **12 plugins:** `github`, `hibp`, `holehe`, `leak_lookup`, `maigret`, `numverify`, `searxng`, `shodan`, `dns_resolver` (+ `base`, `manager`).
+
+### Model mới: `Core/models/profile_entity.py`
+
+`ProfileEntity` + `SourcedField` — unified Golden Record với confidence scoring per field,
+`merge()`, `to_dict()`/`from_dict()`. CLI entry: `Core/autonomous_cli.py` (Complete Profile Mode / Option 16).
+
+### Đính chính so với phần gốc
+
+- `Core/scrapers/` thực tế **chỉ có `registry.py`** (không có instagram.py/twitter.py như sơ đồ gốc mô tả). Site-checkers thật nằm ở `Core/Support/Username/`, `Core/Support/Person/`, v.v.
+- Entry point `MrHolmes.py` **không dùng `asyncio.run()` ở top-level** — vẫn là Menu đồng bộ legacy + batch CLI layer (`Core/cli/`). Async chỉ ở tầng engine/plugins.
+
+### Tech debt đã ghi nhận (qua Correct Course 2026-06-23)
+
+| Hạng | Vấn đề | Trạng thái |
+|------|--------|-----------|
+| P0 | Merge conflict markers trong 7 file (4 .py + requirements.txt + .gitignore + test) | ✅ ĐÃ RESOLVE (giữ HEAD) |
+| P1 | Test infra: `tests/engine/test_retry.py`, `test_scan_concurrency.py` dùng `asyncio.get_event_loop().run_until_complete()` — deprecated Python 3.10+ → 22 fail | ⏳ Chưa fix (test-only, không ảnh hưởng production) |
+| P1 | Test drift: `tests/plugins/test_maigret_plugin.py` mock theo API cũ (`tempfile.NamedTemporaryFile`) thay vì `--folderoutput` của maigret v0.4.4 → 4 fail | ⏳ Chưa fix |
+| P2 | `requirements.txt` để version range mở (`aiohttp>=3.9.0`) → aiohttp 3.14 phá vỡ aioresponses mock; nên pin upper bound cho test reproducibility | ⏳ Đề xuất |
+| P2 | LOC rule "<200/file" vi phạm ở 29 file (gồm cả module mới: scan_pipeline 717, autonomous_agent 604) — đề xuất nới rule lên ~400 LOC + cohesion | ⏳ Đề xuất |
+| P2 | Artifacts rác ở root (`demo_story*.py`, `test_*.py`, `*.log`) — đã thêm vào .gitignore | ⏳ Dọn dần |
+
+**Verify baseline (2026-06-23, Python 3.10, deps pinned aiohttp 3.10.11 / aioresponses 0.7.3 / pytest-asyncio 0.23.8):**
+`963 passed, 33 failed` — toàn bộ fail là test-infra/test-drift, **0 module production vỡ**.
+

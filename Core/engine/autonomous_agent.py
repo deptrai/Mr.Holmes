@@ -31,7 +31,6 @@ _IP_RE = re.compile(
     r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
 )
 
-<<<<<<< HEAD
 # Freemail domains — used to skip deriving DOMAIN clue from common providers
 _FREEMAIL = frozenset({
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
@@ -39,8 +38,6 @@ _FREEMAIL = frozenset({
     "yandex.com", "zoho.com", "gmx.com", "live.com",
 })
 
-=======
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
 
 @dataclass
@@ -257,12 +254,6 @@ class RecursiveProfiler:
                                 via_plugin="auto:email-prefix",
                             ))
                     # Also derive DOMAIN for non-freemail providers
-<<<<<<< HEAD
-=======
-                    _FREEMAIL = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
-                                 "protonmail.com", "icloud.com", "aol.com", "mail.com",
-                                 "yandex.com", "zoho.com", "gmx.com", "live.com"}
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
                     if domain_part not in _FREEMAIL:
                         domain_key = (domain_part, "DOMAIN")
                         if domain_key not in visited:
@@ -431,7 +422,6 @@ class StagedProfiler:
                     "stage": 2,
                 })
 
-<<<<<<< HEAD
         # ── Phase B: Extract clues from stage-2 results ─────────────────────────
         stage3_targets: list[tuple[str, str]] = []   # (target, type) for stage 3
         stage1_extra_seeds: list[tuple[str, str]] = []  # extra seeds for stage-1 BFS
@@ -484,32 +474,6 @@ class StagedProfiler:
                 _add_clue(clue_target, clue_type, result.plugin_name)
 
             # Plugin-specific clue extraction (PHONE, profile emails, etc.)
-=======
-        # ── Phase B: Extract stage-3 targets from stage-2 results ───────────────
-        stage3_targets: list[tuple[str, str]] = []  # (target, type) for stage 3
-
-        def _add_clue(clue_target: str, clue_type: str, via_plugin: str) -> None:
-            clue_key = (clue_target.lower(), clue_type.upper())
-            if self._router.route(clue_type) == 3 and clue_key not in visited:
-                visited.add(clue_key)
-                stage3_targets.append((clue_target, clue_type))
-                graph.nodes.append(ProfileNode(
-                    target=clue_target, target_type=clue_type, depth=1
-                ))
-                graph.edges.append(ProfileEdge(
-                    source_target=seed_target,
-                    discovered_target=clue_target,
-                    discovered_type=clue_type,
-                    via_plugin=via_plugin,
-                ))
-
-        for i, result in enumerate(stage2_results):
-            # Generic clue extraction (Epic 8 — EMAIL/DOMAIN/IP via regex)
-            for clue_target, clue_type in _extract_clues_from_result(result):
-                _add_clue(clue_target, clue_type, result.plugin_name)
-
-            # Plugin-specific clue extraction (Epic 9 — PHONE, profile emails)
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
             plugin = stage2_plugins[i] if i < len(stage2_plugins) else None
             if plugin is not None and hasattr(plugin, "extract_clues"):
                 try:
@@ -519,7 +483,6 @@ class StagedProfiler:
                     logger.warning("extract_clues failed for %s: %s",
                                    result.plugin_name, exc)
 
-<<<<<<< HEAD
             # Add platform profiles as PLATFORM nodes (from Maigret/GitHub profiles)
             if result.is_success and result.data:
                 for profile in (result.data.get("profiles") or []):
@@ -529,8 +492,6 @@ class StagedProfiler:
                     if email:
                         _add_clue(email, "EMAIL", result.plugin_name)
 
-=======
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
         # ── Phase C: Stage 3 plugins on discovered PHONE/DOMAIN clues ────────────
         stage3_plugins = self._router.filter_plugins(plugins, stage=3)
         if stage3_plugins and stage3_targets:
@@ -552,7 +513,6 @@ class StagedProfiler:
                     })
 
         # ── Phase D: Stage 1 (Epic 8) plugins via RecursiveProfiler ─────────────
-<<<<<<< HEAD
         # Run on original seed + any extra EMAIL/USERNAME seeds from stage-2
         stage1_plugins = self._router.filter_plugins(plugins, stage=1)
         if stage1_plugins:
@@ -564,12 +524,6 @@ class StagedProfiler:
                 flat_result["nodes"].extend(partial.get("nodes", []))
                 flat_result["edges"].extend(partial.get("edges", []))
                 flat_result["plugin_results"].extend(partial.get("plugin_results", []))
-=======
-        stage1_plugins = self._router.filter_plugins(plugins, stage=1)
-        if stage1_plugins:
-            flat = RecursiveProfiler(max_depth=self.max_depth)
-            flat_result = await flat.run_profiler(seed_target, seed_type, stage1_plugins)
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
             # Merge flat result — add nodes/edges/results not already in graph
             existing_node_keys = {
                 (n.target.lower(), n.target_type.upper()) for n in graph.nodes

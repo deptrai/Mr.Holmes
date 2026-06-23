@@ -27,11 +27,7 @@ jinja2>=3.1.0
 # weasyprint>=60.0  # optional — install for PDF generation: pip install weasyprint
 
 # === Web Search Fallback (Epic 8 — SearxNG DDG fallback) ===
-<<<<<<< HEAD
 ddgs>=9.0             # renamed from duckduckgo-search
-=======
-duckduckgo-search>=7.0
->>>>>>> cdba61f9b0cf9314efd08901bf21b1b9eac189c1
 
 # === Entity Resolution (Story 9.10) — optional deps, graceful skip if missing ===
 jellyfish>=0.11.0   # Jaro-Winkler name similarity (optional)

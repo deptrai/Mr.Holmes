@@ -35,11 +35,19 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T23:06:00+07:00
-last_updated: 2026-04-07
+last_updated: 2026-06-23
 project: Mr.Holmes
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
+
+# CORRECT COURSE 2026-06-23:
+# - P0 fixed: merge conflict markers trong 7 file (4 .py production + requirements.txt
+#   + .gitignore + test_searxng.py) đã được resolve (giữ HEAD). Trước đó các file này
+#   SyntaxError → Epic 8/9 không import được dù stories ghi 'done'.
+# - Verify baseline: 963 passed / 33 failed (Python 3.10). 33 fail đều là test-infra
+#   /test-drift (event-loop API cũ, maigret mock cũ), KHÔNG có production module vỡ.
+# - Chi tiết + tech debt: xem architecture.md "Addendum — Epic 8 & 9".
 
 development_status:
   # === Epic 1: Foundation Refactoring — Code Structure Cleanup ===
