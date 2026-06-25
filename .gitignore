@@ -143,3 +143,15 @@ demo_story*.py
 test_run.py
 test_epic*_suite.py
 patch_dependencies.py
+
+# Harness durable layer
+harness.db
+harness.db-wal
+harness.db-shm
+scripts/bin/harness-cli
+scripts/bin/harness-cli.exe
+
+# Proxy audit trail (local only, sensitive metadata)
+proxy_audit.db
+proxy_audit.db-wal
+proxy_audit.db-shm
