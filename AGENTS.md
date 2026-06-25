@@ -399,3 +399,221 @@ The proposed enhancements focus on:
 - Raising **quality, reliability, and compliance**
 
 This document should serve as a high-level map of the system and as a starting point for future refactoring, modernization, and feature planning.
+
+---
+
+## 11. Modern Architecture (Epic 7-9)
+
+The sections above describe the **legacy architecture**. The following sections
+describe the **modern architecture** added by Epics 7-9, which coexists with
+the legacy modules.
+
+### 11.1 Plugin System (Epic 7)
+
+A pluggable OSINT data source system under `Core/plugins/`:
+
+- **`Core/plugins/base.py`** — `IntelligencePlugin` Protocol + `PluginResult` dataclass
+- **`Core/plugins/manager.py`** — `PluginManager` with auto-discovery
+- **9 plugins implemented:** GitHub, Shodan, HIBP, LeakLookup, SearxNG, Holehe, Maigret, Numverify, DNSResolver
+
+**PluginResult API:**
+```python
+@dataclass
+class PluginResult:
+    plugin_name: str
+    is_success: bool
+    data: dict[str, Any]
+    error_message: str | None = None
+```
+
+**IntelligencePlugin Protocol:**
+```python
+class IntelligencePlugin(Protocol):
+    @property
+    def name(self) -> str: ...
+    @property
+    def requires_api_key(self) -> bool: ...
+    async def check(self, target: str, target_type: str) -> PluginResult: ...
+    # Epic 9 additions (optional):
+    stage: int  # 1=legacy, 2=identity expansion, 3=deep enrichment
+    tos_risk: str  # "safe" | "tos_risk" | "ban_risk"
+    def extract_clues(self, result: PluginResult) -> list[tuple[str, str]]: ...
+```
+
+> **Note:** The plugin method is `check()`, NOT `run()`. The result field is
+> `is_success`, NOT `status`.
+
+### 11.2 Autonomous Profiler (Epic 8)
+
+Recursive BFS profiler under `Core/engine/`:
+
+- **`Core/engine/autonomous_agent.py`** — `RecursiveProfiler` + `StagedProfiler`
+- **`Core/engine/entity_resolver.py`** — `EntityResolver` (golden record builder)
+- **`Core/engine/scan_pipeline.py`** — async username scan pipeline
+- **`Core/engine/result_collector.py`** — `ScanResultCollector`
+- **`Core/engine/llm_synthesizer.py`** — AI report generation
+- **`Core/engine/mindmap_generator.py`** — vis-network HTML export
+- **`Core/cache/plugin_cache.py`** — SQLite-backed plugin cache
+
+**StagedProfiler API:**
+```python
+profiler = StagedProfiler(max_depth=2)  # max_depth in constructor
+result = await profiler.run_staged(
+    seed_target="torvalds",
+    seed_type="username",
+    plugins=plugins_list,  # plugins passed to run_staged, NOT constructor
+)
+# Returns: {"nodes": [...], "edges": [...], "plugin_results": [...]}
+```
+
+> **Note:** `StagedProfiler.__init__()` only takes `max_depth`. Plugins are
+> passed to `run_staged()`, not the constructor.
+
+**EntityResolver API:**
+```python
+resolver = EntityResolver()
+golden = await resolver.resolve(entities: list[ProfileEntity])
+# Returns: ProfileEntity (merged golden record)
+```
+
+> **Note:** The method is `resolve()`, NOT `build_golden_record()`.
+
+**ProfileEntity API:**
+```python
+@dataclass
+class ProfileEntity:
+    seed: str          # initial input (email/username/phone)
+    seed_type: str     # "EMAIL" | "USERNAME" | "PHONE"
+    real_names: list[SourcedField]
+    emails: list[SourcedField]
+    # ... (see Core/models/profile_entity.py for full schema)
+```
+
+### 11.3 Staged Profiler (Epic 9)
+
+Multi-stage enrichment pipeline:
+
+- **Stage 1:** Legacy plugins (HIBP, Shodan, LeakLookup, SearxNG, DNS)
+- **Stage 2:** Identity expansion (Holehe, Maigret, GitHub)
+- **Stage 3:** Deep enrichment (Numverify, Hunter)
+
+Pipeline phases: A (stage 2 on seed) → B (clue extraction) → C (stage 3 on
+discovered targets) → D (stage 1 BFS via RecursiveProfiler).
+
+### 11.4 Data Models (Core/models/)
+
+- `ProfileEntity` — golden record with SourcedField lists
+- `SourcedField` — value + source + confidence
+- `ScanContext` / `ScanConfig` — scan configuration
+- `ScanResult` — scan result dataclass
+- `validators.py` — input validation + `safe_int_input()`
+- `exceptions.py` — custom exceptions
+
+### 11.5 Reporting (Core/reporting/)
+
+Dual-write reporting system:
+- `ReportWriter` — flat files + SQLite
+- `Database` — SQLite singleton
+- `csv_export.py` / `pdf_export.py` — export formats
+- `schema.sql` — SQLite schema
+
+### 11.6 CLI Modernization (Core/cli/)
+
+- `parser.py` — argparse-based CLI parser
+- `runner.py` — batch mode runner
+- `config_wizard.py` — interactive API key setup
+- `output.py` / `rich_output.py` — formatted output (rich optional)
+
+### 11.7 Configuration (Core/config/)
+
+- `settings.py` — singleton loading from `.env` + `.ini`
+- `logging_config.py` — structured logging
+
+### 11.8 Proxy Management (Core/proxy/)
+
+- `ProxyManager` — proxy pool with health checks
+- `ProxyPool` — rotation and selection
+
+---
+
+## 12. Development Environment
+
+### 12.1 Python Version
+
+**Required:** Python 3.10+ (tested on 3.10.20)
+
+> **Important:** On macOS with Homebrew, `python3` may point to Python 3.14
+> which has a broken `pyexpat` module on some systems. If `pip install pytest`
+> fails with `ImportError: dlopen(...pyexpat...)`, use `python3.10` explicitly:
+>
+> ```bash
+> python3.10 -m pip install -r requirements.txt -r requirements-dev.txt
+> python3.10 -m pytest tests/ -v
+> ```
+
+### 12.2 External CLI Tools
+
+Some plugins require external CLI tools installed via pip:
+
+```bash
+pip install holehe    # email-to-service checker
+pip install maigret   # username checker across 3000+ sites
+```
+
+Plugins degrade gracefully if these are missing — they return
+`is_success=False` with a descriptive `error_message`.
+
+### 12.3 Test Runner
+
+```bash
+# Full suite
+python3.10 -m pytest tests/ -v
+
+# Specific module
+python3.10 -m pytest tests/support/test_harness_status.py -v
+
+# With coverage
+python3.10 -m pytest tests/ --cov=Core --cov-report=term-missing
+```
+
+### 12.4 Harness CLI
+
+The project uses `repository-harness` for agent workflow management:
+
+```bash
+./scripts/bin/harness-cli query matrix     # before starting work
+./scripts/bin/harness-cli intake --type change-request --summary "..." --lane normal
+./scripts/bin/harness-cli trace --summary "..." --outcome completed
+./scripts/bin/harness-cli audit            # drift check
+```
+
+See `docs/HARNESS.md` for the full workflow.
+
+---
+
+## 13. Module Status Summary
+
+| Module | Status | Tests | Notes |
+|--------|--------|-------|-------|
+| Core/Searcher.py | Legacy | None | Username OSINT, being replaced by ScanPipeline |
+| Core/Searcher_phone.py | Legacy | ✅ tests/unit/ | Phone OSINT |
+| Core/Searcher_website.py | Legacy | ✅ tests/unit/ | Website/domain OSINT |
+| Core/Searcher_person.py | Legacy | None | Person OSINT |
+| Core/E_Mail.py | Legacy | ✅ tests/unit/ | Email OSINT |
+| Core/Port_Scanner.py | Legacy | ✅ tests/unit/ | Port scanning |
+| Core/Dork.py | Legacy | Partial | Dork generation |
+| Core/Decoder.py | Legacy | None | Encode/decode utilities |
+| Core/PDF_Converter.py | Legacy | None | PDF conversion |
+| Core/Transfer.py | Legacy | None | File transfer |
+| Core/Session.py | Legacy | Partial | Session management |
+| Core/engine/ | Modern | ✅ tests/engine/ | Autonomous Profiler |
+| Core/plugins/ | Modern | ✅ tests/plugins/ | Plugin system |
+| Core/cache/ | Modern | ✅ tests/cache/ | Plugin cache |
+| Core/cli/ | Modern | ✅ tests/cli/ | CLI modernization |
+| Core/config/ | Modern | ✅ tests/config/ | Settings management |
+| Core/models/ | Modern | ✅ tests/models/ | Data models |
+| Core/proxy/ | Modern | ✅ tests/proxy/ | Proxy management |
+| Core/reporting/ | Modern | ✅ tests/reporting/ | Dual-write reporting |
+| Core/scrapers/ | Modern | ✅ tests/scrapers/ | Scraper registry |
+| Core/Support/Harness_Status.py | New | ✅ tests/support/ | Harness CLI wrapper |
+| Core/Support/Proxy_Audit.py | New | ✅ tests/support/ | Proxy audit trail |
