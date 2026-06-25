@@ -2,12 +2,17 @@
 tests/plugins/test_shodan.py
 
 Story 7.3 — Unit tests for ShodanPlugin (Shodan API integration).
+Migrated from aioresponses to unittest.mock (aioresponses incompatible
+with aiohttp 3.11+).
 """
 from __future__ import annotations
 
 import json
+
 import pytest
-from aioresponses import aioresponses
+from unittest.mock import patch
+
+from tests.conftest import make_mock_response, make_mock_session
 
 from Core.plugins.shodan import ShodanPlugin
 from Core.plugins.base import PluginResult
@@ -73,13 +78,14 @@ async def test_shodan_check_valid_ip():
     """Returns PluginResult with open ports, hostnames, org, isp and CVEs."""
     plugin = ShodanPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(
-            SHODAN_URL,
-            status=200,
-            body=json.dumps(SAMPLE_SHODAN_RESPONSE),
-            headers={"Content-Type": "application/json"},
-        )
+    resp = make_mock_response(
+        status=200,
+        body=json.dumps(SAMPLE_SHODAN_RESPONSE),
+        headers={"Content-Type": "application/json"},
+    )
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("8.8.8.8", "IP")
 
     assert isinstance(result, PluginResult)
@@ -92,14 +98,14 @@ async def test_shodan_check_valid_ip():
     assert result.data["hostnames"] == ["dns.google"]
     assert result.data["org"] == "Google LLC"
     assert result.data["isp"] == "Google LLC"
-    
+
     # Check deduplicated CVEs
     vulns = result.data["vulnerabilities"]
     assert len(vulns) == 3
     assert "CVE-1999-0001" in vulns
     assert "CVE-2015-0235" in vulns
     assert "CVE-2020-1234" in vulns
-    
+
     # Check location data
     assert result.data["location"]["city"] == "Mountain View"
     assert result.data["location"]["country"] == "United States"
@@ -111,8 +117,10 @@ async def test_shodan_check_not_found():
     """Returns data_found=False when IP is not in Shodan (404)."""
     plugin = ShodanPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(SHODAN_URL, status=404)
+    resp = make_mock_response(status=404)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("8.8.8.8", "IP")
 
     assert result.is_success is True
@@ -149,8 +157,10 @@ async def test_shodan_rate_limited_429():
     """API rate limit hit (429) returns is_success=False."""
     plugin = ShodanPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(SHODAN_URL, status=429)
+    resp = make_mock_response(status=429)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("8.8.8.8", "IP")
 
     assert result.is_success is False
@@ -162,8 +172,10 @@ async def test_shodan_unauthorized_401():
     """Invalid API key (401) returns is_success=False."""
     plugin = ShodanPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(SHODAN_URL, status=401)
+    resp = make_mock_response(status=401)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("8.8.8.8", "IP")
 
     assert result.is_success is False
@@ -176,13 +188,11 @@ async def test_shodan_rate_limit_applied():
     import time
     plugin = ShodanPlugin(api_key="test_key")
 
-    url1 = "https://api.shodan.io/shodan/host/1.1.1.1?key=test_key"
-    url2 = "https://api.shodan.io/shodan/host/8.8.4.4?key=test_key"
+    resp1 = make_mock_response(status=404)
+    resp2 = make_mock_response(status=404)
+    mock_session = make_mock_session([resp1, resp2])
 
-    with aioresponses() as mock:
-        mock.get(url1, status=404)
-        mock.get(url2, status=404)
-
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         t0 = time.monotonic()
         await plugin.check("1.1.1.1", "IP")
         await plugin.check("8.8.4.4", "IP")

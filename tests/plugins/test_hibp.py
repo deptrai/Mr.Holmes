@@ -2,13 +2,18 @@
 tests/plugins/test_hibp.py
 
 Story 7.2 — Unit tests for HIBPPlugin (HaveIBeenPwned integration).
-All HTTP calls are mocked via aioresponses.
+All HTTP calls are mocked via unittest.mock (migrated from aioresponses
+because aioresponses is incompatible with aiohttp 3.11+).
 """
 from __future__ import annotations
 
 import json
+
+import aiohttp
 import pytest
-from aioresponses import aioresponses
+from unittest.mock import patch
+
+from tests.conftest import make_mock_response, make_mock_session
 
 from Core.plugins.hibp import HIBPPlugin
 from Core.plugins.base import PluginResult
@@ -57,13 +62,14 @@ async def test_hibp_check_found_breaches():
     """Returns PluginResult with breach count, names, dates, data classes."""
     plugin = HIBPPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(
-            HIBP_URL,
-            status=200,
-            body=json.dumps(SAMPLE_BREACHES),
-            headers={"Content-Type": "application/json"},
-        )
+    resp = make_mock_response(
+        status=200,
+        body=json.dumps(SAMPLE_BREACHES),
+        headers={"Content-Type": "application/json"},
+    )
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert isinstance(result, PluginResult)
@@ -84,8 +90,10 @@ async def test_hibp_check_no_breaches():
     """Returns is_success=True with breach_count=0 when email is clean (404)."""
     plugin = HIBPPlugin(api_key="test_key_123")
 
-    with aioresponses() as mock:
-        mock.get(HIBP_URL, status=404)
+    resp = make_mock_response(status=404)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is True
@@ -103,13 +111,11 @@ async def test_hibp_rate_limit_applied():
     import time
     plugin = HIBPPlugin(api_key="test_key")
 
-    url1 = "https://haveibeenpwned.com/api/v3/breachedaccount/a@b.com"
-    url2 = "https://haveibeenpwned.com/api/v3/breachedaccount/c@d.com"
+    resp1 = make_mock_response(status=404)
+    resp2 = make_mock_response(status=404)
+    mock_session = make_mock_session([resp1, resp2])
 
-    with aioresponses() as mock:
-        mock.get(url1, status=404)
-        mock.get(url2, status=404)
-
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         t0 = time.monotonic()
         await plugin.check("a@b.com", "EMAIL")
         await plugin.check("c@d.com", "EMAIL")
@@ -139,8 +145,10 @@ async def test_hibp_unauthorized_401():
     """Invalid API key (401) returns is_success=False."""
     plugin = HIBPPlugin(api_key="invalid_key")
 
-    with aioresponses() as mock:
-        mock.get(HIBP_URL, status=401)
+    resp = make_mock_response(status=401)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is False
@@ -152,8 +160,10 @@ async def test_hibp_rate_limited_429():
     """API rate limit hit (429) returns is_success=False."""
     plugin = HIBPPlugin(api_key="some_key")
 
-    with aioresponses() as mock:
-        mock.get(HIBP_URL, status=429)
+    resp = make_mock_response(status=429)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is False
@@ -163,11 +173,12 @@ async def test_hibp_rate_limited_429():
 @pytest.mark.asyncio
 async def test_hibp_network_error():
     """Network errors are caught and return is_success=False."""
-    import aiohttp
     plugin = HIBPPlugin(api_key="some_key")
 
-    with aioresponses() as mock:
-        mock.get(HIBP_URL, exception=aiohttp.ClientConnectionError("connection refused"))
+    resp = make_mock_response(exception=aiohttp.ClientConnectionError("connection refused"))
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is False

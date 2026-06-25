@@ -5,6 +5,9 @@ Story 7.6 — Unit tests for SearxngPlugin.
 
 Tests use a fixed custom_url via monkeypatch to ensure deterministic
 HTTP mocking (the plugin rotates random public nodes otherwise).
+
+Migrated from aioresponses to unittest.mock (aioresponses incompatible
+with aiohttp 3.11+).
 """
 from __future__ import annotations
 
@@ -13,7 +16,9 @@ import os
 import re
 
 import pytest
-from aioresponses import aioresponses
+from unittest.mock import patch
+
+from tests.conftest import MockResponse, make_mock_response
 
 from Core.plugins.searxng import SearxngPlugin
 from Core.plugins.base import PluginResult
@@ -45,6 +50,33 @@ def _make_plugin_with_custom_url(monkeypatch):
     """Create a SearxngPlugin that uses a deterministic custom URL for mocking."""
     monkeypatch.setenv("MH_SEARXNG_URL", CUSTOM_SEARX_URL)
     return SearxngPlugin()
+
+
+def _build_pattern_session(pattern_response_map):
+    """
+    Build a mock aiohttp.ClientSession that matches request URLs against
+    regex patterns and returns the corresponding MockResponse.
+
+    Args:
+        pattern_response_map: list of (compiled_regex, MockResponse) tuples.
+    """
+    from unittest.mock import AsyncMock, MagicMock
+
+    def _get(*args, **kwargs):
+        url = kwargs.get("url") or (args[0] if args else "")
+        url_str = str(url)
+        for pattern, resp in pattern_response_map:
+            if pattern.search(url_str):
+                return resp
+        # Default: return a 404 response
+        return make_mock_response(status=404)
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(side_effect=_get)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+    mock_session.closed = False
+    return mock_session
 
 
 # ---------------------------------------------------------------------------
@@ -113,9 +145,11 @@ async def test_searxng_found_results(monkeypatch):
     """Returns successful result mapping URLs and titles."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
 
-    with aioresponses() as mock:
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, status=200, payload=SUCCESS_RESPONSE)
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    resp = make_mock_response(status=200, payload=SUCCESS_RESPONSE)
+    mock_session = _build_pattern_session([(custom_pattern, resp)])
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert isinstance(result, PluginResult)
@@ -139,9 +173,11 @@ async def test_searxng_empty_results(monkeypatch):
     """Returns success but data_found=False when no entries exist."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
 
-    with aioresponses() as mock:
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, status=200, payload=EMPTY_RESPONSE)
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    resp = make_mock_response(status=200, payload=EMPTY_RESPONSE)
+    mock_session = _build_pattern_session([(custom_pattern, resp)])
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert result.is_success is True
@@ -155,14 +191,17 @@ async def test_searxng_rate_limit_http_429(monkeypatch):
     plugin = _make_plugin_with_custom_url(monkeypatch)
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: None)
 
-    with aioresponses() as mock:
-        # Mock custom URL with 429
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, status=429)
-        # Mock all public fallback nodes with 429 too
-        for node in SearxngPlugin.FALLBACK_NODES:
-            escaped = re.escape(node)
-            mock.get(re.compile(rf"^{escaped}\b.*"), status=429)
+    # All nodes return 429
+    pattern_map = []
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    pattern_map.append((custom_pattern, make_mock_response(status=429)))
+    for node in SearxngPlugin.FALLBACK_NODES:
+        escaped = re.escape(node)
+        pattern_map.append((re.compile(rf"^{escaped}\b.*"), make_mock_response(status=429)))
+
+    mock_session = _build_pattern_session(pattern_map)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert result.is_success is False
@@ -179,12 +218,16 @@ async def test_searxng_server_error(monkeypatch):
         raise Exception("DDG unavailable")
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: _raise_ddg)
 
-    with aioresponses() as mock:
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, status=503)
-        for node in SearxngPlugin.FALLBACK_NODES:
-            escaped = re.escape(node)
-            mock.get(re.compile(rf"^{escaped}\b.*"), status=503)
+    pattern_map = []
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    pattern_map.append((custom_pattern, make_mock_response(status=503)))
+    for node in SearxngPlugin.FALLBACK_NODES:
+        escaped = re.escape(node)
+        pattern_map.append((re.compile(rf"^{escaped}\b.*"), make_mock_response(status=503)))
+
+    mock_session = _build_pattern_session(pattern_map)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert result.is_success is False
@@ -197,12 +240,16 @@ async def test_searxng_timeout(monkeypatch):
     plugin = _make_plugin_with_custom_url(monkeypatch)
     monkeypatch.setattr("Core.plugins.searxng._load_ddgs", lambda: None)
 
-    with aioresponses() as mock:
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, exception=asyncio.TimeoutError("Timeout"))
-        for node in SearxngPlugin.FALLBACK_NODES:
-            escaped = re.escape(node)
-            mock.get(re.compile(rf"^{escaped}\b.*"), exception=asyncio.TimeoutError("Timeout"))
+    pattern_map = []
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    pattern_map.append((custom_pattern, make_mock_response(exception=asyncio.TimeoutError("Timeout"))))
+    for node in SearxngPlugin.FALLBACK_NODES:
+        escaped = re.escape(node)
+        pattern_map.append((re.compile(rf"^{escaped}\b.*"), make_mock_response(exception=asyncio.TimeoutError("Timeout"))))
+
+    mock_session = _build_pattern_session(pattern_map)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert result.is_success is False
@@ -214,14 +261,18 @@ async def test_searxng_custom_url_fail_falls_back_to_public(monkeypatch):
     """Custom URL fails but a public node succeeds → result is successful."""
     plugin = _make_plugin_with_custom_url(monkeypatch)
 
-    with aioresponses() as mock:
-        # Custom URL fails
-        pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
-        mock.get(pattern, status=503)
-        # All public nodes succeed
-        for node in SearxngPlugin.FALLBACK_NODES:
-            escaped = re.escape(node)
-            mock.get(re.compile(rf"^{escaped}\b.*"), status=200, payload=SUCCESS_RESPONSE)
+    pattern_map = []
+    # Custom URL fails
+    custom_pattern = re.compile(r"^https://my-searx\.example\.com/search\b.*")
+    pattern_map.append((custom_pattern, make_mock_response(status=503)))
+    # All public nodes succeed
+    for node in SearxngPlugin.FALLBACK_NODES:
+        escaped = re.escape(node)
+        pattern_map.append((re.compile(rf"^{escaped}\b.*"), make_mock_response(status=200, payload=SUCCESS_RESPONSE)))
+
+    mock_session = _build_pattern_session(pattern_map)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("admin@test.com", "EMAIL")
 
     assert result.is_success is True

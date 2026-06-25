@@ -9,13 +9,17 @@ Test coverage:
     - SiteConfig dataclass
     - Timeout handling
     - Error handling (network exception)
+
+Migrated from aioresponses to unittest.mock (aioresponses incompatible
+with aiohttp 3.11+).
 """
 from __future__ import annotations
 
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from aioresponses import aioresponses
+
+from tests.conftest import make_mock_response, make_mock_session
 
 from Core.engine.async_search import search_site, SiteConfig
 from Core.models import ScanResult, ScanStatus, ErrorStrategy
@@ -44,6 +48,13 @@ def make_site(
         tags=tags or ["Tech"],
         is_scrapable=is_scrapable,
     )
+
+
+def _run_with_mock_session(mock_session, site, username="testuser"):
+    """Run search_site with a mock session via asyncio."""
+    async def _run():
+        return await search_site(mock_session, site, username)
+    return asyncio.new_event_loop().run_until_complete(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -79,71 +90,47 @@ class TestStatusCodeStrategy:
 
     def test_status_200_returns_found(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.FOUND
         assert result.site_name == "TestSite"
         assert result.url == site.display_url
 
     def test_status_404_returns_not_found(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=404)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=404)
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.NOT_FOUND
 
     def test_status_204_returns_not_found(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=204)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=204)
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.NOT_FOUND
 
     def test_other_status_returns_error(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=503)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=503)
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.ERROR
         assert "503" in result.error_message
 
     def test_found_result_includes_tags(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE, tags=["Dev", "Code"])
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.tags == ["Dev", "Code"]
 
     def test_found_result_is_scrapable(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE, is_scrapable=True)
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.is_scrapable is True
 
 
@@ -156,24 +143,16 @@ class TestMessageStrategy:
 
     def test_error_text_not_in_body_returns_found(self):
         site = make_site(strategy=ErrorStrategy.MESSAGE, error_text="Profile not found")
-        with aioresponses() as m:
-            m.get(site.display_url, status=200, body="Welcome to testuser's page!")
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body="Welcome to testuser's page!")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.FOUND
 
     def test_error_text_in_body_returns_not_found(self):
         site = make_site(strategy=ErrorStrategy.MESSAGE, error_text="Profile not found")
-        with aioresponses() as m:
-            m.get(site.display_url, status=200, body="Profile not found - user does not exist")
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body="Profile not found - user does not exist")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.NOT_FOUND
 
 
@@ -190,17 +169,11 @@ class TestResponseUrlStrategy:
             strategy=ErrorStrategy.RESPONSE_URL,
             response_url="https://example.com/404",
         )
-        # Mock target_url (url_template.format(username)), not display_url
-        target_url = site.url_template.format("testuser")
-        with aioresponses() as m:
-            m.get(target_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        # response.url is the default "https://example.com/testuser" which != response_url
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>", url="https://example.com/testuser")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.FOUND
-
 
     def test_url_matches_expected_returns_not_found(self):
         """
@@ -213,24 +186,19 @@ class TestResponseUrlStrategy:
             strategy=ErrorStrategy.RESPONSE_URL,
             response_url=expected_url,
         )
-        target_url = site.url_template.format("testuser")
 
-        import aiohttp
-        async def run():
-            async with aiohttp.ClientSession() as session:
-                # Tạo mock response với url = response_url (simulate redirect)
-                mock_resp = AsyncMock()
-                mock_resp.status = 200
-                mock_resp.url = MagicMock()
-                mock_resp.url.__str__ = MagicMock(return_value=expected_url)
-                mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
-                mock_resp.__aexit__ = AsyncMock(return_value=False)
-                with patch.object(session, "get", return_value=mock_resp):
-                    return await search_site(session, site, "testuser")
-        result = asyncio.get_event_loop().run_until_complete(run())
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.url = expected_url  # str matches response_url
+        mock_resp.headers = {}
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+
+        session = MagicMock()
+        session.get = MagicMock(return_value=mock_resp)
+
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.NOT_FOUND
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -242,27 +210,23 @@ class TestErrorHandling:
 
     def test_network_exception_returns_error_result(self):
         """Generic exception → ScanResult ERROR, không raise."""
-        import aiohttp
         site = make_site()
 
-        async def run():
-            async with aiohttp.ClientSession() as session:
-                with patch.object(session, "get", side_effect=Exception("connection refused")):
-                    return await search_site(session, site, "testuser")
-        result = asyncio.get_event_loop().run_until_complete(run())
+        session = MagicMock()
+        session.get = MagicMock(side_effect=Exception("connection refused"))
+
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.ERROR
         assert result.site_name == "TestSite"
 
     def test_timeout_returns_timeout_status(self):
         """asyncio.TimeoutError → ScanResult TIMEOUT (H1 fix verification)."""
-        import aiohttp as _aiohttp
         site = make_site()
 
-        async def run():
-            async with _aiohttp.ClientSession() as session:
-                with patch.object(session, "get", side_effect=asyncio.TimeoutError()):
-                    return await search_site(session, site, "testuser")
-        result = asyncio.get_event_loop().run_until_complete(run())
+        session = MagicMock()
+        session.get = MagicMock(side_effect=asyncio.TimeoutError())
+
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.TIMEOUT
         # Story 2.4: error_message now uses TargetSiteTimeout structured format
         assert "TargetSiteTimeout" in result.error_message
@@ -270,13 +234,9 @@ class TestErrorHandling:
     def test_empty_error_text_returns_error(self):
         """MESSAGE strategy with empty error_text → ScanResult ERROR (M2 fix verification)."""
         site = make_site(strategy=ErrorStrategy.MESSAGE, error_text="")
-        with aioresponses() as m:
-            m.get(site.display_url, status=200, body="Some page content")
-            import aiohttp as _aiohttp
-            async def run():
-                async with _aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body="Some page content")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.status == ScanStatus.ERROR
         assert "error_text" in result.error_message
 
@@ -290,33 +250,21 @@ class TestScanResultInterface:
 
     def test_returns_scan_result_instance(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert isinstance(result, ScanResult)
 
     def test_found_property_on_found_result(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=200)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=200, body=b"<html>Profile</html>")
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.found is True
 
     def test_not_found_result_found_false(self):
         site = make_site(strategy=ErrorStrategy.STATUS_CODE)
-        with aioresponses() as m:
-            m.get(site.display_url, status=404)
-            import aiohttp
-            async def run():
-                async with aiohttp.ClientSession() as session:
-                    return await search_site(session, site, "testuser")
-            result = asyncio.get_event_loop().run_until_complete(run())
+        resp = make_mock_response(status=404)
+        session = make_mock_session(resp)
+        result = _run_with_mock_session(session, site)
         assert result.found is False

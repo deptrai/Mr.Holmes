@@ -2,12 +2,15 @@
 tests/plugins/test_leak_lookup.py
 
 Story 7.5 — Unit tests for LeakLookupPlugin.
+Migrated from aioresponses to unittest.mock (aioresponses incompatible
+with aiohttp 3.11+).
 """
 from __future__ import annotations
 
-import json
 import pytest
-from aioresponses import aioresponses
+from unittest.mock import patch
+
+from tests.conftest import make_mock_response, make_mock_session
 
 from Core.plugins.leak_lookup import LeakLookupPlugin
 from Core.plugins.base import PluginResult
@@ -73,19 +76,17 @@ async def test_leak_lookup_found_breaches():
     """Returns successful result mapping databases to vulnerabilities array."""
     plugin = LeakLookupPlugin(api_key="test_key")
 
-    with aioresponses() as mock:
-        mock.post(
-            LEAK_LOOKUP_URL,
-            status=200,
-            payload=SUCCESS_RESPONSE,
-        )
+    resp = make_mock_response(status=200, payload=SUCCESS_RESPONSE)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert isinstance(result, PluginResult)
     assert result.plugin_name == "LeakLookup"
     assert result.is_success is True
     assert result.data["data_found"] is True
-    
+
     vulns = result.data["vulnerabilities"]
     assert len(vulns) == 2
     assert "linkedin.com" in vulns
@@ -98,12 +99,10 @@ async def test_leak_lookup_not_found():
     """Returns success but data_found=False when no entries exist."""
     plugin = LeakLookupPlugin(api_key="test_key")
 
-    with aioresponses() as mock:
-        mock.post(
-            LEAK_LOOKUP_URL,
-            status=200,
-            payload=NOT_FOUND_RESPONSE,
-        )
+    resp = make_mock_response(status=200, payload=NOT_FOUND_RESPONSE)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is True
@@ -116,12 +115,10 @@ async def test_leak_lookup_invalid_key():
     """Server returns 200 but JSON holds error='true' -> traps to 401 message."""
     plugin = LeakLookupPlugin(api_key="test_key")
 
-    with aioresponses() as mock:
-        mock.post(
-            LEAK_LOOKUP_URL,
-            status=200,
-            payload=INVALID_KEY_RESPONSE,
-        )
+    resp = make_mock_response(status=200, payload=INVALID_KEY_RESPONSE)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is False
@@ -134,8 +131,10 @@ async def test_leak_lookup_rate_limit_http_429():
     """Catch conventional HTTP 429 server codes."""
     plugin = LeakLookupPlugin(api_key="test_key")
 
-    with aioresponses() as mock:
-        mock.post(LEAK_LOOKUP_URL, status=429)
+    resp = make_mock_response(status=429)
+    mock_session = make_mock_session(resp)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await plugin.check("test@example.com", "EMAIL")
 
     assert result.is_success is False
@@ -152,10 +151,11 @@ async def test_leak_lookup_rate_limit_throttle():
     import time
     plugin = LeakLookupPlugin(api_key="test_key")
 
-    with aioresponses() as mock:
-        mock.post(LEAK_LOOKUP_URL, status=200, payload=NOT_FOUND_RESPONSE)
-        mock.post(LEAK_LOOKUP_URL, status=200, payload=NOT_FOUND_RESPONSE)
+    resp1 = make_mock_response(status=200, payload=NOT_FOUND_RESPONSE)
+    resp2 = make_mock_response(status=200, payload=NOT_FOUND_RESPONSE)
+    mock_session = make_mock_session([resp1, resp2])
 
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         t0 = time.monotonic()
         await plugin.check("test@example.com", "EMAIL")
         await plugin.check("test2@example.com", "EMAIL")
