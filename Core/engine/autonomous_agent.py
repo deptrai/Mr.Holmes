@@ -358,10 +358,22 @@ class StagedProfiler:
 
     _SEMAPHORE_LIMIT: int = 5
 
-    def __init__(self, max_depth: int = 2) -> None:
+    def __init__(
+        self,
+        max_depth: int = 2,
+        plugins: list[IntelligencePlugin] | None = None,
+    ) -> None:
+        """Initialize profiler.
+
+        Args:
+            max_depth: Maximum recursion depth for entity expansion.
+            plugins:   Optional list of plugins to use. Can be overridden
+                       per-call via run_staged(plugins=...).
+        """
         if max_depth < 0:
             raise ValueError(f"max_depth must be >= 0, got {max_depth}")
         self.max_depth = max_depth
+        self._default_plugins = plugins
         self._router = StageRouter()
 
     async def run_staged(
@@ -376,11 +388,15 @@ class StagedProfiler:
         Args:
             seed_target: Starting piece of intelligence.
             seed_type:   "EMAIL" | "USERNAME" | "PHONE" | "DOMAIN" | "IP"
-            plugins:     List of IntelligencePlugin instances.
+            plugins:     List of IntelligencePlugin instances. If None, falls
+                         back to the plugins passed to the constructor.
 
         Returns:
             dict with keys: "nodes", "edges", "plugin_results"  (same schema as Epic 8)
         """
+        # Use provided plugins, or fall back to constructor default
+        if plugins is None:
+            plugins = self._default_plugins
         plugins = plugins or []
 
         # Detect staged plugins

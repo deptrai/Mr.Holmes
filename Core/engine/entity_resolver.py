@@ -144,6 +144,10 @@ class EntityResolver:
     LOW_CONFIDENCE_THRESHOLD: float = 0.5
     LOW_CONFIDENCE_FLAG: str = "⚠ LOW_CONFIDENCE"
 
+    async def build_golden_record(self, entities: list[ProfileEntity]) -> ProfileEntity:
+        """Alias for resolve() — backward compatibility."""
+        return await self.resolve(entities)
+
     async def resolve(self, entities: list[ProfileEntity]) -> ProfileEntity:
         """
         Merge list of ProfileEntity → 1 Golden Record.
