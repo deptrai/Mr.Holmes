@@ -4,6 +4,7 @@
 # License: GNU General Public License v3.0
 
 import os
+import warnings
 import urllib
 import json
 from Core.Support import Font
@@ -27,6 +28,13 @@ from Core.Support import Site_Counter as CO
 from time import sleep
 from Core.config.logging_config import get_logger
 
+warnings.warn(
+    "Core.Searcher is deprecated. Use Core.engine.ScanPipeline, "
+    "Core.engine.DorkGenerator, and Core.engine.ProfileScraper instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 
@@ -36,68 +44,17 @@ class MrHolmes:
 
     @staticmethod
     def Scraping(report, username, http_proxy,InstagramParams,PostLocations, PostGpsCoordinates,TwitterParams):
-        os.chdir("GUI/Reports/Usernames/{}".format(username))
-        if os.path.isdir("Profile_pics"):
-            pass
-        else:
-            os.mkdir("Profile_pics")
-        os.chdir("../../../../")
-        #http_proxy = None
-        try:
-            Scraper.info.Instagram(report, username, http_proxy, InstagramParams,
-                                 PostLocations, PostGpsCoordinates, "Usernames", username)
-        except Exception as e:
-            _logger.error("Instagram scraper failed: %s", e, exc_info=True)
-        try:
-            Scraper.info.Twitter(report, username, http_proxy, TwitterParams,
-                               "Usernames", username)
-        except Exception as e:
-            _logger.error("Twitter scraper failed: %s", e, exc_info=True)
-        try:
-            Scraper.info.TikTok(report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("TikTok scraper failed: %s", e, exc_info=True)
-        
-        try:
-            Scraper.info.Github(
-            report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("GitHub scraper failed: %s", e, exc_info=True)
-
-        try:
-            Scraper.info.GitLab(
-            report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("GitLab scraper failed: %s", e, exc_info=True)
-        
-        try:
-            Scraper.info.Ngl(
-            report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("Ngl scraper failed: %s", e, exc_info=True)
-        try:
-            Scraper.info.Tellonym(
-                report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("Tellonym scraper failed: %s", e, exc_info=True)
-        
-        try:
-            Scraper.info.Gravatar(
-                report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("Gravatar scraper failed: %s", e, exc_info=True)
-
-        try:
-            Scraper.info.Joinroll(
-            report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("Joinroll scraper failed: %s", e, exc_info=True)
-        
-        try:
-            Scraper.info.Chess(
-                report, username, http_proxy, "Usernames", username)
-        except Exception as e:
-            _logger.error("Chess scraper failed: %s", e, exc_info=True)
+        """Thin wrapper — ủy quyền cho ProfileScraper.scrape_all()."""
+        from Core.engine.profile_scraper import ProfileScraper
+        ProfileScraper.scrape_all(
+            report=report,
+            username=username,
+            http_proxy=http_proxy,
+            instagram_params=InstagramParams,
+            post_locations=PostLocations,
+            post_gps_coordinates=PostGpsCoordinates,
+            twitter_params=TwitterParams,
+        )
         
     
     @staticmethod
@@ -166,23 +123,15 @@ class MrHolmes:
 
     @staticmethod
     def Google_dork(username):
-        report = "GUI/Reports/Usernames/Dorks/{}_Dorks.txt".format(username)
-        nomefile = "Site_lists/Username/Google_dorks.txt"
-        Type = "GOOGLE"
-        if os.path.isfile(report):
-            os.remove(report)
-            print(Font.Color.BLUE + "\n[I]" + Font.Color.WHITE +
-                  Language.Translation.Translate_Language(filename, "Dorks", "Remove", "None").format(username))
-        else:
-            pass
-        Dorks.Search.dork(username, report, nomefile, Type)
+        """Thin wrapper — ủy quyền cho DorkGenerator.google_dorks()."""
+        from Core.engine.dork_generator import DorkGenerator
+        DorkGenerator.google_dorks(username)
 
     @staticmethod
     def Yandex_dork(username):
-        report = "GUI/Reports/Usernames/Dorks/{}_Dorks.txt".format(username)
-        nomefile = "Site_lists/Username/Yandex_dorks.txt"
-        Type = "YANDEX"
-        Dorks.Search.dork(username, report, nomefile, Type)
+        """Thin wrapper — ủy quyền cho DorkGenerator.yandex_dorks()."""
+        from Core.engine.dork_generator import DorkGenerator
+        DorkGenerator.yandex_dorks(username)
 
     @staticmethod
     def search(username, Mode):

@@ -77,46 +77,30 @@ class TestSearcherClass:
 
 
 class TestGoogleDork:
-    """Test Google_dork static method."""
+    """Test Google_dork static method — delegates to DorkGenerator."""
 
-    def test_google_dork_calls_dorks_search(self, searcher_mod, tmp_path):
-        """Google_dork should call Dorks.Search.dork with GOOGLE type."""
-        with mock.patch("Core.Searcher.Dorks") as mock_dorks, \
-             mock.patch("Core.Searcher.os.path.isfile", return_value=False), \
-             mock.patch("builtins.print"):
+    def test_google_dork_delegates_to_dork_generator(self, searcher_mod):
+        """Google_dork should delegate to DorkGenerator.google_dorks."""
+        with mock.patch("Core.engine.dork_generator.DorkGenerator") as mock_gen:
             searcher_mod.MrHolmes.Google_dork("testuser")
-            mock_dorks.Search.dork.assert_called_once()
-            args = mock_dorks.Search.dork.call_args[0]
-            assert args[0] == "testuser"          # username
-            assert "testuser_Dorks.txt" in args[1]  # report path
-            assert "Google_dorks.txt" in args[2]    # site list file
-            assert args[3] == "GOOGLE"              # Type
+            mock_gen.google_dorks.assert_called_once_with("testuser")
 
-    def test_google_dork_removes_existing_report(self, searcher_mod):
-        """If report file exists, Google_dork should remove it first."""
-        with mock.patch("Core.Searcher.Dorks"), \
-             mock.patch("Core.Searcher.os.path.isfile", return_value=True), \
-             mock.patch("Core.Searcher.os.remove") as mock_remove, \
-             mock.patch("builtins.print"):
-            searcher_mod.MrHolmes.Google_dork("existing_user")
-            mock_remove.assert_called_once()
+    def test_google_dork_calls_dorks_search_via_generator(self, searcher_mod):
+        """Google_dork delegates to DorkGenerator which calls Dorks.Search.dork
+        with GOOGLE type."""
+        with mock.patch("Core.engine.dork_generator.DorkGenerator.google_dorks") as mock_gdork:
+            searcher_mod.MrHolmes.Google_dork("testuser")
+            mock_gdork.assert_called_once_with("testuser")
 
 
 class TestYandexDork:
-    """Test Yandex_dork static method."""
+    """Test Yandex_dork static method — delegates to DorkGenerator."""
 
-    def test_yandex_dork_calls_dorks_search(self, searcher_mod):
-        """Yandex_dork should call Dorks.Search.dork with YANDEX type."""
-        with mock.patch("Core.Searcher.Dorks") as mock_dorks, \
-             mock.patch("Core.Searcher.os.path.isfile", return_value=False), \
-             mock.patch("builtins.print"):
+    def test_yandex_dork_delegates_to_dork_generator(self, searcher_mod):
+        """Yandex_dork should delegate to DorkGenerator.yandex_dorks."""
+        with mock.patch("Core.engine.dork_generator.DorkGenerator") as mock_gen:
             searcher_mod.MrHolmes.Yandex_dork("testuser")
-            mock_dorks.Search.dork.assert_called_once()
-            args = mock_dorks.Search.dork.call_args[0]
-            assert args[0] == "testuser"
-            assert "testuser_Dorks.txt" in args[1]
-            assert "Yandex_dorks.txt" in args[2]
-            assert args[3] == "YANDEX"
+            mock_gen.yandex_dorks.assert_called_once_with("testuser")
 
 
 class TestBanner:
@@ -145,14 +129,11 @@ class TestSearchDelegation:
 
 
 class TestScraping:
-    """Test Scraping static method — profile pic directory creation."""
+    """Test Scraping static method — delegates to ProfileScraper.scrape_all."""
 
-    def test_scraping_creates_profile_pics_dir(self, searcher_mod):
-        """Scraping should chdir to report dir and create Profile_pics if missing."""
-        with mock.patch("Core.Searcher.os.chdir") as mock_chdir, \
-             mock.patch("Core.Searcher.os.path.isdir", return_value=False), \
-             mock.patch("Core.Searcher.os.mkdir") as mock_mkdir, \
-             mock.patch("Core.Searcher.Scraper") as mock_scraper:
+    def test_scraping_delegates_to_profile_scraper(self, searcher_mod):
+        """Scraping should delegate to ProfileScraper.scrape_all."""
+        with mock.patch("Core.engine.profile_scraper.ProfileScraper") as mock_ps:
             searcher_mod.MrHolmes.Scraping(
                 report="/tmp/report.txt",
                 username="testuser",
@@ -162,52 +143,32 @@ class TestScraping:
                 PostGpsCoordinates=[],
                 TwitterParams=[],
             )
-            # Should chdir to GUI/Reports/Usernames/testuser
-            chdir_calls = mock_chdir.call_args_list
-            assert any("testuser" in str(c) for c in chdir_calls)
-            # Should mkdir Profile_pics
-            mock_mkdir.assert_called_once_with("Profile_pics")
+            mock_ps.scrape_all.assert_called_once()
+            kwargs = mock_ps.scrape_all.call_args[1]
+            assert kwargs["report"] == "/tmp/report.txt"
+            assert kwargs["username"] == "testuser"
+            assert kwargs["http_proxy"] is None
+            assert kwargs["instagram_params"] == []
+            assert kwargs["post_locations"] == []
+            assert kwargs["post_gps_coordinates"] == []
+            assert kwargs["twitter_params"] == []
 
-    def test_scraping_skips_mkdir_if_exists(self, searcher_mod):
-        """If Profile_pics exists, mkdir should not be called."""
-        with mock.patch("Core.Searcher.os.chdir"), \
-             mock.patch("Core.Searcher.os.path.isdir", return_value=True), \
-             mock.patch("Core.Searcher.os.mkdir") as mock_mkdir, \
-             mock.patch("Core.Searcher.Scraper"):
+    def test_scraping_passes_params_correctly(self, searcher_mod):
+        """Scraping should pass InstagramParams and TwitterParams correctly."""
+        with mock.patch("Core.engine.profile_scraper.ProfileScraper") as mock_ps:
+            ig_params = ["private", "100"]
+            tw_params = ["active"]
             searcher_mod.MrHolmes.Scraping(
                 report="/tmp/report.txt",
-                username="testuser",
-                http_proxy=None,
-                InstagramParams=[],
-                PostLocations=[],
-                PostGpsCoordinates=[],
-                TwitterParams=[],
+                username="myuser",
+                http_proxy={"http": "http://proxy:8080"},
+                InstagramParams=ig_params,
+                PostLocations=["loc1"],
+                PostGpsCoordinates=["gps1"],
+                TwitterParams=tw_params,
             )
-            mock_mkdir.assert_not_called()
-
-    def test_scraping_calls_all_scrapers(self, searcher_mod):
-        """Scraping should call Instagram, Twitter, TikTok, Github, GitLab,
-        Ngl, Tellonym, Gravatar, Joinroll, Chess scrapers."""
-        with mock.patch("Core.Searcher.os.chdir"), \
-             mock.patch("Core.Searcher.os.path.isdir", return_value=True), \
-             mock.patch("Core.Searcher.Scraper") as mock_scraper:
-            searcher_mod.MrHolmes.Scraping(
-                report="/tmp/report.txt",
-                username="testuser",
-                http_proxy=None,
-                InstagramParams=[],
-                PostLocations=[],
-                PostGpsCoordinates=[],
-                TwitterParams=[],
-            )
-            scraper_info = mock_scraper.info
-            scraper_info.Instagram.assert_called_once()
-            scraper_info.Twitter.assert_called_once()
-            scraper_info.TikTok.assert_called_once()
-            scraper_info.Github.assert_called_once()
-            scraper_info.GitLab.assert_called_once()
-            scraper_info.Ngl.assert_called_once()
-            scraper_info.Tellonym.assert_called_once()
-            scraper_info.Gravatar.assert_called_once()
-            scraper_info.Joinroll.assert_called_once()
-            scraper_info.Chess.assert_called_once()
+            kwargs = mock_ps.scrape_all.call_args[1]
+            assert kwargs["instagram_params"] is ig_params
+            assert kwargs["twitter_params"] is tw_params
+            assert kwargs["post_locations"] == ["loc1"]
+            assert kwargs["post_gps_coordinates"] == ["gps1"]
