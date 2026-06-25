@@ -219,7 +219,7 @@ class TestAsyncSearchIntegration:
             mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
             return await search_site(mock_session, site, "testuser")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result.status == ScanStatus.TIMEOUT
         assert "TargetSiteTimeout" in result.error_message
 
@@ -246,6 +246,6 @@ class TestAsyncSearchIntegration:
             mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
             return await search_site(mock_session, site, "testuser")
 
-        result = asyncio.get_event_loop().run_until_complete(run())
+        result = asyncio.run(run())
         assert result.status == ScanStatus.ERROR
         assert "SiteCheckError" in result.error_message
