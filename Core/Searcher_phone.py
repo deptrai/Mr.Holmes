@@ -25,6 +25,13 @@ from Core.Support import Notification
 from Core.Support import Encoding
 from time import sleep
 
+import warnings
+warnings.warn(
+    "Core.Searcher_phone is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 

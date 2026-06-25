@@ -23,6 +23,13 @@ from Core.Support import Encoding
 from time import sleep
 from datetime import datetime
 
+import warnings
+warnings.warn(
+    "Core.E_Mail is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 

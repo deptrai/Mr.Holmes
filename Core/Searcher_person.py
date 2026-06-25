@@ -25,6 +25,12 @@ from datetime import datetime
 from time import sleep
 from Core.Support import Encoding
 
+import warnings
+warnings.warn(
+    "Core.Searcher_person is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 filename = Language.Translation.Get_Language()
 filename

@@ -16,6 +16,13 @@ from Core.Support import Notification
 from Core.Support import Encoding
 from datetime import datetime
 
+import warnings
+warnings.warn(
+    "Core.Port_Scanner is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 

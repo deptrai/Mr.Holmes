@@ -17,6 +17,13 @@ from Core.Support import Banner_Selector as banner
 from datetime import datetime
 from bs4 import BeautifulSoup as soup
 
+import warnings
+warnings.warn(
+    "Core.PDF_Converter is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 langfile = Language.Translation.Get_Language()
 langfile
 

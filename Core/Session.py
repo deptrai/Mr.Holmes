@@ -11,6 +11,13 @@ from Core.Support import Language
 from Core.Support import Font
 from time import sleep
 
+import warnings
+warnings.warn(
+    "Core.Session is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 

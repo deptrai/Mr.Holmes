@@ -11,6 +11,13 @@ from Core.Support import Clear
 from Core.Support import Banner_Selector as banner
 from Core.Support import Encoding
 
+import warnings
+warnings.warn(
+    "Core.Decoder is deprecated. Use the modern Core/engine/ equivalents instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 filename = Language.Translation.Get_Language()
 filename
 
