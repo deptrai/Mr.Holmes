@@ -1,501 +1,462 @@
----
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
-status: 'complete'
-completedAt: '2026-03-26'
-inputDocuments:
-  - _bmad-output/planning-artifacts/prd.md
-  - _bmad-output/planning-artifacts/epics.md
-  - docs/project-context.md
-  - docs/architecture.md
-  - docs/component-inventory.md
-  - docs/tech-stack.md
-  - docs/source-tree-analysis.md
-  - docs/testing-strategy.md
-  - docs/brownfield-analysis-Mr.Holmes-2025-10-08.md
-workflowType: 'architecture'
-project_name: 'Mr.Holmes'
-user_name: 'Luisphan'
-date: '2026-03-26'
----
-
-# Architecture Decision Document
-
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
-
-## Project Context Analysis
-
-### Requirements Overview
-
-**Functional Requirements (24 FRs):**
-
-| Capability Area | FRs | Tóm tắt |
-|----------------|-----|---------|
-| Scanning Engine | FR1-5 | Async concurrent scanning, rate limiting, retry |
-| Proxy Management | FR6-8 | Auto-rotate, health-check, configurable sources |
-| Scraper System | FR9-11 | Registry pattern, concurrent dispatch, retry fallback |
-| Data & Reporting | FR12-15 | SQLite dual-write, PDF/CSV export, cross-case search |
-| CLI & UX | FR16-18 | Batch mode, Rich UI, input validation |
-| Security & Config | FR19-21 | .env secrets, structured logging, unit tests |
-| External Intelligence | FR22-24 | HaveIBeenPwned, Shodan, API key config |
-
-**Non-Functional Requirements (7 NFRs):**
-
-- NFR1: Scan 300 sites < 2 phút (semaphore=20)
-- NFR2: Memory < 200MB/session
-- NFR3: Test coverage > 60% core modules
-- NFR4: Backward compatible với PHP GUI (dual-write)
-- NFR5: Python 3.9+
-- NFR6: Zero plaintext secrets
-- NFR7: Structured error messages
-
-### Scale & Complexity
-
-- **Primary domain:** CLI backend / OSINT scraping engine
-- **Complexity level:** HIGH (brownfield refactoring, 690 LOC God Method, zero tests, significant tech debt)
-- **Estimated architectural components:** ~8 (ScanPipeline, AsyncScanner, ProxyManager, ScraperRegistry, ReportWriter, ExportManager, ConfigManager, CLIInterface)
-
-### Technical Constraints & Dependencies
-
-- Python 3.9+ required (asyncio maturity)
-- PHP GUI backward compatibility — file-based reports must continue working during migration
-- Existing site list JSON format (`Site_lists/`) must be preserved
-- i18n system (`Language.Translation`) integrated across all output layers
-- `os.chdir()` pattern in Scraper — relative paths create fragile navigation
-
-### Cross-Cutting Concerns Identified
-
-| Concern | Ảnh hưởng | Components |
-|---------|-----------|------------|
-| Error Handling | ALL | Custom exceptions, structured logging thay except:pass |
-| Proxy Management | Scanning + Scraping | ProxyManager shared across engine |
-| Structured Logging | ALL | Replace print() với logging module |
-| File I/O Safety | Reporting + Writers | Context managers, aiofiles |
-| i18n/Localization | CLI Output | Language.Translation integration |
-| Concurrency Safety | Scanning + Reporting | ScanResult[] collect pattern, avoid shared mutable state |
-
-## Technology Stack Decisions
-
-### Primary Domain: CLI Backend / OSINT Scraping Engine (Python)
-
-### Selected Stack (Brownfield Evolution)
-
-| Layer | Công nghệ | Version | Lý do |
-|-------|-----------|---------|-------|
-| Runtime | Python | 3.9+ | asyncio maturity, existing codebase |
-| HTTP Client | aiohttp | latest | Async HTTP, connection pooling |
-| Async Runtime | asyncio | stdlib | Native Python, zero dependency |
-| File I/O | aiofiles | latest | Non-blocking file operations |
-| CLI Framework | argparse + Rich | stdlib + latest | Batch mode + modern TUI |
-| Testing | pytest + aioresponses | latest | Mock HTTP, async test support |
-| Config/Secrets | python-dotenv | latest | .env files, security best practice |
-| Logging | logging | stdlib | Structured levels, no dependency |
-| Data Storage | SQLite + flat files | stdlib | Dual-write backward compat |
-| Templating | Jinja2 | latest | PDF/HTML report generation |
-
-### Rationale
-
-- Tối thiểu hóa external dependencies — ưu tiên stdlib
-- Backward compatible với PHP GUI qua dual-write strategy
-- aiohttp là async HTTP client mature nhất cho Python
-
-## Core Architectural Decisions
-
-### Decision Priority Analysis
-
-**Critical Decisions (Block Implementation):**
-1. Code Architecture Patterns (Pipeline + Registry)
-2. Concurrency Model (asyncio.gather + Semaphore)
-3. Error Handling Hierarchy
-
-**Important Decisions (Shape Architecture):**
-4. Data Architecture (Normalized SQLite + dual-write)
-5. Module Structure (Core/ reorganization)
-6. Interface Contracts (Python Protocols)
-
-**Deferred Decisions (Post-MVP):**
-7. Docker packaging
-8. Plugin SDK
-9. REST API layer
-
-### Code Architecture — Pipeline + Registry
-
-**Decision:** Decompose God Method into Pipeline Pattern + Scraper Registry.
-
-- `MrHolmes.search()` 500 LOC → `ScanPipeline` class với 8 stages
-- 15 scrapers copy-paste → `SCRAPER_REGISTRY` dict + generic dispatcher
-- 3x proxy code duplication → `ProxyManager` singleton
-
-**Rationale:** Mỗi stage có 1 trách nhiệm, testable independently, dễ thêm/sửa.
-
-### Concurrency Model
-
-**Decision:** `asyncio.gather()` + `Semaphore(20)` + `ScanResult` collection.
-
-- Semaphore giới hạn concurrent connections (configurable)
-- `ScanResult` dataclass thu kết quả — không shared mutable lists
-- Main event loop tại entry point (`asyncio.run()`)
-
-**Rationale:** Tránh race conditions, memory-efficient, 10-30x faster.
-
-### Error Handling Hierarchy
-
-**Decision:** Custom exception hierarchy thay thế `except Exception: pass`.
-
-```
-OSINTError (base)
-├── TargetSiteTimeout
-├── ProxyDeadError
-├── RateLimitExceeded
-├── ScraperError
-└── ConfigurationError
-```
-
-Retry policy: Exponential backoff + jitter, max 3 retries.
-
-### Data Architecture
-
-**Decision:** Normalized SQLite + dual-write cho backward compatibility.
-
-**Schema:**
-- `subjects` (id, type, value, created_at)
-- `findings` (id, subject_id, source_id, url, status, tags, scraped_data)
-- `sources` (id, name, category, error_type)
-- `scans` (id, subject_id, started_at, proxy_used, total_found)
-
-**Dual-write:** `ReportWriter` ghi cả flat file (`GUI/Reports/`) + SQLite song song.
-
-### Module Structure
-
-**Decision:** Reorganize `Core/` thành domain-based modules.
-
-```
-Core/
-├── models/          # ScanContext, ScanResult, ScanConfig dataclasses
-├── engine/          # ScanPipeline, AsyncScanner
-├── proxy/           # ProxyManager
-├── scrapers/        # ScraperRegistry + individual scrapers
-├── reporting/       # ReportWriter, ExportManager
-├── config/          # ConfigManager (.env loader)
-├── cli/             # CLIInterface (argparse + Rich)
-└── support/         # Logging, i18n, utilities (existing)
-```
-
-### Interface Contracts — Python Protocols
-
-**Decision:** Dùng `typing.Protocol` cho loose coupling.
-
-```python
-class ScraperPlugin(Protocol):
-    name: str
-    async def scrape(self, url: str, ctx: ScanContext) -> ScanResult: ...
-
-class ReportOutput(Protocol):
-    async def write(self, results: list[ScanResult]) -> None: ...
-```
-
-### Decision Impact Analysis
-
-**Implementation Sequence:**
-1. `models/` (ScanContext, ScanResult) — prerequisite cho mọi thứ
-2. `proxy/` (ProxyManager) — extracted từ existing code
-3. `scrapers/` (Registry) — eliminates duplication
-4. `engine/` (ScanPipeline) — decomposes God Method
-5. `reporting/` (ReportWriter) — dual-write
-6. `config/` (ConfigManager) — .env migration
-7. `cli/` (CLIInterface) — batch mode + Rich
-
-**Cross-Component Dependencies:**
-- `engine/` depends on `models/`, `proxy/`, `scrapers/`
-- `reporting/` depends on `models/`
-- `cli/` depends on `engine/`, `config/`
-- `scrapers/` depends on `models/`, `proxy/`
-
-## Implementation Patterns & Consistency Rules
-
-### Naming Patterns
-
-| Ngữ cảnh | Convention | Ví dụ |
-|----------|-----------|-------|
-| File/Module | `snake_case.py` | `scan_pipeline.py`, `proxy_manager.py` |
-| Class | `PascalCase` | `ScanPipeline`, `ProxyManager` |
-| Function/Method | `snake_case` | `dispatch_scrapers()`, `health_check()` |
-| Variable | `snake_case` | `scan_result`, `proxy_dict` |
-| Constant | `UPPER_SNAKE` | `SCRAPER_REGISTRY`, `MAX_RETRIES` |
-| DB Table | `snake_case` (plural) | `subjects`, `findings`, `sources` |
-| DB Column | `snake_case` | `subject_id`, `created_at` |
-
-### Structure Patterns
-
-- Tests: `tests/` mirror `Core/` structure (`tests/engine/test_scan_pipeline.py`)
-- Config: `.env` tại project root, `Configuration/` cho non-secret settings
-- Shared utils: `Core/support/` (existing pattern preserved)
-
-### Format Patterns
-
-- JSON output fields: `snake_case`
-- Dates: ISO 8601 (`2026-03-26T22:45:00+07:00`)
-- Booleans: `true/false` (Python native)
-
-### Process Patterns
-
-**Error Handling (Bắt buộc):**
-```python
-# ✅ ĐÚNG
-try:
-    result = await scanner.check(site, ctx)
-except RateLimitExceeded as e:
-    logger.warning("Rate limited: %s", site.name, exc_info=True)
-    await asyncio.sleep(e.retry_after)
-except OSINTError as e:
-    logger.error("Scan failed: %s: %s", site.name, e)
-    results.append(ScanResult(site=site, found=False, error=str(e)))
-```
-
-**Logging (Bắt buộc):**
-```python
-logger = logging.getLogger(__name__)  # Mỗi module 1 logger
-```
-
-**Async (Bắt buộc):**
-```python
-# ✅ Collect results tập trung
-results = await asyncio.gather(*tasks, return_exceptions=True)
-```
-
-### Enforcement — All Agents MUST:
-
-1. Dùng `dataclass` cho mọi data structure (không raw dict)
-2. Dùng `typing.Protocol` cho interfaces
-3. Dùng `with` cho file I/O (KHÔNG raw `open()`)
-4. Dùng `logging` module (KHÔNG `print()`)
-5. Mỗi function < 50 LOC, mỗi file < 200 LOC
-
-## Project Structure & Boundaries
-
-### Complete Project Directory Structure
-
-```
-Mr.Holmes/
-├── MrHolmes.py                    # Entry point (asyncio.run())
-├── .env                           # Secrets (SMTP, API keys)
-├── .env.example                   # Template
-├── requirements.txt               # Dependencies
-├── .github/workflows/ci.yml       # GitHub Actions CI
-│
-├── Core/
-│   ├── models/                    # 🆕 Data structures
-│   │   ├── __init__.py
-│   │   ├── scan_context.py        # ScanContext, ScanConfig
-│   │   ├── scan_result.py         # ScanResult
-│   │   └── exceptions.py          # OSINTError hierarchy
-│   │
-│   ├── engine/                    # 🆕 Scan orchestration
-│   │   ├── __init__.py
-│   │   ├── scan_pipeline.py       # ScanPipeline
-│   │   └── async_scanner.py       # AsyncScanner (aiohttp)
-│   │
-│   ├── proxy/                     # 🆕 Proxy management
-│   │   ├── __init__.py
-│   │   └── proxy_manager.py       # ProxyManager
-│   │
-│   ├── scrapers/                  # 🆕 Plugin scrapers
-│   │   ├── __init__.py
-│   │   ├── registry.py            # SCRAPER_REGISTRY
-│   │   ├── instagram.py
-│   │   ├── twitter.py
-│   │   ├── tiktok.py
-│   │   └── ...
-│   │
-│   ├── reporting/                 # 🆕 Report output
-│   │   ├── __init__.py
-│   │   ├── report_writer.py       # Dual-write
-│   │   └── export_manager.py      # PDF/CSV/JSON
-│   │
-│   ├── config/                    # 🆕 Config
-│   │   ├── __init__.py
-│   │   └── config_manager.py      # .env loader
-│   │
-│   ├── cli/                       # 🆕 CLI
-│   │   ├── __init__.py
-│   │   ├── cli_interface.py       # argparse + Rich
-│   │   └── output_layer.py        # Abstract output
-│   │
-│   ├── Support/                   # ✅ Preserved
-│   ├── Searcher.py               # ⚠️ Legacy → wraps ScanPipeline
-│   └── Searcher_phone.py         # ⚠️ Legacy
-│
-├── data/mrholmes.db              # 🆕 SQLite
-├── tests/                         # 🆕 Test suite (mirrors Core/)
-│   ├── conftest.py
-│   ├── engine/test_scan_pipeline.py
-│   ├── proxy/test_proxy_manager.py
-│   ├── scrapers/test_registry.py
-│   └── reporting/test_report_writer.py
-│
-├── Site_lists/                    # ✅ Preserved
-├── GUI/Reports/                   # ✅ Preserved (PHP GUI)
-├── Configuration/                 # ✅ Preserved
-└── docs/                          # ✅ Preserved
-```
-
-### Epic → Structure Mapping
-
-| Epic | Primary Directory | Key Files |
-|------|------------------|-----------|
-| E1: Foundation | `models/`, `scrapers/`, `proxy/` | `scan_context.py`, `registry.py`, `proxy_manager.py` |
-| E2: Async | `engine/` | `scan_pipeline.py`, `async_scanner.py` |
-| E3: Proxy | `proxy/` | `proxy_manager.py` |
-| E4: Quality | `tests/`, root | `conftest.py`, `.env`, `ci.yml` |
-| E5: CLI | `cli/` | `cli_interface.py`, `output_layer.py` |
-| E6: Data | `reporting/`, `data/` | `report_writer.py`, `mrholmes.db` |
-| E7: APIs | `scrapers/` | New plugin files |
-
-### Data Flow
-
-```
-CLI → ConfigManager → ScanPipeline
-                        ├── ProxyManager.resolve()
-                        ├── AsyncScanner.scan_all() → aiohttp → Sites
-                        ├── ScraperRegistry.dispatch()
-                        └── ReportWriter.write()
-                            ├── flat files (GUI/Reports/)
-                            └── SQLite (data/mrholmes.db)
-```
-
-## Architecture Validation Results
-
-### Coherence Validation ✅
-
-**Decision Compatibility:** All technology choices (Python 3.9+, aiohttp, asyncio, SQLite) are stdlib or mature Python libs — zero conflicts.
-
-**Pattern Consistency:** Pipeline, Registry, Protocol patterns all follow Python idioms. Naming conventions (snake_case) consistent across DB, code, and JSON output.
-
-**Structure Alignment:** Module structure directly maps to architectural decisions — each decision has a clear home directory.
-
-### Requirements Coverage Validation ✅
-
-**Epic Coverage:**
-- ✅ Epic 1 (Foundation): `models/`, `scrapers/registry.py`, `proxy/`
-- ✅ Epic 2 (Async): `engine/scan_pipeline.py`, `engine/async_scanner.py`
-- ✅ Epic 3 (Proxy): `proxy/proxy_manager.py`
-- ✅ Epic 4 (Quality): `tests/`, `.env`, `.github/`
-- ✅ Epic 5 (CLI): `cli/cli_interface.py`, `cli/output_layer.py`
-- ✅ Epic 6 (Data): `reporting/report_writer.py`, `data/mrholmes.db`
-- ✅ Epic 7 (APIs): `scrapers/` plugin files
-
-**NFR Coverage:**
-- ✅ NFR1 (Performance): asyncio.gather + Semaphore
-- ✅ NFR2 (Memory): Semaphore limits concurrency
-- ✅ NFR3 (Test coverage): pytest framework + test structure
-- ✅ NFR4 (Backward compat): Dual-write strategy
-- ✅ NFR5 (Python 3.9+): All decisions compatible
-- ✅ NFR6 (Zero secrets): python-dotenv + .env
-- ✅ NFR7 (Structured errors): Custom exception hierarchy + logging
-
-### Implementation Readiness ✅
-
-**Overall Status:** ✅ READY FOR IMPLEMENTATION
-
-**Confidence Level:** HIGH
-
-**Key Strengths:**
-- Clean separation: mỗi architectural concern có module riêng
-- Backward compatible: PHP GUI không bị ảnh hưởng
-- Incremental: có thể implement từng epic tuần tự
-- Testable: mỗi module có test directory tương ứng
-
-**Areas for Future Enhancement:**
-- Docker packaging (deferred)
-- Plugin SDK documentation (deferred)
-- REST API layer (deferred)
-
-### Architecture Completeness Checklist
-
-- [x] Project context thoroughly analyzed
-- [x] Scale and complexity assessed
-- [x] Technical constraints identified
-- [x] Cross-cutting concerns mapped
-- [x] Critical decisions documented
-- [x] Technology stack fully specified
-- [x] Implementation patterns defined
-- [x] Naming conventions established
-- [x] Complete directory structure defined
-- [x] Component boundaries established
-- [x] Requirements to structure mapping complete
-- [x] Validation passed all checks
-
-### Implementation Handoff
-
-**AI Agent Guidelines:**
-1. Follow all architectural decisions exactly as documented
-2. Use implementation patterns consistently
-3. Respect module boundaries
-4. Start with `Core/models/` (prerequisite for all)
-
-**Implementation Priority:**
-1. `Core/models/` → dataclasses + exceptions
-2. `Core/proxy/` → extract ProxyManager
-3. `Core/scrapers/` → Registry Pattern
-4. `Core/engine/` → ScanPipeline (decomposes God Method)
-5. `tests/` → pytest framework
-6. `Core/reporting/` → dual-write
-7. `Core/config/` → .env migration
-8. `Core/cli/` → argparse + Rich
+# Mr.Holmes 2.0 — Tài liệu Kiến trúc (MCP-Powered OSINT Tool Collection)
+
+Ngày: 2026-06-26
+Phiên bản: 2.0-draft
+Tác giả: Winston (System Architect)
 
 ---
 
-## Addendum — Epic 8 & 9 Architecture (cập nhật 2026-06-23)
+## 1. Tổng quan Kiến trúc (Architecture Overview)
 
-> Phần gốc ở trên (2026-03-26) chỉ phủ Epic 1-7. Addendum này đồng bộ tài liệu với
-> code thực tế sau khi Epic 8 (Autonomous Profiler) và Epic 9 (Complete OSINT
-> Profiling System) đã được implement. Được tạo qua workflow **Correct Course**.
+Mr.Holmes 2.0 biến công cụ OSINT đơn thể hiện tại thành một **bộ sưu tập công cụ MCP (Model Context Protocol)**, trong đó **Claude Code** đóng vai trò AI orchestrator. Mr.Holmes chỉ expose các tool thu thập dữ liệu qua MCP server; Claude Code gọi tool, nhận kết quả, suy luận, và quyết định bước tiếp theo.
 
-### Tầng mới: Autonomous Profiling Engine (`Core/engine/`)
+### 1.1 Sơ đồ kiến trúc (ASCII)
 
-Epic 8-9 mở rộng kiến trúc từ "username scanner" thành "autonomous OSINT agent". Lõi
-là một pipeline BFS đa tầng gọi LLM tổng hợp Golden Record.
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Claude Code (AI Orchestrator)                │
+│  - Nhận yêu cầu điều tra từ user                                     │
+│  - Lập kế hoạch: gọi tool nào, theo thứ tự nào                       │
+│  - Suy luận trên kết quả, đề xuất giả thuyết, quyết định tool tiếp   │
+│  - Tổng hợp thành báo cáo cuối                                       │
+└───────────────▲───────────────────────────────────▲──────────────────┘
+                │ MCP Protocol (stdio / SSE)         │
+                │ JSON-RPC 2.0                       │
+┌───────────────┴───────────────────────────────────┴──────────────────┐
+│                   Mr.Holmes MCP Server (mcp Python SDK)              │
+│  Core/mcp/server.py                                                  │
+│  - Đăng ký ~25 tools (username, email, phone, domain, person, ...)   │
+│  - Mỗi tool → wrapper gọi PluginManager / StagedProfiler / Evidence  │
+│  - Auth: API key (MH_MCP_TOKEN), rate limiting per-tool              │
+└───────┬────────────┬───────────────┬───────────────┬─────────────────┘
+        │            │               │               │
+┌───────▼──────┐ ┌───▼──────────┐ ┌──▼───────────┐ ┌─▼──────────────┐
+│ Plugin Layer │ │ Engine Layer │ │ Evidence     │ │ Browser Layer  │
+│ Core/plugins │ │ Core/engine  │ │ Store        │ │ Playwright     │
+│  - hibp      │ │  - Staged    │ │ Core/        │ │ Core/browser/  │
+│  - shodan    │ │    Profiler  │ │ reporting    │ │  - stealth ctx │
+│  - holehe    │ │  - Entity    │ │  +evidence   │ │  - scrape      │
+│  - maigret   │ │    Resolver  │ │  +hypothesis │ │  - bypass CF   │
+│  - github    │ │              │ │              │ │                │
+│  - searxng   │ │              │ │              │ │                │
+│  - dns       │ │              │ │              │ │                │
+│  - numverify │ │              │ │              │ │                │
+└──────┬───────┘ └──────────────┘ └──────────────┘ └────────────────┘
+       │
+┌──────▼──────────────────────────────────────────────────────────────┐
+│  Shared Infrastructure                                                │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐ │
+│  │ PluginCache  │  │ ProxyManager │  │ Settings     │  │ Database │ │
+│  │ Core/cache   │  │ Core/proxy   │  │ Core/config  │  │ SQLite   │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
-| Module | Trách nhiệm |
-|--------|-------------|
-| `engine/autonomous_agent.py` | `RecursiveProfiler` + multi-stage BFS orchestration (Stage 1/2/3). Nhận seed → quét đệ quy → graph nodes/edges. |
-| `engine/stage_router.py` | `StageRouter` — route clue theo loại (EMAIL/USERNAME→Stage 2, PHONE/DOMAIN→Stage 3) |
-| `engine/entity_resolver.py` | `EntityResolver` — merge Golden Record bằng Jaro-Winkler (jellyfish) + pHash (imagehash) |
-| `engine/llm_synthesizer.py` | Gọi OpenAI-compatible API tổng hợp JSON thô → Analyst Report (ProfileEntity-aware prompts) |
-| `engine/mindmap_generator.py` | Xuất Interactive HTML Mindmap từ profile graph |
-| `engine/scan_pipeline.py` | Pipeline quét đồng bộ (Epic 1-2) — vẫn được dùng cho username scan |
-| `engine/async_search.py`, `result_collector.py`, `retry.py`, `apify_scraper.py` | HTTP async + result collection + retry policy |
+### 1.2 Mô tả thành phần
 
-### Tầng mới: Intelligence Plugins (`Core/plugins/`)
+| Thành phần | Vai trò | File hiện tại |
+|---|---|---|
+| **Claude Code** | AI orchestrator — reasoning, planning, gọi tool | (external) |
+| **MCP Server** | Expose OSINT tools qua MCP protocol | `Core/mcp/server.py` (mới) |
+| **Plugin Layer** | Các plugin OSINT (HIBP, Shodan, Maigret...) | `Core/plugins/` |
+| **Engine Layer** | StagedProfiler (BFS), EntityResolver (golden record) | `Core/engine/` |
+| **Evidence Store** | SQLite lưu kết quả điều tra có thể query/resume | `Core/reporting/` |
+| **Browser Layer** | Playwright cho bot-detection bypass | `Core/browser/` (mới) |
+| **PluginCache** | Cache kết quả plugin, giảm API call | `Core/cache/plugin_cache.py` |
+| **ProxyManager** | Pool proxy, rotation, health check | `Core/proxy/manager.py` |
+| **Settings** | Secrets (.env) + config (.ini) | `Core/config/settings.py` |
+| **REST API** | FastAPI — secondary interface (giữ lại) | `Core/api/server.py` |
+| **CLI** | Legacy interactive — secondary interface | `MrHolmes.py` |
 
-Khác với `Core/Support/*` (legacy site-checkers cho username scan), đây là hệ
-**external intelligence plugins** theo `IntelligencePlugin` Protocol.
+---
 
-- **Contract:** `Core/plugins/base.py` — `IntelligencePlugin` Protocol (`name`, `requires_api_key`, `async check()`) + `PluginResult` dataclass. Epic 9 thêm `stage: int` và `tos_risk: str` (backward-compatible qua `getattr` default).
-- **Manager:** `Core/plugins/manager.py` — `PluginManager` auto-discovery (`pkgutil`), shared `aiohttp.ClientSession` pooling, `asyncio.gather` concurrent, transparent cache.
-- **Cache:** `Core/cache/plugin_cache.py` — `PluginCache` SQLite-backed, TTL configurable (`MH_CACHE_TTL`), wrap trong PluginManager (plugins không biết cache tồn tại).
-- **12 plugins:** `github`, `hibp`, `holehe`, `leak_lookup`, `maigret`, `numverify`, `searxng`, `shodan`, `dns_resolver` (+ `base`, `manager`).
+## 2. Quyết định Thiết kế Chính (Key Design Decisions)
 
-### Model mới: `Core/models/profile_entity.py`
+### 2.1 Tại sao MCP?
 
-`ProfileEntity` + `SourcedField` — unified Golden Record với confidence scoring per field,
-`merge()`, `to_dict()`/`from_dict()`. CLI entry: `Core/autonomous_cli.py` (Complete Profile Mode / Option 16).
+- **Chuẩn mở**: MCP là protocol chuẩn cho LLM-tool integration, không lock-in vào một vendor cụ thể.
+- **Claude Code native**: Claude Code đã built-in MCP client, zero integration cost.
+- **Structured I/O**: Mỗi tool có schema rõ ràng (input/output), Claude Code tự hiểu cách gọi.
+- **Iterative reasoning**: Claude Code gọi tool → nhận kết quả → suy luận → gọi tool tiếp, thay vì batch-run tất cả plugin như hiện tại.
 
-### Đính chính so với phần gốc
+### 2.2 Tại sao KHÔNG build AI orchestrator nội bộ?
 
-- `Core/scrapers/` thực tế **chỉ có `registry.py`** (không có instagram.py/twitter.py như sơ đồ gốc mô tả). Site-checkers thật nằm ở `Core/Support/Username/`, `Core/Support/Person/`, v.v.
-- Entry point `MrHolmes.py` **không dùng `asyncio.run()` ở top-level** — vẫn là Menu đồng bộ legacy + batch CLI layer (`Core/cli/`). Async chỉ ở tầng engine/plugins.
+- **Chi phí bảo trì cao**: Phải duy trì prompt engineering, context window management, tool routing logic — tất cả Claude Code đã làm tốt hơn.
+- **Lặp lại công sức**: Claude Code đã là một orchestrator xuất sắc; build thêm layer AI nội bộ = trùng lặp.
+- **Phụ thuộc nhẹ hơn**: Phụ thuộc Claude Code (external, well-maintained) tốt hơn phụ thuộc vào codebase AI nội bộ tự viết.
+- **Chi tiết thêm**: xem ADR-0010.
 
-### Tech debt đã ghi nhận (qua Correct Course 2026-06-23)
+### 2.3 CLI/REST vẫn giữ, nhưng secondary
 
-| Hạng | Vấn đề | Trạng thái |
-|------|--------|-----------|
-| P0 | Merge conflict markers trong 7 file (4 .py + requirements.txt + .gitignore + test) | ✅ ĐÃ RESOLVE (giữ HEAD) |
-| P1 | Test infra: `tests/engine/test_retry.py`, `test_scan_concurrency.py` dùng `asyncio.get_event_loop().run_until_complete()` — deprecated Python 3.10+ → 22 fail | ⏳ Chưa fix (test-only, không ảnh hưởng production) |
-| P1 | Test drift: `tests/plugins/test_maigret_plugin.py` mock theo API cũ (`tempfile.NamedTemporaryFile`) thay vì `--folderoutput` của maigret v0.4.4 → 4 fail | ⏳ Chưa fix |
-| P2 | `requirements.txt` để version range mở (`aiohttp>=3.9.0`) → aiohttp 3.14 phá vỡ aioresponses mock; nên pin upper bound cho test reproducibility | ⏳ Đề xuất |
-| P2 | LOC rule "<200/file" vi phạm ở 29 file (gồm cả module mới: scan_pipeline 717, autonomous_agent 604) — đề xuất nới rule lên ~400 LOC + cohesion | ⏳ Đề xuất |
-| P2 | Artifacts rác ở root (`demo_story*.py`, `test_*.py`, `*.log`) — đã thêm vào .gitignore | ⏳ Dọn dần |
+- CLI (`MrHolmes.py`) và REST API (`Core/api/server.py`) vẫn hoạt động cho backward compatibility và automation.
+- MCP server là **primary interface** cho interactive investigation.
+- REST API hữu ích cho integration với hệ thống khác (SIEM, dashboard).
 
-**Verify baseline (2026-06-23, Python 3.10, deps pinned aiohttp 3.10.11 / aioresponses 0.7.3 / pytest-asyncio 0.23.8):**
-`963 passed, 33 failed` — toàn bộ fail là test-infra/test-drift, **0 module production vỡ**.
+---
 
+## 3. Thiết kế MCP Server (MCP Server Design)
+
+### 3.1 Công nghệ
+
+- **Package**: `mcp` (Python SDK, `pip install mcp`)
+- **Transport**: stdio (local, Claude Code mặc định) hoặc SSE (remote)
+- **File**: `Core/mcp/server.py`
+
+### 3.2 Định nghĩa tool
+
+Mỗi tool đăng ký qua `@server.tool()` decorator:
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("mrholmes")
+
+@mcp.tool()
+async def search_username(username: str, sites: list[str] | None = None) -> dict:
+    """Tìm username trên các site mạng xã hội.
+
+    Args:
+        username: Tên người dùng cần tìm.
+        sites: Danh sách site cụ thể (optional). Mặc định quét tất cả.
+    Returns:
+        Dict với key "found" (list) và "not_found" (list).
+    """
+    ...
+```
+
+### 3.3 Request / Response format
+
+- **Input**: JSON object, schema tự sinh từ type hints của Python.
+- **Output**: JSON object, luôn có cấu trúc:
+  ```json
+  {
+    "success": true,
+    "data": { ... },
+    "error": null,
+    "metadata": { "plugin": "Maigret", "duration_ms": 3200, "cached": false }
+  }
+  ```
+- **Error**: Khi tool fail, trả `success: false` + `error` message (không raise exception ra MCP layer).
+
+### 3.4 Error handling
+
+- Plugin exception → catch trong wrapper, trả `PluginResult(is_success=False, error_message=...)`.
+- Timeout → trả error với `error_type: "timeout"`.
+- Rate limited → trả error với `error_type: "rate_limited"`, gợi ý retry-after.
+- Missing API key → trả error với `error_type: "missing_key"`, chỉ rõ env var cần set.
+
+### 3.5 Auth & rate limiting
+
+- Auth: token qua env `MH_MCP_TOKEN` (optional, cho remote SSE mode).
+- Rate limiting: per-tool semaphore + PluginCache (TTL 24h, configurable qua `MH_CACHE_TTL`).
+- Proxy: tự động dùng ProxyManager nếu enabled.
+
+---
+
+## 4. Kiến trúc Plugin (Plugin Architecture)
+
+### 4.1 Plugin hiện tại → MCP tool mapping
+
+Mỗi plugin hiện tại (`Core/plugins/`) được wrap thành 1+ MCP tool. Plugin interface (`IntelligencePlugin` Protocol) không thay đổi — chỉ thêm layer MCP wrapper.
+
+| Plugin hiện tại | MCP tool(s) | File |
+|---|---|---|
+| `hibp.py` | `check_breach(email)` | `Core/plugins/hibp.py` |
+| `shodan.py` | `shodan_lookup(ip)` | `Core/plugins/shodan.py` |
+| `holehe.py` | `search_email(email)` | `Core/plugins/holehe.py` |
+| `maigret.py` | `run_maigret(username, top_n?)` | `Core/plugins/maigret.py` |
+| `github.py` | `search_github(username)` | `Core/plugins/github.py` |
+| `searxng.py` | `search_web(query)` | `Core/plugins/searxng.py` |
+| `dns_resolver.py` | `resolve_dns(domain)` | `Core/plugins/dns_resolver.py` |
+| `numverify.py` | `search_phone(phone)` | `Core/plugins/numverify.py` |
+| `leak_lookup.py` | `check_leak(email)` | `Core/plugins/leak_lookup.py` |
+
+### 4.2 Plugin types mới
+
+| Type | Mô tả | Ví dụ |
+|---|---|---|
+| **HTTP Plugin** (hiện tại) | Gọi REST API, parse JSON | HIBP, Shodan, Numverify |
+| **Scrape Plugin** (hiện tại) | HTTP + HTML scraping | Maigret, Holehe |
+| **Browser Plugin** (mới) | Playwright, bypass bot detection | Cloudflare-protected sites |
+| **Composite Plugin** (mới) | Gọi nhiều plugin con, aggregate | `search_person` → Maigret + GitHub + SearXNG |
+| **Utility Plugin** (mới) | Không gọi API, xử lý data | `decode_text`, `generate_dorks` |
+
+### 4.3 Auto-discovery
+
+`PluginManager.discover_plugins()` (hiện tại) quét `Core/plugins/` và đăng ký tất cả. MCP server dùng cùng cơ chế — chỉ cần thêm plugin file, tool tự xuất hiện.
+
+MCP wrapper layer (`Core/mcp/tool_registry.py`) map plugin → MCP tool tự động dựa trên `target_types` attribute của plugin:
+
+```python
+# Tự động: plugin có target_types=["EMAIL"] → expose làm email tool
+# Plugin có target_types=["USERNAME"] → expose làm username tool
+```
+
+---
+
+## 5. Evidence Store (Kho Bằng chứng)
+
+### 5.1 Mục tiêu
+
+Lưu trữ kết quả điều tra có thể **query, resume, audit**. Claude Code có thể:
+- Tạo investigation mới
+- Save evidence sau mỗi tool call
+- Query evidence đã thu thập
+- Resume investigation bị gián đoạn
+
+### 5.2 Schema mở rộng (SQLite)
+
+Mở rộng `Core/reporting/schema.sql` hiện tại (investigations, findings, tags) thêm 3 bảng:
+
+```sql
+-- Bằng chứng thu thập được (mỗi tool call = 1 evidence)
+CREATE TABLE IF NOT EXISTS evidence (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    investigation_id INTEGER NOT NULL REFERENCES investigations(id) ON DELETE CASCADE,
+    tool_name        TEXT    NOT NULL,      -- MCP tool name
+    target           TEXT    NOT NULL,      -- input target
+    target_type      TEXT,                  -- EMAIL/USERNAME/IP/DOMAIN/PHONE
+    result_data      TEXT    NOT NULL,      -- JSON blob
+    confidence       REAL    DEFAULT 0.0,
+    source_url       TEXT,
+    collected_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    collected_by     TEXT    DEFAULT 'claude-code'  -- orchestrator id
+);
+
+-- Giả thuyết điều tra (Claude Code đề xuất, verify qua tool)
+CREATE TABLE IF NOT EXISTS hypotheses (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    investigation_id INTEGER NOT NULL REFERENCES investigations(id) ON DELETE CASCADE,
+    statement        TEXT    NOT NULL,      -- "Target likely owns GitHub account X"
+    status           TEXT    DEFAULT 'unverified'
+                     CHECK(status IN ('unverified','confirmed','refuted','inconclusive')),
+    confidence       REAL    DEFAULT 0.0,
+    evidence_ids     TEXT,                  -- JSON array of evidence.id
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Audit trail (mọi tool call)
+CREATE TABLE IF NOT EXISTS audit_log (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    investigation_id INTEGER REFERENCES investigations(id) ON DELETE SET NULL,
+    tool_name        TEXT    NOT NULL,
+    input_hash       TEXT,                  -- SHA-256 hash of input (privacy)
+    success          BOOLEAN,
+    duration_ms      INTEGER,
+    proxy_used       BOOLEAN DEFAULT FALSE,
+    called_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_investigation ON evidence(investigation_id);
+CREATE INDEX IF NOT EXISTS idx_evidence_tool ON evidence(tool_name);
+CREATE INDEX IF NOT EXISTS idx_hypotheses_investigation ON hypotheses(investigation_id);
+CREATE INDEX IF NOT EXISTS idx_audit_investigation ON audit_log(investigation_id);
+```
+
+### 5.3 Evidence Store API
+
+Qua MCP tools:
+- `create_investigation(seed, seed_type) → investigation_id`
+- `save_evidence(investigation_id, evidence) → evidence_id`
+- `query_evidence(investigation_id, filters?) → evidence[]`
+- `get_investigation(id) → full profile + evidence + hypotheses`
+
+### 5.4 Resume capability
+
+Claude Code có thể load investigation cũ, đọc evidence đã có, và tiếp tục từ đó — không cần chạy lại tool đã chạy.
+
+---
+
+## 6. Browser Automation Layer (Playwright)
+
+### 6.1 Vấn đề
+
+Nhiều site OSINT (Instagram, Twitter, TikTok) chặn HTTP request thông thường bằng Cloudflare, captcha, hoặc JS challenge. Plugin hiện tại (Holehe, Maigret) dùng HTTP thuần → bị block trên một số site.
+
+### 6.2 Giải pháp: Playwright
+
+- **Package**: `playwright` (Python)
+- **File**: `Core/browser/stealth_context.py`
+- **Mode**: Headless Chromium với stealth plugin (fake user-agent, disable webdriver flag, human-like delays)
+- **Plugin type mới**: `BrowserPlugin` — extends `IntelligencePlugin` nhưng dùng browser thay vì aiohttp
+
+### 6.3 Cách dùng
+
+```python
+# Core/browser/stealth_context.py
+from playwright.async_api import async_playwright
+
+async def get_stealth_page():
+    p = await async_playwright().start()
+    browser = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+    context = await browser.new_context(user_agent="...")
+    page = await context.new_page()
+    return page, browser
+```
+
+Browser plugin implement `check()` nhưng thay vì `aiohttp.get()`, dùng `page.goto()` + `page.content()`.
+
+### 6.4 Tradeoff
+
+- **Chậm hơn**: browser load ~2-5s/page vs HTTP ~0.5s/page.
+- **Nặng hơn**: Chromium ~200MB dependency.
+- **Hiệu quả hơn**: bypass được Cloudflare/captcha đơn giản.
+- **Chi tiết**: xem ADR-0011.
+
+---
+
+## 7. Source Coverage (Phủ nguồn dữ liệu)
+
+### 7.1 Free vs Paid sources
+
+| Source | Loại | Plugin | Ghi chú |
+|---|---|---|---|
+| Maigret (509+ sites) | Free | `maigret.py` | Username enumeration |
+| Holehe | Free | `holehe.py` | Email → registered sites |
+| GitHub | Free | `github.py` | Public profiles, repos |
+| SearXNG | Free (self-host) | `searxng.py` | Meta search engine |
+| DNS | Free | `dns_resolver.py` | WHOIS, A, MX, TXT |
+| HaveIBeenPwned | Paid (API key) | `hibp.py` | Breach data |
+| Shodan | Freemium | `shodan.py` | IP services, vulns |
+| Numverify | Freemium | `numverify.py` | Phone carrier lookup |
+| LeakLookup | Paid | `leak_lookup.py` | Leak database |
+| Hunter.io | Paid (API key) | (mới) | Email verification + finder |
+
+### 7.2 API key management
+
+- Tất cả API key qua env variables (`.env`), không bao giờ hardcode.
+- Convention: `MH_{PLUGIN_NAME}_API_KEY` (đã có trong `settings.get_plugin_key()`).
+- MCP tool trả error rõ ràng nếu thiếu key: `"error_type": "missing_key", "message": "Set MH_SHODAN_API_KEY in .env"`.
+
+### 7.3 Rate limiting
+
+- **Per-plugin**: semaphore trong `PluginManager._safe_execute()` (hiện tại: 5 concurrent).
+- **Global**: PluginCache TTL 24h — tránh gọi lại API cho cùng target.
+- **Source-specific**: mỗi plugin tự implement retry/backoff cho API-specific limits (e.g. Shodan 1 req/sec).
+- **Proxy rotation**: `ProxyManager.rotate()` khi bị IP-banned.
+
+---
+
+## 8. Bảo mật & Đạo đức (Security & Ethics)
+
+### 8.1 Consent tracking
+
+- Mỗi investigation ghi `consent_accepted: true` + timestamp khi tạo.
+- CLI/MCP hiển thị disclaimer trước khi chạy tool.
+- Audit log ghi lại mọi tool call (xem §5.2 `audit_log` table).
+
+### 8.2 Audit trail
+
+- `audit_log` table: tool name, input hash (không lưu raw input — privacy), success, duration, proxy used, timestamp.
+- Giống ADR-0008 (proxy audit trail) nhưng mở rộng cho mọi tool call, không chỉ proxy.
+- Retention: 90 ngày (configurable qua `MH_AUDIT_RETENTION_DAYS`).
+
+### 8.3 Data retention
+
+- Evidence: giữ vô hạn (user-controlled delete).
+- Audit log: 90 ngày default, auto-purge.
+- Plugin cache: 24h TTL (configurable).
+- Proxy audit: 30 ngày (hiện tại, ADR-0008).
+
+### 8.4 Safe mode
+
+- MCP server có flag `safe_mode` (env `MH_SAFE_MODE=true`):
+  - Exclude NSFW sources.
+  - Exclude sources có `tos_risk: "ban_risk"`.
+  - Disable browser automation (chỉ HTTP).
+- Mặc định: safe_mode ON. User phải explicitly disable.
+
+### 8.5 Legal disclaimer
+
+- Mỗi investigation report có footer: "Data collected from public sources. Verify before acting. Comply with local laws."
+- Không lưu raw credentials/passwords — chỉ metadata (breach name, date).
+
+---
+
+## 9. Technology Stack
+
+| Layer | Công nghệ | Lý do |
+|---|---|---|
+| **Language** | Python 3.10+ | Đã có, ecosystem OSINT phong phú |
+| **MCP SDK** | `mcp` (pip install mcp) | Official Python SDK, FastMCP decorator |
+| **Browser** | Playwright (Python) | Cross-browser, stealth, async-native |
+| **Database** | SQLite (WAL mode) | Đã có, zero-infra, đủ cho single-user |
+| **HTTP** | aiohttp | Đã có, async, connection pooling |
+| **REST API** | FastAPI | Đã có (`Core/api/server.py`), giữ lại |
+| **Cache** | SQLite (PluginCache) | Đã có, TTL-based |
+| **Proxy** | aiohttp + ProxyManager | Đã có, pool rotation + health check |
+| **Config** | python-dotenv + configparser | Đã có, secrets in .env |
+| **Testing** | pytest + pytest-asyncio | Đã có |
+| **Entity resolution** | jellyfish + imagehash + Pillow | Đã có (optional deps) |
+
+### Dependencies mới
+
+```
+mcp>=1.0          # MCP Python SDK
+playwright>=1.40  # Browser automation
+```
+
+---
+
+## 10. Đường di chuyển (Migration Path)
+
+### Phase 1: MCP Server MVP (2-3 tuần)
+
+1. Tạo `Core/mcp/server.py` — FastMCP server với 5 tool cốt lõi:
+   - `search_username`, `search_email`, `search_domain`, `check_breach`, `resolve_entities`
+2. Mỗi tool wrap `PluginManager` / `StagedProfiler` hiện tại — không thay đổi plugin code.
+3. Test với Claude Code: thêm config `~/.claude/mcp_servers.json`:
+   ```json
+   { "mrholmes": { "command": "python", "args": ["-m", "Core.mcp.server"] } }
+   ```
+4. Giữ CLI + REST API hoạt động (backward compatible).
+
+### Phase 2: Evidence Store (1-2 tuần)
+
+1. Mở rộng `schema.sql` thêm `evidence`, `hypotheses`, `audit_log` tables.
+2. Thêm MCP tools: `create_investigation`, `save_evidence`, `query_evidence`, `get_investigation`.
+3. Mỗi tool call tự động save evidence nếu `investigation_id` được truyền.
+
+### Phase 3: Browser Automation (1-2 tuần)
+
+1. Add `playwright` dependency.
+2. Tạo `Core/browser/stealth_context.py`.
+3. Convert 2-3 plugin quan trọng (Instagram, Twitter) sang BrowserPlugin.
+4. Thêm MCP tool `scrape_profile(url)`.
+
+### Phase 4: Tool Catalog đầy đủ (1-2 tuần)
+
+1. Wrap tất cả plugin còn lại thành MCP tool (xem `mcp-tool-catalog.md`).
+2. Thêm utility tools: `decode_text`, `generate_dorks`, `generate_report`.
+3. Auto-discovery: plugin mới tự xuất hiện làm MCP tool.
+
+### Phase 5: Hardening (tuần rải rác)
+
+1. Rate limiting per-tool.
+2. Safe mode enforcement.
+3. Audit log auto-purge.
+4. Documentation + examples cho Claude Code prompts.
+
+### Tổng thời gian ước tính: 6-9 tuần (part-time, 1 developer)
+
+---
+
+## Phụ lục: Tham chiếu file hiện tại
+
+| File | Vai trò trong 2.0 |
+|---|---|
+| `Core/plugins/base.py` | Không đổi — `IntelligencePlugin` Protocol |
+| `Core/plugins/manager.py` | Không đổi — `PluginManager` dùng trong MCP wrapper |
+| `Core/engine/autonomous_agent.py` | Không đổi — `StagedProfiler` gọi qua MCP tool |
+| `Core/engine/entity_resolver.py` | Không đổi — `EntityResolver` gọi qua `resolve_entities` tool |
+| `Core/api/server.py` | Giữ lại — secondary interface |
+| `Core/reporting/database.py` | Mở rộng — thêm evidence/hypotheses/audit tables |
+| `Core/reporting/schema.sql` | Mở rộng — thêm 3 bảng mới |
+| `Core/cache/plugin_cache.py` | Không đổi — dùng trong MCP wrapper |
+| `Core/proxy/manager.py` | Không đổi — dùng trong MCP wrapper |
+| `Core/config/settings.py` | Mở rộng — thêm `mcp_token`, `safe_mode` settings |
+| `Core/models/profile_entity.py` | Không đổi — golden record model |
+| `Core/mcp/server.py` | **Mới** — MCP server entry point |
+| `Core/mcp/tool_registry.py` | **Mới** — auto map plugin → MCP tool |
+| `Core/browser/stealth_context.py` | **Mới** — Playwright stealth context |

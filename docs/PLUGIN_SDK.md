@@ -687,3 +687,24 @@ mgr.register(HIBPPlugin(api_key="..."))
 
 Use these as templates when building your own plugin — `github.py` and
 `dns_resolver.py` are the most complete reference implementations.
+
+---
+
+## MCP Integration
+
+All plugins are automatically exposed as MCP tools. When you create a new plugin in `Core/plugins/`, it will be:
+
+1. Auto-discovered by `PluginManager.discover_plugins()`
+2. Callable via `run_plugin(plugin_name, target, target_type)` MCP tool
+3. Listed in `list_plugins` MCP tool
+
+To expose a plugin as a dedicated MCP tool (with custom input schema), add a tool function in `Core/mcp/server.py`:
+
+```python
+@mcp.tool()
+async def my_custom_tool(param: str) -> str:
+    """Description for Claude Code."""
+    plugin = _get_plugin("MyPlugin")
+    result = await plugin.check(param, "username")
+    return json.dumps({"success": result.is_success, "data": result.data})
+```
