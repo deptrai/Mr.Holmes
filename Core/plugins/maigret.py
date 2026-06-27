@@ -28,6 +28,7 @@ class MaigretPlugin:
     requires_api_key: bool = False
     stage: int = 2
     tos_risk: str = "safe"
+    top_n: int | None = None  # Set by caller to limit scan to top N sites
 
     async def check(self, target: str, target_type: str) -> PluginResult:
         """
@@ -58,14 +59,20 @@ class MaigretPlugin:
 
         tmp_dir = tempfile.mkdtemp()
         try:
-            # maigret 0.4.4 uses: maigret <username> -J simple --folderoutput <dir>
-            proc = await asyncio.create_subprocess_exec(
+            # Build command — maigret 0.4.4 uses: maigret <username> -J simple --folderoutput <dir>
+            cmd = [
                 "maigret", target,
                 "-J", "simple",
                 "--folderoutput", tmp_dir,
                 "--timeout", "30",
                 "--no-color",
                 "--no-progressbar",
+            ]
+            if self.top_n is not None:
+                cmd.extend(["--top-sites", str(self.top_n)])
+
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

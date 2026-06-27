@@ -72,6 +72,11 @@ async def run_maigret(username: str, top_n: int | None = None) -> str:
     maigret = _get_plugin("Maigret")
     if not maigret:
         return json.dumps({"error": "Maigret plugin not found"})
+    # Store top_n on plugin instance so check() can use it
+    if top_n is not None:
+        maigret.top_n = top_n  # type: ignore[attr-defined]
+    else:
+        maigret.top_n = None  # type: ignore[attr-defined]
     result = await maigret.check(username, "username")
     return json.dumps({
         "is_success": result.is_success,
@@ -82,21 +87,23 @@ async def run_maigret(username: str, top_n: int | None = None) -> str:
 
 @mcp.tool()
 async def scrape_profile(url: str, fields: list[str] | None = None) -> str:
-    """Scrape a social media profile page.
+    """Scrape a social media profile page using stealth browser.
 
     Args:
         url: Profile URL to scrape
         fields: Optional list of fields to extract (None = all)
 
     Returns:
-        JSON with profile data (bio, name, avatar, posts)
+        JSON with profile data (title, meta tags, content length)
     """
-    # TODO: Playwright integration in Sprint 2
-    # For now, return placeholder
-    return json.dumps({
-        "error": "Browser automation not yet implemented. Will be available in Sprint 2.",
-        "url": url,
-    })
+    from Core.browser.stealth_context import scrape_with_stealth, PLAYWRIGHT_AVAILABLE
+    if not PLAYWRIGHT_AVAILABLE:
+        return json.dumps({
+            "error": "Playwright not installed. Run: pip install playwright && playwright install chromium",
+            "url": url,
+        })
+    result = await scrape_with_stealth(url)
+    return json.dumps(result, ensure_ascii=False, indent=2)
 
 # === Email OSINT ===
 
@@ -116,8 +123,11 @@ async def search_email(email: str) -> str:
     result = await holehe.check(email, "email")
     return json.dumps({
         "is_success": result.is_success,
-        "registered_sites": result.data.get("registered_sites", []),
-        "count": result.data.get("count", 0),
+        "registered_sites": result.data.get("registered", []),
+        "count": result.data.get("total_registered", 0),
+        "recovery_phones": result.data.get("recovery_phones", []),
+        "recovery_emails": result.data.get("recovery_emails", []),
+        "total_checked": result.data.get("total_checked", 0),
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
