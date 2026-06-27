@@ -133,7 +133,10 @@ async def search_email(email: str) -> str:
 
 @mcp.tool()
 async def check_breach(email: str) -> str:
-    """Check if email appears in data breaches (via HaveIBeenPwned).
+    """Check if email appears in data breaches.
+
+    Tries HaveIBeenPwned first (requires paid key). Falls back to IntelX
+    (free tier) if HIBP key is missing.
 
     Args:
         email: Email to check
@@ -141,14 +144,32 @@ async def check_breach(email: str) -> str:
     Returns:
         JSON with breach list
     """
+    # Try HIBP first
     hibp = _get_plugin("HaveIBeenPwned")
-    if not hibp:
-        return json.dumps({"error": "HIBP plugin not found"})
-    result = await hibp.check(email, "email")
+    if hibp and hibp.api_key:
+        result = await hibp.check(email, "email")
+        if result.is_success:
+            return json.dumps({
+                "source": "HaveIBeenPwned",
+                "is_success": result.is_success,
+                "breaches": result.data.get("breach_names", []),
+                "count": result.data.get("breach_count", 0),
+                "data_classes": result.data.get("data_classes", []),
+                "error": result.error_message,
+            }, ensure_ascii=False, indent=2)
+
+    # Fallback to IntelX
+    intelx = _get_plugin("IntelX")
+    if not intelx:
+        return json.dumps({"error": "Neither HIBP nor IntelX plugin found"})
+    result = await intelx.check(email, "email")
     return json.dumps({
+        "source": "IntelX",
         "is_success": result.is_success,
         "breaches": result.data.get("breaches", []),
-        "count": result.data.get("count", 0),
+        "count": result.data.get("breach_count", 0),
+        "sources": result.data.get("sources", []),
+        "data_classes": result.data.get("data_classes", []),
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
@@ -169,6 +190,33 @@ async def check_leak(email: str) -> str:
     return json.dumps({
         "is_success": result.is_success,
         "leaks": result.data.get("leaks", []),
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def intelx_search(target: str, target_type: str = "email") -> str:
+    """Search Intelligence X for breaches, leaks, and pastes.
+
+    Supports EMAIL, USERNAME, PHONE, DOMAIN, and IP targets.
+    Free alternative to HIBP with broader coverage (darknet, pastes, leaks).
+
+    Args:
+        target: The search term (email, username, phone, domain, or IP)
+        target_type: One of 'email', 'username', 'phone', 'domain', 'ip'
+
+    Returns:
+        JSON with breach/leak results
+    """
+    intelx = _get_plugin("IntelX")
+    if not intelx:
+        return json.dumps({"error": "IntelX plugin not found"})
+    result = await intelx.check(target, target_type)
+    return json.dumps({
+        "is_success": result.is_success,
+        "breaches": result.data.get("breaches", []),
+        "count": result.data.get("breach_count", 0),
+        "sources": result.data.get("sources", []),
+        "data_classes": result.data.get("data_classes", []),
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 

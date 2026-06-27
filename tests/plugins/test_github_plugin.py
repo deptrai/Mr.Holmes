@@ -327,8 +327,9 @@ class TestGitHubPluginAuth:
         assert captured_headers.get("Authorization") == "Bearer ghp_mytoken"
 
     @pytest.mark.asyncio
-    async def test_without_token_no_authorization_header(self):
+    async def test_without_token_no_authorization_header(self, monkeypatch):
         from Core.plugins.github import GitHubPlugin
+        monkeypatch.delenv("MH_GITHUB_TOKEN", raising=False)
         plugin = GitHubPlugin()
 
         captured_headers = {}

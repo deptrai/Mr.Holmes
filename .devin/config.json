@@ -33,7 +33,8 @@
       "mcp__mr-holmes__list_investigations",
       "mcp__mr-holmes__decode_text",
       "mcp__mr-holmes__list_plugins",
-      "mcp__mr-holmes__run_plugin"
+      "mcp__mr-holmes__run_plugin",
+      "mcp__mr-holmes__intelx_search"
     ]
   }
 }
