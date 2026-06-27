@@ -79,32 +79,32 @@ class StealthBrowser:
     async def __aenter__(self):
         if not PLAYWRIGHT_AVAILABLE:
             raise RuntimeError("Playwright not installed. Run: pip install playwright && playwright install chromium")
-        
-        self._playwright = await async_playwright().__aenter__()
+
+        self._playwright = await async_playwright().start()
         self._browser = await self._playwright.chromium.launch(
             headless=self.headless,
             args=["--disable-blink-features=AutomationControlled"]
         )
-        
+
         self._context = await self._browser.new_context(
             user_agent=random.choice(USER_AGENTS),
             viewport=random.choice(VIEWPORTS),
             locale="en-US",
             timezone_id="America/New_York",
         )
-        
+
         # Inject stealth scripts
         await self._context.add_init_script(STEALTH_JS)
-        
+
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._context:
             await self._context.close()
         if self._browser:
             await self._browser.close()
         if self._playwright:
-            await self._playwright.__aexit__(exc_type, exc_val, exc_tb)
+            await self._playwright.stop()
     
     async def new_page(self):
         """Create a new stealth page."""

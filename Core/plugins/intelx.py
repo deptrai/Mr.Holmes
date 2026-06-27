@@ -135,7 +135,7 @@ class IntelXPlugin(IntelligencePlugin):
                         poll_data = await r.json()
                         status = poll_data.get("status", 0)
                         # status 0 = in progress, 1 = completed, 2 = no results
-                        records = poll_data.get("records", [])
+                        records = poll_data.get("records") or []
                         results.extend(records)
                         if status in (1, 2):
                             break
