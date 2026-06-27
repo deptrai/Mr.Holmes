@@ -1,0 +1,39 @@
+{
+  "mcpServers": {
+    "mr-holmes": {
+      "command": "python3.10",
+      "args": ["-m", "Core.mcp.server"],
+      "transport": "stdio"
+    }
+  },
+  "permissions": {
+    "allow": [
+      "mcp__mr-holmes__search_username",
+      "mcp__mr-holmes__run_maigret",
+      "mcp__mr-holmes__scrape_profile",
+      "mcp__mr-holmes__search_email",
+      "mcp__mr-holmes__check_breach",
+      "mcp__mr-holmes__check_leak",
+      "mcp__mr-holmes__validate_email",
+      "mcp__mr-holmes__search_phone",
+      "mcp__mr-holmes__validate_phone",
+      "mcp__mr-holmes__search_domain",
+      "mcp__mr-holmes__scan_ports",
+      "mcp__mr-holmes__shodan_lookup",
+      "mcp__mr-holmes__whois_lookup",
+      "mcp__mr-holmes__search_person",
+      "mcp__mr-holmes__generate_dorks",
+      "mcp__mr-holmes__run_searxng",
+      "mcp__mr-holmes__resolve_entities",
+      "mcp__mr-holmes__run_profiler",
+      "mcp__mr-holmes__create_investigation",
+      "mcp__mr-holmes__save_evidence",
+      "mcp__mr-holmes__query_evidence",
+      "mcp__mr-holmes__get_investigation",
+      "mcp__mr-holmes__list_investigations",
+      "mcp__mr-holmes__decode_text",
+      "mcp__mr-holmes__list_plugins",
+      "mcp__mr-holmes__run_plugin"
+    ]
+  }
+}
