@@ -59,6 +59,40 @@ class EvidenceStore:
                 timestamp TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (investigation_id) REFERENCES investigations(id)
             );
+
+            -- AD-13: Cross-reference schema extension (v2.1)
+            -- Extracted entities from evidence result_json for cross-referencing
+            CREATE TABLE IF NOT EXISTS evidence_entities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                evidence_id INTEGER NOT NULL,
+                entity_type TEXT NOT NULL,
+                entity_value TEXT NOT NULL,
+                confidence REAL DEFAULT 0.5,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (evidence_id) REFERENCES evidence(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_entities_type ON evidence_entities(entity_type);
+            CREATE INDEX IF NOT EXISTS idx_entities_value ON evidence_entities(entity_value);
+            CREATE INDEX IF NOT EXISTS idx_entities_evidence ON evidence_entities(evidence_id);
+
+            -- Cross-reference results: pairs of evidence that share entities
+            CREATE TABLE IF NOT EXISTS cross_refs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                investigation_id INTEGER NOT NULL,
+                evidence_id_1 INTEGER NOT NULL,
+                evidence_id_2 INTEGER NOT NULL,
+                match_type TEXT NOT NULL,
+                match_value TEXT NOT NULL,
+                confidence REAL DEFAULT 0.5,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (investigation_id) REFERENCES investigations(id),
+                FOREIGN KEY (evidence_id_1) REFERENCES evidence(id) ON DELETE CASCADE,
+                FOREIGN KEY (evidence_id_2) REFERENCES evidence(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_cross_refs_inv ON cross_refs(investigation_id);
+            CREATE INDEX IF NOT EXISTS idx_cross_refs_match ON cross_refs(match_value);
         """)
         conn.commit()
         conn.close()
@@ -145,6 +179,92 @@ class EvidenceStore:
         conn = self._get_conn()
         rows = conn.execute(
             "SELECT * FROM investigations ORDER BY created_at DESC"
+        ).fetchall()
+        result = [dict(r) for r in rows]
+        conn.close()
+        return result
+
+    # === AD-13: Cross-reference schema methods (v2.1) ===
+
+    def save_entities(self, evidence_id: int, entities: list[dict]) -> int:
+        """Save extracted entities for an evidence row.
+
+        Args:
+            evidence_id: Evidence row ID
+            entities: List of {"entity_type": ..., "entity_value": ..., "confidence": ...}
+
+        Returns:
+            Number of entities saved
+        """
+        if not entities:
+            return 0
+        conn = self._get_conn()
+        saved = 0
+        for ent in entities:
+            conn.execute(
+                """INSERT INTO evidence_entities (evidence_id, entity_type, entity_value, confidence)
+                   VALUES (?, ?, ?, ?)""",
+                (evidence_id, ent.get("entity_type", "UNKNOWN"),
+                 ent.get("entity_value", ""), ent.get("confidence", 0.5))
+            )
+            saved += 1
+        conn.commit()
+        conn.close()
+        return saved
+
+    def save_cross_ref(self, investigation_id: int, evidence_id_1: int,
+                       evidence_id_2: int, match_type: str, match_value: str,
+                       confidence: float = 0.5) -> int:
+        """Save a cross-reference between two evidence rows."""
+        conn = self._get_conn()
+        cursor = conn.execute(
+            """INSERT INTO cross_refs
+               (investigation_id, evidence_id_1, evidence_id_2, match_type, match_value, confidence)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (investigation_id, evidence_id_1, evidence_id_2,
+             match_type, match_value, confidence)
+        )
+        ref_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return ref_id
+
+    def query_entities(self, investigation_id: int,
+                       entity_type: str | None = None) -> list[dict]:
+        """Query extracted entities for an investigation.
+
+        Returns:
+            List of dicts with evidence_id, entity_type, entity_value, confidence
+        """
+        conn = self._get_conn()
+        if entity_type:
+            rows = conn.execute(
+                """SELECT ee.* FROM evidence_entities ee
+                   JOIN evidence e ON ee.evidence_id = e.id
+                   WHERE e.investigation_id = ? AND ee.entity_type = ?
+                   ORDER BY ee.entity_value""",
+                (investigation_id, entity_type)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """SELECT ee.* FROM evidence_entities ee
+                   JOIN evidence e ON ee.evidence_id = e.id
+                   WHERE e.investigation_id = ?
+                   ORDER BY ee.entity_type, ee.entity_value""",
+                (investigation_id,)
+            ).fetchall()
+        result = [dict(r) for r in rows]
+        conn.close()
+        return result
+
+    def query_cross_refs(self, investigation_id: int) -> list[dict]:
+        """Query cross-references for an investigation."""
+        conn = self._get_conn()
+        rows = conn.execute(
+            """SELECT * FROM cross_refs
+               WHERE investigation_id = ?
+               ORDER BY match_type, match_value""",
+            (investigation_id,)
         ).fetchall()
         result = [dict(r) for r in rows]
         conn.close()

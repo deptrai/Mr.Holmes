@@ -34,7 +34,14 @@
       "mcp__mr-holmes__decode_text",
       "mcp__mr-holmes__list_plugins",
       "mcp__mr-holmes__run_plugin",
-      "mcp__mr-holmes__intelx_search"
+      "mcp__mr-holmes__intelx_search",
+      "mcp__mr-holmes__synthesize_report",
+      "mcp__mr-holmes__export_pdf",
+      "mcp__mr-holmes__generate_mindmap",
+      "mcp__mr-holmes__cross_reference",
+      "mcp__mr-holmes__search_tax",
+      "mcp__mr-holmes__search_court_records",
+      "mcp__mr-holmes__search_news"
     ]
   }
 }

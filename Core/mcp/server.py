@@ -618,6 +618,344 @@ async def run_plugin(plugin_name: str, target: str, target_type: str) -> str:
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
+# === v2.1: Engine Module Wire ===
+
+@mcp.tool()
+async def synthesize_report(investigation_id: int) -> str:
+    """Generate an LLM-synthesized narrative report from investigation evidence.
+
+    Collects all evidence for an investigation, builds a ProfileGraph dict,
+    and calls the LLM synthesizer to produce a Markdown analyst report.
+
+    Args:
+        investigation_id: The investigation ID
+
+    Returns:
+        JSON with report_markdown, model_used, is_success
+    """
+    from Core.engine.llm_synthesizer import LLMSynthesizer
+    from Core.evidence.store import EvidenceStore
+
+    store = EvidenceStore()
+    inv = store.get_investigation(investigation_id)
+    if "error" in inv:
+        return json.dumps({"error": inv["error"]}, ensure_ascii=False)
+
+    evidence_rows = inv.get("evidence", [])
+    if not evidence_rows:
+        return json.dumps({"error": "No evidence found for investigation"}, ensure_ascii=False)
+
+    # Build ProfileGraph dict from evidence
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    plugin_results: list[dict] = []
+    seen_targets: set[str] = set()
+
+    for ev in evidence_rows:
+        target = ev.get("target", "")
+        target_type = ev.get("target_type", "UNKNOWN")
+        tool = ev.get("tool_name", "unknown")
+        try:
+            data = json.loads(ev.get("result_json", "{}"))
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+
+        if target and target not in seen_targets:
+            nodes.append({"target": target, "target_type": target_type.upper(), "depth": 0 if target == inv["investigation"].get("seed") else 1})
+            seen_targets.add(target)
+
+        plugin_results.append({
+            "plugin": tool,
+            "target": target,
+            "is_success": bool(data),
+            "data": data,
+        })
+
+    graph = {"nodes": nodes, "edges": edges, "plugin_results": plugin_results}
+
+    synth = LLMSynthesizer()
+    result = await synth.synthesize(graph)
+    return json.dumps({
+        "is_success": result.is_success,
+        "report_markdown": result.report_markdown,
+        "model_used": result.model_used,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def export_pdf(investigation_id: int, template: int = 1) -> str:
+    """Export an investigation report to HTML/PDF.
+
+    Generates an HTML report from investigation evidence using PDFBuilder.
+
+    Args:
+        investigation_id: The investigation ID
+        template: Template number (1=LIGHT, 2=DARK, 3=HIGH-CONTRAST)
+
+    Returns:
+        JSON with file_path and html_content
+    """
+    from Core.engine.pdf_builder import PDFBuilder
+    from Core.evidence.store import EvidenceStore
+
+    store = EvidenceStore()
+    inv = store.get_investigation(investigation_id)
+    if "error" in inv:
+        return json.dumps({"error": inv["error"]}, ensure_ascii=False)
+
+    evidence_rows = inv.get("evidence", [])
+    if not evidence_rows:
+        return json.dumps({"error": "No evidence found"}, ensure_ascii=False)
+
+    # Build content from evidence
+    lines = ["<h2>Evidence Report</h2>"]
+    for ev in evidence_rows:
+        lines.append(
+            f"<div class='evidence'><h3>{ev.get('tool_name', '?')} → "
+            f"{ev.get('target', '?')} ({ev.get('target_type', '?')})</h3>"
+            f"<pre>{ev.get('result_json', '')}</pre></div>"
+        )
+    content = "\n".join(lines)
+    seed = inv["investigation"].get("seed", "unknown")
+    html = PDFBuilder.generate_html(seed, content, template)
+
+    # Save to file
+    import os
+    report_dir = os.path.join("GUI", "Reports", "Investigations", str(investigation_id))
+    os.makedirs(report_dir, exist_ok=True)
+    file_path = os.path.join(report_dir, f"{seed}_report.html")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    return json.dumps({
+        "is_success": True,
+        "file_path": file_path,
+        "html_length": len(html),
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def generate_mindmap(investigation_id: int) -> str:
+    """Generate an interactive HTML mindmap from investigation evidence.
+
+    Creates a vis-network mindmap showing entity relationships.
+
+    Args:
+        investigation_id: The investigation ID
+
+    Returns:
+        JSON with file_path
+    """
+    from Core.engine.mindmap_generator import MindmapGenerator
+    from Core.evidence.store import EvidenceStore
+
+    store = EvidenceStore()
+    inv = store.get_investigation(investigation_id)
+    if "error" in inv:
+        return json.dumps({"error": inv["error"]}, ensure_ascii=False)
+
+    evidence_rows = inv.get("evidence", [])
+    if not evidence_rows:
+        return json.dumps({"error": "No evidence found"}, ensure_ascii=False)
+
+    # Build graph from evidence
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    seen: set[str] = set()
+    seed = inv["investigation"].get("seed", "unknown")
+
+    for ev in evidence_rows:
+        target = ev.get("target", "")
+        ttype = ev.get("target_type", "UNKNOWN").upper()
+        tool = ev.get("tool_name", "unknown")
+        if target and target not in seen:
+            nodes.append({"target": target, "target_type": ttype, "depth": 0 if target == seed else 1})
+            seen.add(target)
+            if target != seed:
+                edges.append({"source": seed, "discovered": target, "via_plugin": tool, "type": "found"})
+
+    graph = {"nodes": nodes, "edges": edges, "plugin_results": []}
+    gen = MindmapGenerator()
+    html = gen.generate(graph)
+
+    import os
+    report_dir = os.path.join("GUI", "Reports", "Investigations", str(investigation_id))
+    os.makedirs(report_dir, exist_ok=True)
+    file_path = os.path.join(report_dir, f"{seed}_mindmap.html")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    return json.dumps({
+        "is_success": True,
+        "file_path": file_path,
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+    }, ensure_ascii=False, indent=2)
+
+# === v2.1: Cross-Reference Engine ===
+
+@mcp.tool()
+async def cross_reference(investigation_id: int) -> str:
+    """Cross-reference evidence in an investigation to find overlaps and suggest new targets.
+
+    Analyzes all evidence rows for:
+    - Emails/usernames/phones appearing in multiple evidence
+    - Clues extracted from breach data, scrape results
+    - Suggested new targets to investigate
+
+    Args:
+        investigation_id: The investigation ID
+
+    Returns:
+        JSON with overlaps and suggested_targets
+    """
+    import re
+    from Core.evidence.store import EvidenceStore
+
+    store = EvidenceStore()
+    inv = store.get_investigation(investigation_id)
+    if "error" in inv:
+        return json.dumps({"error": inv["error"]}, ensure_ascii=False)
+
+    evidence_rows = inv.get("evidence", [])
+    if not evidence_rows:
+        return json.dumps({"error": "No evidence found"}, ensure_ascii=False)
+
+    # Collect all entities by type
+    entities: dict[str, set[str]] = {"EMAIL": set(), "USERNAME": set(), "PHONE": set(), "DOMAIN": set(), "NAME": set()}
+    target_to_evidence: dict[str, list[int]] = {}
+
+    email_pattern = re.compile(r'[\w.+-]+@[\w-]+\.[\w.-]+')
+    phone_pattern = re.compile(r'\+?\d[\d\s\-]{8,15}\d')
+
+    for ev in evidence_rows:
+        target = ev.get("target", "")
+        ttype = ev.get("target_type", "").upper()
+        ev_id = ev.get("id", 0)
+        result_json = ev.get("result_json", "{}")
+
+        # Track target → evidence mapping
+        if target not in target_to_evidence:
+            target_to_evidence[target] = []
+        target_to_evidence[target].append(ev_id)
+
+        # Add target to entities
+        if ttype in entities:
+            entities[ttype].add(target)
+
+        # Extract clues from result_json
+        try:
+            data = json.loads(result_json)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+
+        # Extract emails from result data
+        result_str = json.dumps(data)
+        found_emails = set(email_pattern.findall(result_str))
+        for email in found_emails:
+            entities["EMAIL"].add(email)
+
+        # Extract names from scrape results
+        for key in ("name", "full_name", "real_names", "keywords"):
+            val = data.get(key)
+            if isinstance(val, str) and len(val) > 2:
+                entities["NAME"].add(val)
+            elif isinstance(val, list):
+                for v in val:
+                    if isinstance(v, str) and len(v) > 2:
+                        entities["NAME"].add(v)
+
+    # Find overlaps: targets appearing in multiple evidence rows
+    overlaps: list[dict] = []
+    for target, ev_ids in target_to_evidence.items():
+        if len(ev_ids) > 1:
+            overlaps.append({"target": target, "evidence_ids": ev_ids, "count": len(ev_ids)})
+
+    # Suggest new targets: entities not yet investigated
+    investigated = set(target_to_evidence.keys())
+    suggested: list[dict] = []
+    for ttype, values in entities.items():
+        for val in values:
+            if val and val not in investigated:
+                suggested.append({"target": val, "target_type": ttype, "reason": "Found in evidence data"})
+
+    return json.dumps({
+        "investigation_id": investigation_id,
+        "total_evidence": len(evidence_rows),
+        "overlaps": overlaps,
+        "overlap_count": len(overlaps),
+        "suggested_targets": suggested[:20],
+        "suggestion_count": len(suggested),
+        "entities_found": {k: len(v) for k, v in entities.items()},
+    }, ensure_ascii=False, indent=2)
+
+# === v2.1: Vietnam OSINT Plugins ===
+
+@mcp.tool()
+async def search_tax(tax_id: str) -> str:
+    """Look up Vietnam tax code (mã số thuế) via XInvoice API.
+
+    Args:
+        tax_id: 10-13 digit tax code
+
+    Returns:
+        JSON with taxpayer name, address, status
+    """
+    intelx = _get_plugin("XInvoice")
+    if not intelx:
+        return json.dumps({"error": "XInvoice plugin not found"})
+    result = await intelx.check(tax_id, "tax_id")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_court_records(name: str) -> str:
+    """Search Vietnam court records by name.
+
+    Args:
+        name: Person or company name (Vietnamese)
+
+    Returns:
+        JSON with matching court cases
+    """
+    plugin = _get_plugin("VnCourt")
+    if not plugin:
+        return json.dumps({"error": "VnCourt plugin not found"})
+    result = await plugin.check(name, "name")
+    return json.dumps({
+        "is_success": result.is_success,
+        "cases": result.data.get("cases", []),
+        "count": result.data.get("count", 0),
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_news(query: str, date_from: str = "", date_to: str = "") -> str:
+    """Search Vietnam news archives for articles mentioning a person or company.
+
+    Uses Google News + site-specific dorks for tuoitre.vn, vnexpress.net, thanhnien.vn.
+
+    Args:
+        query: Person name or company name
+        date_from: Optional start date (YYYY-MM-DD)
+        date_to: Optional end date (YYYY-MM-DD)
+
+    Returns:
+        JSON with article list
+    """
+    plugin = _get_plugin("VnNews")
+    if not plugin:
+        return json.dumps({"error": "VnNews plugin not found"})
+    result = await plugin.check(query, "name")
+    return json.dumps({
+        "is_success": result.is_success,
+        "articles": result.data.get("articles", []),
+        "count": result.data.get("count", 0),
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
 # === Entry point ===
 
 def main():

@@ -70,6 +70,21 @@
 - **Prevents**: single point of failure cho breach data
 - **Rule**: User cung cấp `MH_SNUSBASE_API_KEY`, paid $5/mo
 
+### AD-11: Browser Pool Management [ADOPTED — Architect review]
+- **Binds**: `Core/browser/browser_pool.py` — singleton BrowserPool, max 3 concurrent contexts
+- **Prevents**: resource exhaustion (5 browsers × 250MB = 1.25GB RAM), IP ban risk
+- **Rule**: `PooledBrowserContext(profile)` context manager, semaphore-limited, ref-counted
+
+### AD-12: Centralized Rate Limiter [ADOPTED — Architect review]
+- **Binds**: `Core/utils/rate_limiter.py` — singleton RateLimiter, per-domain + per-plugin limits
+- **Prevents**: IP ban từ gov portals, inconsistent rate limiting across plugins
+- **Rule**: `await limiter.wait_if_needed(domain, plugin)` before every external request
+
+### AD-13: Cross-Reference Schema Extension [ADOPTED — Architect review]
+- **Binds**: `evidence_entities` + `cross_refs` tables in EvidenceStore
+- **Prevents**: cannot query opaque `result_json` blob for entity matching
+- **Rule**: `save_entities()`, `save_cross_ref()`, `query_entities()`, `query_cross_refs()`
+
 ## Feature Map (v2.1)
 
 ```
