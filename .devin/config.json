@@ -52,7 +52,10 @@
       "mcp__mr-holmes__reverse_avatar",
       "mcp__mr-holmes__search_business",
       "mcp__mr-holmes__search_land",
-      "mcp__mr-holmes__search_vehicle"
+      "mcp__mr-holmes__search_vehicle",
+      "mcp__mr-holmes__search_phone_vn",
+      "mcp__mr-holmes__search_email_vn",
+      "mcp__mr-holmes__search_domain_vn"
     ]
   }
 }

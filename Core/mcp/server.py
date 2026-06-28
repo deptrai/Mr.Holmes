@@ -1233,6 +1233,78 @@ async def search_vehicle(license_plate: str) -> str:
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
+# === v2.1 Sprint 5: Advanced Enrichment ===
+
+@mcp.tool()
+async def search_phone_vn(phone: str) -> str:
+    """Look up a Vietnamese phone number: carrier, region, and validation.
+
+    Uses local prefix database + Numverify API (if key configured).
+    Identifies carrier (Viettel, MobiFone, VinaPhone, etc.) and region.
+
+    Args:
+        phone: Vietnamese phone number (e.g., "0901234567" or "+84901234567")
+
+    Returns:
+        JSON with carrier, region, line type, international format
+    """
+    plugin = _get_plugin("VnPhone")
+    if not plugin:
+        return json.dumps({"error": "VnPhone plugin not found"})
+    result = await plugin.check(phone, "phone")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_email_vn(email: str) -> str:
+    """Validate email and check for data breaches.
+
+    Combines: format validation, MX record check, HaveIBeenPwned breach
+    lookup (if key configured), and LeakLookup search (if key configured).
+
+    Args:
+        email: Email address to check
+
+    Returns:
+        JSON with validation status, MX check, and breach data
+    """
+    plugin = _get_plugin("VnEmail")
+    if not plugin:
+        return json.dumps({"error": "VnEmail plugin not found"})
+    result = await plugin.check(email, "email")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_domain_vn(domain: str) -> str:
+    """Enrich a domain with WHOIS, DNS, and subdomain data.
+
+    Combines: WHOIS lookup (owner, registrar, dates), DNS resolution
+    (A, AAAA, MX, NS, TXT), and subdomain discovery via crt.sh.
+    Special handling for .vn TLD (VNNIC registry fields).
+
+    Args:
+        domain: Domain name (e.g., "example.com" or "example.vn")
+
+    Returns:
+        JSON with WHOIS data, DNS records, and subdomains
+    """
+    plugin = _get_plugin("VnDomain")
+    if not plugin:
+        return json.dumps({"error": "VnDomain plugin not found"})
+    result = await plugin.check(domain, "domain")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
 # === Entry point ===
 
 def main():
