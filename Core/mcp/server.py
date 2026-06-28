@@ -1160,6 +1160,79 @@ async def reverse_avatar(image_url: str) -> str:
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
+# === v2.1 Sprint 4: Vietnam Government Records ===
+
+@mcp.tool()
+async def search_business(target: str, target_type: str = "tax_id") -> str:
+    """Search Vietnamese business registration.
+
+    Looks up business registration data from dangkykinhdoanh.gov.vn.
+    Tries public API first, falls back to browser scrape.
+
+    Args:
+        target: Tax code (10-13 digits) or business name
+        target_type: "tax_id" or "business_name"
+
+    Returns:
+        JSON with business name, address, status, representative
+    """
+    plugin = _get_plugin("VnBusiness")
+    if not plugin:
+        return json.dumps({"error": "VnBusiness plugin not found"})
+    result = await plugin.check(target, target_type)
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_land(target: str, target_type: str = "address") -> str:
+    """Search Vietnam land registry public data.
+
+    Searches land use planning and price framework from dkt.gov.vn.
+    Note: Full sổ đỏ (land certificate) lookup requires in-person visit.
+
+    Args:
+        target: Address, location, or land parcel identifier
+        target_type: "address", "location", or "name"
+
+    Returns:
+        JSON with land planning records and price framework
+    """
+    plugin = _get_plugin("VnLand")
+    if not plugin:
+        return json.dumps({"error": "VnLand plugin not found"})
+    result = await plugin.check(target, target_type)
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_vehicle(license_plate: str) -> str:
+    """Search Vietnam vehicle registration and traffic violations.
+
+    Checks CSGT (traffic violations) and VR (inspection certificate)
+    by license plate. Both portals may require CAPTCHA.
+
+    Args:
+        license_plate: Vietnam license plate (e.g., "29A-12345" or "29-X1 234.56")
+
+    Returns:
+        JSON with traffic violations and inspection status
+    """
+    plugin = _get_plugin("VnVehicle")
+    if not plugin:
+        return json.dumps({"error": "VnVehicle plugin not found"})
+    result = await plugin.check(license_plate, "license_plate")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
 # === Entry point ===
 
 def main():

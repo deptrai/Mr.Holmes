@@ -84,6 +84,7 @@ class BrowserPool:
         self._context_refs: dict[str, int] = {}  # reference count per profile
         self._lock = asyncio.Lock()
         self._initialized = False
+        self._loop: asyncio.AbstractEventLoop | None = None  # track owning loop
 
     @classmethod
     def get_instance(cls) -> "BrowserPool":
@@ -93,7 +94,24 @@ class BrowserPool:
         return cls._instance
 
     async def _ensure_initialized(self) -> None:
-        """Initialize Playwright and browser on first use."""
+        """Initialize Playwright and browser on first use.
+
+        Detects event-loop changes (e.g., multiple asyncio.run() calls in
+        MCP server) and resets the pool to avoid 'future belongs to a
+        different loop' errors.
+        """
+        current_loop = asyncio.get_event_loop()
+
+        # Reset if event loop changed (singleton reused across loops)
+        if self._initialized and self._loop is not None and self._loop is not current_loop:
+            logger.warning("BrowserPool: event loop changed, resetting pool")
+            try:
+                await self._force_cleanup()
+            except Exception as e:
+                logger.warning("BrowserPool: cleanup on loop change failed: %s", e)
+            self._initialized = False
+            self._loop = None
+
         if self._initialized:
             return
         async with self._lock:
@@ -111,6 +129,7 @@ class BrowserPool:
                     "--disable-blink-features=AutomationControlled",
                 ],
             )
+            self._loop = current_loop
             self._initialized = True
             logger.info("BrowserPool: ready (max=%d browsers)", self._max_browsers)
 
@@ -196,7 +215,32 @@ class BrowserPool:
                 except Exception:
                     pass
             self._initialized = False
+            self._loop = None
             logger.info("BrowserPool: cleaned up all contexts")
+
+    async def _force_cleanup(self) -> None:
+        """Force cleanup without acquiring lock (used on event-loop change)."""
+        for profile, ctx in list(self._contexts.items()):
+            try:
+                await ctx.close()
+            except Exception:
+                pass
+        self._contexts.clear()
+        self._context_refs.clear()
+
+        if self._browser:
+            try:
+                await self._browser.close()
+            except Exception:
+                pass
+        if self._playwright:
+            try:
+                await self._playwright.stop()
+            except Exception:
+                pass
+        self._initialized = False
+        self._loop = None
+        logger.info("BrowserPool: force cleanup (event loop changed)")
 
     def get_stats(self) -> dict:
         """Return pool statistics for monitoring."""

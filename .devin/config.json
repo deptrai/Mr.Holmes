@@ -49,7 +49,10 @@
       "mcp__mr-holmes__search_linkedin",
       "mcp__mr-holmes__reverse_phone",
       "mcp__mr-holmes__search_snusbase",
-      "mcp__mr-holmes__reverse_avatar"
+      "mcp__mr-holmes__reverse_avatar",
+      "mcp__mr-holmes__search_business",
+      "mcp__mr-holmes__search_land",
+      "mcp__mr-holmes__search_vehicle"
     ]
   }
 }
