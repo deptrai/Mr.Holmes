@@ -900,11 +900,33 @@ async def search_tax(tax_id: str) -> str:
     Returns:
         JSON with taxpayer name, address, status
     """
-    intelx = _get_plugin("XInvoice")
-    if not intelx:
-        return json.dumps({"error": "XInvoice plugin not found"})
-    result = await intelx.check(tax_id, "tax_id")
+    # Try XInvoice (structured API) first; fall back to VnTax (browser scrape)
+    # if XInvoice is unavailable, misconfigured, or returns no data.
+    xinvoice = _get_plugin("XInvoice")
+    if xinvoice:
+        result = await xinvoice.check(tax_id, "tax_id")
+        if result.is_success and result.data.get("data_found"):
+            return json.dumps({
+                "source": "XInvoice",
+                "is_success": result.is_success,
+                "data": result.data,
+                "error": result.error_message,
+            }, ensure_ascii=False, indent=2)
+
+    # Fallback: VnTax browser scraper (tracuunnt.gdt.gov.vn)
+    vntax = _get_plugin("VnTax")
+    if not vntax:
+        # Neither plugin produced data — surface the XInvoice error if any
+        err = result.error_message if xinvoice else "Neither XInvoice nor VnTax plugin found"
+        return json.dumps({
+            "source": "XInvoice",
+            "is_success": False,
+            "data": {},
+            "error": err,
+        }, ensure_ascii=False, indent=2)
+    result = await vntax.check(tax_id, "tax_id")
     return json.dumps({
+        "source": "VnTax",
         "is_success": result.is_success,
         "data": result.data,
         "error": result.error_message,
