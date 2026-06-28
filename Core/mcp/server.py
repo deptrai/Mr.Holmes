@@ -978,6 +978,116 @@ async def search_news(query: str, date_from: str = "", date_to: str = "") -> str
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
+# === v2.1 Sprint 2: Social Media Scrapers ===
+
+@mcp.tool()
+async def search_facebook(username: str) -> str:
+    """Scrape a Facebook profile via mbasic.facebook.com.
+
+    Args:
+        username: Facebook username or profile URL
+
+    Returns:
+        JSON with name, bio, profile_pic, sections
+    """
+    plugin = _get_plugin("FacebookVn")
+    if not plugin:
+        return json.dumps({"error": "FacebookVn plugin not found"})
+    result = await plugin.check(username, "username")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_instagram(username: str) -> str:
+    """Scrape an Instagram public profile.
+
+    Args:
+        username: Instagram username or profile URL
+
+    Returns:
+        JSON with bio, followers, following, posts, profile_pic
+    """
+    plugin = _get_plugin("Instagram")
+    if not plugin:
+        return json.dumps({"error": "Instagram plugin not found"})
+    result = await plugin.check(username, "username")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_tiktok(username: str) -> str:
+    """Scrape a TikTok public profile.
+
+    Extracts nickname, bio, followers, following, likes, video count
+    from SIGI_STATE / __UNIVERSAL_DATA_FOR_REHYDRATION__ embedded JSON.
+
+    Args:
+        username: TikTok username (with or without @) or profile URL
+
+    Returns:
+        JSON with profile data
+    """
+    plugin = _get_plugin("TikTokVn")
+    if not plugin:
+        return json.dumps({"error": "TikTokVn plugin not found"})
+    result = await plugin.check(username, "username")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_zalo(target: str) -> str:
+    """Look up a Zalo profile by ID or phone number.
+
+    Tries Zalo Open API (if token configured), falls back to web scrape.
+
+    Args:
+        target: Zalo ID, phone number, or zalo.me URL
+
+    Returns:
+        JSON with name, avatar, status
+    """
+    plugin = _get_plugin("Zalo")
+    if not plugin:
+        return json.dumps({"error": "Zalo plugin not found"})
+    result = await plugin.check(target, "username")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_linkedin(target: str) -> str:
+    """Scrape a LinkedIn public profile.
+
+    Uses social-preview UA for SSR HTML with JSON-LD schema.
+    Extracts name, headline, company, education, location.
+
+    Args:
+        target: LinkedIn username, profile URL, or name
+
+    Returns:
+        JSON with profile data
+    """
+    plugin = _get_plugin("LinkedIn")
+    if not plugin:
+        return json.dumps({"error": "LinkedIn plugin not found"})
+    result = await plugin.check(target, "username")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
 # === Entry point ===
 
 def main():

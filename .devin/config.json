@@ -41,7 +41,12 @@
       "mcp__mr-holmes__cross_reference",
       "mcp__mr-holmes__search_tax",
       "mcp__mr-holmes__search_court_records",
-      "mcp__mr-holmes__search_news"
+      "mcp__mr-holmes__search_news",
+      "mcp__mr-holmes__search_facebook",
+      "mcp__mr-holmes__search_instagram",
+      "mcp__mr-holmes__search_tiktok",
+      "mcp__mr-holmes__search_zalo",
+      "mcp__mr-holmes__search_linkedin"
     ]
   }
 }
