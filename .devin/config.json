@@ -46,7 +46,10 @@
       "mcp__mr-holmes__search_instagram",
       "mcp__mr-holmes__search_tiktok",
       "mcp__mr-holmes__search_zalo",
-      "mcp__mr-holmes__search_linkedin"
+      "mcp__mr-holmes__search_linkedin",
+      "mcp__mr-holmes__reverse_phone",
+      "mcp__mr-holmes__search_snusbase",
+      "mcp__mr-holmes__reverse_avatar"
     ]
   }
 }

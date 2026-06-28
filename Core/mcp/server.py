@@ -1088,6 +1088,78 @@ async def search_linkedin(target: str) -> str:
         "error": result.error_message,
     }, ensure_ascii=False, indent=2)
 
+# === v2.1 Sprint 3: Enrichment Plugins ===
+
+@mcp.tool()
+async def reverse_phone(phone: str) -> str:
+    """Reverse lookup a phone number via Truecaller.
+
+    Returns owner name, email, address, spam score.
+    Requires MH_TRUECALLER_API_KEY.
+
+    Args:
+        phone: Phone number (international format preferred)
+
+    Returns:
+        JSON with owner info
+    """
+    plugin = _get_plugin("Truecaller")
+    if not plugin:
+        return json.dumps({"error": "Truecaller plugin not found"})
+    result = await plugin.check(phone, "phone")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def search_snusbase(target: str, target_type: str = "email") -> str:
+    """Search Snusbase breach database.
+
+    Searches by email, username, phone, IP, password, name, or domain.
+    Requires MH_SNUSBASE_API_KEY (paid subscription).
+
+    Args:
+        target: Search term (email, username, phone, etc.)
+        target_type: Type of search (email, username, phone, ip, name, password, domain)
+
+    Returns:
+        JSON with breach records
+    """
+    plugin = _get_plugin("Snusbase")
+    if not plugin:
+        return json.dumps({"error": "Snusbase plugin not found"})
+    result = await plugin.check(target, target_type)
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
+@mcp.tool()
+async def reverse_avatar(image_url: str) -> str:
+    """Reverse search an avatar/profile image.
+
+    Searches Google Images, Yandex Images, and FaceCheck.id (if API key
+    configured) to find other profiles using the same image.
+
+    Args:
+        image_url: URL of the avatar/profile image
+
+    Returns:
+        JSON with matching URLs and confidence scores
+    """
+    plugin = _get_plugin("AvatarReverse")
+    if not plugin:
+        return json.dumps({"error": "AvatarReverse plugin not found"})
+    result = await plugin.check(image_url, "image_url")
+    return json.dumps({
+        "is_success": result.is_success,
+        "data": result.data,
+        "error": result.error_message,
+    }, ensure_ascii=False, indent=2)
+
 # === Entry point ===
 
 def main():
